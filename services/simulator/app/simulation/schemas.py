@@ -105,3 +105,22 @@ class SimulateResponse(BaseModel):
     corridor_key: str | None = None
     truck_slug: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ValidationCaseResult(BaseModel):
+    """Single OEM reference case MAPE result."""
+
+    name: str
+    expected_kwh: float
+    actual_kwh: float
+    mape_pct: float
+    pass_: bool = Field(alias="pass", description="True when MAPE is within ±8–12% band")
+
+    model_config = {"populate_by_name": True}
+
+
+class ValidationResponse(BaseModel):
+    """Aggregate validation gate response for GET /v1/physics/validation."""
+
+    cases: list[ValidationCaseResult]
+    overall_pass: bool

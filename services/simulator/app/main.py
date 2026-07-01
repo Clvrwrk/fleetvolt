@@ -17,6 +17,7 @@ from app.routes.routing import router as routing_router
 from app.routes.simulate import router as simulate_router
 from app.routes.spatial import router as spatial_router
 from app.routes.trucks import router as trucks_router
+from app.routes.validation import router as validation_router
 
 app = FastAPI(title="FleetVolt Simulator", version="0.1.0")
 app.include_router(chargers_router)
@@ -26,6 +27,7 @@ app.include_router(routing_router)
 app.include_router(simulate_router)
 app.include_router(spatial_router)
 app.include_router(trucks_router)
+app.include_router(validation_router)
 
 SPATIAL_TABLES = (
     "nhfn_network",

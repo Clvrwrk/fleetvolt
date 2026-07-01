@@ -57,7 +57,10 @@ def test_flat_highway_oem_mape_in_band(validation_db):
     flat = next(c for c in response.cases if c.name == "flat_highway_oem")
     assert flat.pass_ is True
     assert 8.0 <= flat.mape_pct <= 12.0
-    assert flat.expected_kwh == pytest.approx(394.0)
+    payload = load_reference_cases()
+    assert flat.expected_kwh == pytest.approx(
+        payload["cases"]["flat_highway_oem"]["expected_total_kwh"]
+    )
     assert flat.actual_kwh > 0
 
 

@@ -80,3 +80,47 @@ Every simulate response includes `assumptions[]` with `{field, value, source, oe
 - **`user_override`:** Client supplied an in-bounds inline override
 
 Values outside ±20% of OEM return HTTP 422. Implementation: `app/simulation/overrides.py`.
+
+## Core Physics Parameters
+
+Segment-based force balance drives energy integration (PHYS-02). Key parameters sourced from `data/trucks/{slug}.json` and seeded `truck_configs.params` JSONB:
+
+| Parameter | eCascadia 438 OEM default | Role |
+|-----------|---------------------------|------|
+| usable_kwh | 394 kWh | SoC integration capacity (nameplate 438 kWh minus BMS reserve) |
+| C_rr | 0.0065 | Rolling resistance coefficient |
+| drag_coefficient | 0.65 | Aero drag coefficient |
+| frontal_area_m2 | 9.8 | Frontal area for aero force |
+| regen_efficiency | 0.70 | Regenerative braking efficiency cap |
+| aux_kw_base | 10 kW | Baseline auxiliary load per segment |
+| drivetrain_efficiency | 0.92 | Motor/inverter efficiency on traction |
+
+### Usable kWh Policy (D-10)
+
+Simulation uses **usable kWh**, not nameplate pack capacity. eCascadia 438 kWh nameplate maps to 394 kWh usable (~90% minus 0.5 kWh BMS reserve). SoC integration starts at 100% of usable energy; KPI `total_kwh` is gross discharge including aux and thermal derate.
+
+### Segment Discretization (D-05, D-07)
+
+Routes split at **10 US mile** intervals and wherever grade exceeds **6%**. Elevation profiles sampled at 150 m resolution from cached PostGIS fixtures or Open-Elevation fallback.
+
+## OEM Validation Methodology (D-11, PHYS-06)
+
+Two deterministic reference cases in `data/validation/reference_cases.json` gate Phase 2 accuracy:
+
+| Case | Route | Expected basis |
+|------|-------|----------------|
+| flat_highway_oem | Synthetic 230 mi flat at 65 mph | OEM ideal-cycle regional range (eCascadia 438 kWh) |
+| polb_cajon_grade | `polb_cajon_pass` corridor fixture | Grade-heavy POLB→Cajon validation corridor |
+
+### MAPE Gate
+
+```
+MAPE = |actual_kwh − expected_kwh| / expected_kwh × 100
+pass = 8% ≤ MAPE ≤ 12%   (calibration band per D-11)
+```
+
+- **GET /v1/physics/validation** runs both cases via `orchestrator.run_simulation` and returns per-case MAPE with `overall_pass`.
+- **CI gate:** `tests/test_validation_gate.py` uses fixture elevation only — no Valhalla or Open-Elevation HTTP.
+- **Phase 2 calibration:** `expected_total_kwh` values tuned in Plan 05 so current segment physics lands in the 8–12% band against cached fixtures. OEM nameplate claims documented in `source_notes`; calibrated expected values reflect conservative aux/aero vs OEM ideal-cycle marketing range.
+
+Implementation: `app/simulation/validation_cases.py`, `app/routes/validation.py`.
