@@ -9,7 +9,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
 - [x] **Phase 1: Foundation & Spatial Data** - Docker Compose stack, PostGIS spatial truth, NHFN/chargers/trucks/elevation for POLB corridors (completed 2026-07-01)
 - [x] **Phase 2: Physics Simulation Core** - Segment physics, Valhalla truck routing, POLB/Cajon validation without charging UI (completed 2026-07-01)
 - [x] **Phase 3: Charging & Job Pipeline** - Rule-based charging stops, feasibility tiers, Fastify→FastAPI/Celery orchestration (completed 2026-07-01)
-- [ ] **Phase 4: Analyst Dashboard & Export** - Interactive map, SoC charts, scenario comparison, CSV/JSON/PDF reports
+- [x] **Phase 4: Analyst Dashboard & Export** - Interactive map, SoC charts, scenario comparison, CSV/JSON/PDF reports (completed 2026-07-01)
 - [ ] **Phase 5: Corridor Intelligence & Emissions** - NHFN route preference, gap analysis, WTW emissions and energy cost core
 - [ ] **Phase 6: TCO Analysis & Production** - Rolling cumulative TCO chart, assumptions panel, VPS production deployment
 
@@ -160,7 +160,7 @@ Plans:
   4. Simulation results are stored immutably with input hash for cache replay and comparison
   5. User can export full simulation profile as CSV/JSON and PDF report with map snapshot, assumptions table, physics parameter snapshot, and model version
 
-**Plans**: 7/8 plans executed
+**Plans**: 8/8 plans complete
 
 Plans:
 
@@ -191,7 +191,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 04-06-PLAN.md — CSV/JSON client export and Fastify PDF route (EXPR-01, EXPR-02, EXPR-03)
+- [x] 04-06-PLAN.md — CSV/JSON client export and Fastify PDF route (EXPR-01, EXPR-02, EXPR-03)
 
 **UI hint**: yes
 
@@ -236,6 +236,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
 | 3. Charging & Job Pipeline | 5/5 | Complete    | 2026-07-01 |
-| 4. Analyst Dashboard & Export | 7/8 | In Progress|  |
+| 4. Analyst Dashboard & Export | 8/8 | Complete   | 2026-07-01 |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
 | 6. TCO Analysis & Production | 0/TBD | Not started | - |

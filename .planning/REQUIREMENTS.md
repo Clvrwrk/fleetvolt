@@ -58,9 +58,9 @@
 
 ### Export & Reporting
 
-- [ ] **EXPR-01**: User can export full simulation profile as CSV and JSON with charge events and input hash
-- [ ] **EXPR-02**: User can export PDF report with summary KPIs, map snapshot, assumptions table, and limitations
-- [ ] **EXPR-03**: Export includes physics parameter snapshot and model version for consulting audit trail
+- [x] **EXPR-01**: User can export full simulation profile as CSV and JSON with charge events and input hash
+- [x] **EXPR-02**: User can export PDF report with summary KPIs, map snapshot, assumptions table, and limitations
+- [x] **EXPR-03**: Export includes physics parameter snapshot and model version for consulting audit trail
 
 ### Emissions & Economics
 
@@ -158,9 +158,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | SCEN-01 | Phase 4 | Complete |
 | SCEN-02 | Phase 4 | Complete |
 | SCEN-04 | Phase 4 | Complete |
-| EXPR-01 | Phase 4 | Pending |
-| EXPR-02 | Phase 4 | Pending |
-| EXPR-03 | Phase 4 | Pending |
+| EXPR-01 | Phase 4 | Complete |
+| EXPR-02 | Phase 4 | Complete |
+| EXPR-03 | Phase 4 | Complete |
 | ROUT-03 | Phase 5 | Pending |
 | SCEN-03 | Phase 5 | Pending |
 | EMIS-01 | Phase 5 | Pending |
