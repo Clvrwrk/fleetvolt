@@ -42,8 +42,8 @@
 
 ### Visualization
 
-- [ ] **MAP-01**: User sees interactive map with route polyline color-coded by SoC gradient
-- [ ] **MAP-02**: User sees charger markers sized/colored by power level with popup details
+- [x] **MAP-01**: User sees interactive map with route polyline color-coded by SoC gradient
+- [x] **MAP-02**: User sees charger markers sized/colored by power level with popup details
 - [ ] **MAP-03**: User sees SoC/energy profile chart synced with map hover along route
 - [ ] **MAP-04**: User sees KPI cards (total kWh, Wh/mi, stops, dwell time, final SoC, feasibility verdict)
 - [ ] **MAP-05**: User sees charging plan table (location, arrival SoC, charge kWh/time, departure SoC)
@@ -149,8 +149,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | CHRG-05 | Phase 3 | Complete |
 | CHRG-06 | Phase 3 | Complete |
 | PLAT-02 | Phase 3 | Complete |
-| MAP-01 | Phase 4 | Pending |
-| MAP-02 | Phase 4 | Pending |
+| MAP-01 | Phase 4 | Complete |
+| MAP-02 | Phase 4 | Complete |
 | MAP-03 | Phase 4 | Pending |
 | MAP-04 | Phase 4 | Pending |
 | MAP-05 | Phase 4 | Pending |
