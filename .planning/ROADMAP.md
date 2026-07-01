@@ -84,7 +84,7 @@ Plans:
   4. Physics validation passes ±8–12% MAPE on OEM reference test cases
   5. Class 8 truck routes generate via Valhalla with height/weight/axle restrictions; POLB terminal presets and corridor pairs are selectable; single scenario completes in <10s p95
 
-**Plans**: 3/5 plans executed
+**Plans**: 4/5 plans executed
 
 Plans:
 
@@ -102,7 +102,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — Weather presets, port geo-fence, overrides audit trail (PHYS-04, PHYS-07, PHYS-08)
+- [x] 02-04-PLAN.md — Weather presets, port geo-fence, overrides audit trail (PHYS-04, PHYS-07, PHYS-08)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -180,7 +180,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
-| 2. Physics Simulation Core | 3/5 | In Progress|  |
+| 2. Physics Simulation Core | 4/5 | In Progress|  |
 | 3. Charging & Job Pipeline | 0/TBD | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |

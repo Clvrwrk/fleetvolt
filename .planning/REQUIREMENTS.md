@@ -18,11 +18,11 @@
 - [x] **PHYS-01**: User can input origin, destination, truck config, payload weight, and departure conditions to run a simulation
 - [x] **PHYS-02**: Physics engine computes segment-based energy (rolling + aero + grade + aux − regen) using NumPy vectorized model
 - [x] **PHYS-03**: Simulation integrates elevation profiles and demonstrates grade impact on Cajon Pass corridor
-- [ ] **PHYS-04**: Simulation applies weather presets (Ideal / Hot / Cold / Headwind) affecting battery thermal efficiency
+- [x] **PHYS-04**: Simulation applies weather presets (Ideal / Hot / Cold / Headwind) affecting battery thermal efficiency
 - [x] **PHYS-05**: Simulation projects forward SoC profile and outputs KPIs (total kWh, Wh/mi, regen recovered, total time)
 - [ ] **PHYS-06**: Physics model validates against OEM ideal-case range within ±8–12% MAPE on reference test cases
-- [ ] **PHYS-07**: User can enable port drayage profile (stop-go, elevated aux, lower speed cap) for POLB basin segments
-- [ ] **PHYS-08**: User can override truck physics parameters with reset-to-OEM option and assumptions audit trail
+- [x] **PHYS-07**: User can enable port drayage profile (stop-go, elevated aux, lower speed cap) for POLB basin segments
+- [x] **PHYS-08**: User can override truck physics parameters with reset-to-OEM option and assumptions audit trail
 
 ### Routing & Corridors
 
@@ -134,11 +134,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | PHYS-01 | Phase 2 | Complete |
 | PHYS-02 | Phase 2 | Complete |
 | PHYS-03 | Phase 2 | Complete |
-| PHYS-04 | Phase 2 | Pending |
+| PHYS-04 | Phase 2 | Complete |
 | PHYS-05 | Phase 2 | Complete |
 | PHYS-06 | Phase 2 | Pending |
-| PHYS-07 | Phase 2 | Pending |
-| PHYS-08 | Phase 2 | Pending |
+| PHYS-07 | Phase 2 | Complete |
+| PHYS-08 | Phase 2 | Complete |
 | ROUT-01 | Phase 2 | Complete |
 | ROUT-02 | Phase 2 | Complete |
 | ROUT-04 | Phase 2 | Pending |
