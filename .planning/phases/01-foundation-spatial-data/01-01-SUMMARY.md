@@ -119,7 +119,7 @@ status: complete
 2. **Task 2: Docker Compose six-service stack and Alembic PostGIS schema** - `e661a1d` (feat)
 3. **Task 3: End-to-end health chain and compose smoke test** - `df74b89` (feat)
 
-**Plan metadata:** pending (docs: complete plan)
+**Plan metadata:** `3036379` (docs: complete plan)
 
 ## Files Created/Modified
 
