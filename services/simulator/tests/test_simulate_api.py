@@ -147,3 +147,52 @@ def test_simulate_custom_od_happy_path(client: TestClient, monkeypatch: pytest.M
     response = client.post("/v1/simulate", json=_custom_od_body())
     assert response.status_code == 200, response.text
     _assert_simulate_response(response.json())
+
+
+def test_overrides_audit(client: TestClient):
+    body = _corridor_body()
+    body["overrides"] = {"C_rr": 0.0070}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    assumptions = response.json()["assumptions"]
+    c_rr_entries = [a for a in assumptions if a["field"] == "C_rr"]
+    assert len(c_rr_entries) == 1
+    entry = c_rr_entries[0]
+    assert entry["value"] == pytest.approx(0.0070)
+    assert entry["source"] == "user_override"
+    assert entry["oem_default"] == pytest.approx(0.0065)
+
+
+def test_reset_to_oem(client: TestClient):
+    body = _corridor_body()
+    body["overrides"] = {"reset_to_oem": True, "C_rr": 0.0070, "usable_kwh": 450.0}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    assumptions = response.json()["assumptions"]
+    c_rr_entries = [a for a in assumptions if a["field"] == "C_rr"]
+    assert len(c_rr_entries) == 1
+    assert c_rr_entries[0]["value"] == pytest.approx(0.0065)
+    assert c_rr_entries[0]["source"] == "oem_default"
+    usable_entries = [a for a in assumptions if a["field"] == "usable_kwh"]
+    assert usable_entries[0]["value"] == pytest.approx(394.0)
+    assert usable_entries[0]["source"] == "oem_default"
+
+
+def test_overrides_out_of_bounds_returns_422(client: TestClient):
+    body = _corridor_body()
+    body["overrides"] = {"C_rr": 0.02}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 422
+
+
+def test_overrides_defaults_oem_assumptions(client: TestClient):
+    body = _corridor_body()
+    body["overrides"] = {}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    assumptions = response.json()["assumptions"]
+    assert len(assumptions) >= 5
+    assert all(a["source"] == "oem_default" for a in assumptions)
+    fields = {a["field"] for a in assumptions}
+    assert "C_rr" in fields
+    assert "usable_kwh" in fields
