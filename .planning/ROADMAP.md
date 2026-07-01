@@ -160,15 +160,16 @@ Plans:
   4. Simulation results are stored immutably with input hash for cache replay and comparison
   5. User can export full simulation profile as CSV/JSON and PDF report with map snapshot, assumptions table, physics parameter snapshot, and model version
 
-**Plans**: 7 plans
+**Plans**: 8 plans
 
 Plans:
 
 **Wave 0**
 
-- [ ] 04-00-PLAN.md — API poll audit metadata, routing proxy, web deps and test scaffolds (SCEN-04)
+- [ ] 04-00-PLAN.md — API poll audit metadata + routing proxy (SCEN-04)
+- [ ] 04-07-PLAN.md — Web deps, brand tokens, /status relocation, lib test scaffolds (SCEN-04)
 
-**Wave 1** *(blocked on Wave 0 completion)*
+**Wave 1** *(blocked on Wave 0 completion — Plans 00 + 07)*
 
 - [ ] 04-01-PLAN.md — Scenario form, async submit/poll, basic results panel (SCEN-04)
 
