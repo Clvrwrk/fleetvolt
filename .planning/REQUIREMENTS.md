@@ -51,8 +51,8 @@
 
 ### Scenario Analysis
 
-- [ ] **SCEN-01**: User can run and compare 2+ scenarios side-by-side with diff on KPIs and stops
-- [ ] **SCEN-02**: User can adjust sensitivity sliders (payload, temperature, headwind) and see delta KPIs
+- [x] **SCEN-01**: User can run and compare 2+ scenarios side-by-side with diff on KPIs and stops
+- [x] **SCEN-02**: User can adjust sensitivity sliders (payload, temperature, headwind) and see delta KPIs
 - [ ] **SCEN-03**: User can view corridor charging gap analysis highlighting stretches without qualifying chargers
 - [x] **SCEN-04**: Simulation results stored immutably with input hash for cache replay and comparison
 
@@ -155,8 +155,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | MAP-04 | Phase 4 | Complete |
 | MAP-05 | Phase 4 | Complete |
 | MAP-06 | Phase 4 | Complete |
-| SCEN-01 | Phase 4 | Pending |
-| SCEN-02 | Phase 4 | Pending |
+| SCEN-01 | Phase 4 | Complete |
+| SCEN-02 | Phase 4 | Complete |
 | SCEN-04 | Phase 4 | Complete |
 | EXPR-01 | Phase 4 | Pending |
 | EXPR-02 | Phase 4 | Pending |
