@@ -10,11 +10,15 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.routes.chargers import router as chargers_router
 from app.routes.routing import router as routing_router
+from app.routes.spatial import router as spatial_router
 from app.routes.trucks import router as trucks_router
 
 app = FastAPI(title="FleetVolt Simulator", version="0.1.0")
+app.include_router(chargers_router)
 app.include_router(routing_router)
+app.include_router(spatial_router)
 app.include_router(trucks_router)
 
 SPATIAL_TABLES = (

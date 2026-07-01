@@ -3,6 +3,32 @@ type StackMeta = {
   table_counts: Record<string, number>;
 };
 
+type NhfnStats = {
+  segment_count: number;
+  bbox_west: number | null;
+  bbox_south: number | null;
+  bbox_east: number | null;
+  bbox_north: number | null;
+  source_sample: string | null;
+  ingested_at_max: string | null;
+};
+
+type DataFreshnessEntry = {
+  dataset_name: string;
+  last_ingested_at: string | null;
+  row_count: number | null;
+  source: string | null;
+};
+
+type ChargerNearEntry = {
+  station_id: string;
+  name: string | null;
+  power_kw: number;
+  hd_capable: boolean;
+  operator: string | null;
+  distance_m: number;
+};
+
 type TruckSummary = {
   id: number;
   name: string;
@@ -17,6 +43,30 @@ type ServiceStatus = {
   ok: boolean;
   detail?: string;
 };
+
+async function fetchNhfnStats(): Promise<
+  { ok: true; data: NhfnStats } | { ok: false; error: string }
+> {
+  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+  try {
+    const response = await fetch(`${apiUrl}/v1/spatial/nhfn/stats`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `API returned ${response.status}: ${await response.text()}`,
+      };
+    }
+    const data = (await response.json()) as NhfnStats;
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
 
 async function fetchStackMeta(): Promise<
   { ok: true; data: StackMeta } | { ok: false; error: string }
@@ -66,6 +116,60 @@ async function fetchTrucks(): Promise<
   }
 }
 
+async function fetchFreshness(): Promise<
+  { ok: true; data: DataFreshnessEntry[] } | { ok: false; error: string }
+> {
+  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+  try {
+    const response = await fetch(`${apiUrl}/v1/data/freshness`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `API returned ${response.status}: ${await response.text()}`,
+      };
+    }
+    const data = (await response.json()) as DataFreshnessEntry[];
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function fetchChargersNearPolb(): Promise<
+  { ok: true; data: ChargerNearEntry[] } | { ok: false; error: string }
+> {
+  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+  const params = new URLSearchParams({
+    lat: "33.754",
+    lon: "-118.216",
+    radius_m: "100000",
+    hd_only: "true",
+  });
+  try {
+    const response = await fetch(`${apiUrl}/v1/chargers/near?${params}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `API returned ${response.status}: ${await response.text()}`,
+      };
+    }
+    const data = (await response.json()) as ChargerNearEntry[];
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 function usablePct(truck: TruckSummary): string {
   const pct = (truck.usable_kwh / truck.nameplate_kwh) * 100;
   return `${pct.toFixed(1)}%`;
@@ -80,10 +184,14 @@ function Badge({ ok }: { ok: boolean }) {
 }
 
 export default async function HomePage() {
-  const [result, trucksResult] = await Promise.all([
-    fetchStackMeta(),
-    fetchTrucks(),
-  ]);
+  const [result, nhfnResult, trucksResult, freshnessResult, chargersResult] =
+    await Promise.all([
+      fetchStackMeta(),
+      fetchNhfnStats(),
+      fetchTrucks(),
+      fetchFreshness(),
+      fetchChargersNearPolb(),
+    ]);
 
   if (!result.ok) {
     return (
@@ -130,6 +238,12 @@ export default async function HomePage() {
     },
   ];
 
+  const chargerFreshness = freshnessResult.ok
+    ? freshnessResult.data.find((d) => d.dataset_name === "nrel_afdc_chargers")
+    : undefined;
+  const hdChargerCount = chargersResult.ok ? chargersResult.data.length : null;
+  const totalChargerCount = data.table_counts.chargers ?? 0;
+
   return (
     <main>
       <h1>FleetVolt Route</h1>
@@ -160,6 +274,34 @@ export default async function HomePage() {
       </div>
 
       <div className="card">
+        <h2>Spatial data</h2>
+        {nhfnResult.ok ? (
+          <table>
+            <tbody>
+              <tr>
+                <td>NHFN segments</td>
+                <td>{nhfnResult.data.segment_count}</td>
+              </tr>
+              {nhfnResult.data.source_sample && (
+                <tr>
+                  <td>NHFN source</td>
+                  <td className="mono">{nhfnResult.data.source_sample}</td>
+                </tr>
+              )}
+              {nhfnResult.data.ingested_at_max && (
+                <tr>
+                  <td>NHFN last ingested</td>
+                  <td className="mono">{nhfnResult.data.ingested_at_max}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <p className="error">NHFN stats unavailable: {nhfnResult.error}</p>
+        )}
+      </div>
+
+      <div className="card">
         <h2>Spatial table row counts</h2>
         <table>
           <thead>
@@ -179,6 +321,39 @@ export default async function HomePage() {
               ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="card">
+        <h2>Chargers (NREL AFDC)</h2>
+        {freshnessResult.ok ? (
+          <>
+            <p>
+              Total in database: <strong>{totalChargerCount}</strong>
+              {hdChargerCount !== null && (
+                <>
+                  {" "}
+                  · HD-capable within 100 km of POLB:{" "}
+                  <strong>{hdChargerCount}</strong>
+                </>
+              )}
+            </p>
+            {chargerFreshness?.last_ingested_at ? (
+              <p className="mono">
+                nrel_afdc_chargers last ingested:{" "}
+                {new Date(chargerFreshness.last_ingested_at).toLocaleString()}
+              </p>
+            ) : (
+              <p>
+                No freshness record yet. Run{" "}
+                <code>python -m data.ingest.refresh_chargers --fixture</code>.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="error">
+            Failed to load freshness: {freshnessResult.error}
+          </p>
+        )}
       </div>
 
       <div className="card">
