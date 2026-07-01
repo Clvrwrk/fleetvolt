@@ -17,6 +17,7 @@ from app.simulation.elevation_service import ElevationService, ElevationServiceE
 from app.simulation.kpi_aggregator import aggregate_kpis
 from app.simulation.physics_engine import TruckParams, segment_forces
 from app.simulation.route_provider import RouteProvider
+from app.simulation.overrides import apply_truck_overrides
 from app.simulation.port_drayage import apply_port_drayage
 from app.simulation.schemas import (
     ConditionsSpec,
@@ -90,7 +91,11 @@ def _synthetic_coordinates(
     return coords
 
 
-def _load_truck_params(db: Session, slug: str, conditions: ConditionsSpec) -> TruckParams:
+def _load_truck_params(
+    db: Session,
+    slug: str,
+    conditions: ConditionsSpec,
+) -> tuple[TruckParams, dict[str, Any], dict[str, Any]]:
     truck_path = TRUCKS_DIR / f"{slug}.json"
     if not truck_path.is_file():
         raise HTTPException(status_code=404, detail=f"Unknown truck slug: {slug}")
@@ -114,7 +119,7 @@ def _load_truck_params(db: Session, slug: str, conditions: ConditionsSpec) -> Tr
         raise HTTPException(status_code=404, detail=f"Truck config not seeded: {slug}")
 
     params = row.params
-    return TruckParams(
+    truck = TruckParams(
         usable_kwh=float(params["usable_kwh"]),
         curb_weight_lbs=float(params.get("curb_weight_lbs", file_payload.get("curb_weight_lbs", 26000))),
         payload_lbs=float(conditions.payload_lbs),
@@ -129,6 +134,7 @@ def _load_truck_params(db: Session, slug: str, conditions: ConditionsSpec) -> Tr
             params.get("drivetrain_efficiency", file_payload.get("drivetrain_efficiency", 0.92))
         ),
     )
+    return truck, params, file_payload
 
 
 def _resolve_endpoints(request: SimulateRequest) -> tuple[float, float, float, float, str | None]:
@@ -162,7 +168,13 @@ def run_simulation(
     elevation = elevation_service or ElevationService(route_provider=provider)
 
     origin_lat, origin_lon, dest_lat, dest_lon, corridor_key = _resolve_endpoints(request)
-    truck = _load_truck_params(db, request.truck.slug, request.conditions)
+    truck, oem_params, file_payload = _load_truck_params(db, request.truck.slug, request.conditions)
+    truck, assumptions = apply_truck_overrides(
+        truck,
+        request.overrides,
+        oem=oem_params,
+        file_payload=file_payload,
+    )
     weather = apply_weather(truck, request.conditions)
 
     try:
@@ -250,7 +262,7 @@ def run_simulation(
         segments=segments,
         kpis=KpiResult(**kpis_raw),
         disclaimer=DISCLAIMER,
-        assumptions=[],
+        assumptions=assumptions,
         corridor_key=corridor_key,
         truck_slug=request.truck.slug,
         metadata={

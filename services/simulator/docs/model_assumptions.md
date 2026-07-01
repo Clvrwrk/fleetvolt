@@ -59,3 +59,24 @@ When `conditions.port_drayage_enabled=true`, stop-go drayage penalties apply **o
 | Auxiliary load | max(base aux, 18 kW) | Base aux (with weather multiplier) |
 
 Point-in-polygon uses Shapely `Point.within()` on segment midpoints computed by `segment_builder.py`. Implementation: `app/simulation/port_drayage.py`.
+
+## Physics Parameter Overrides (D-14)
+
+Inline `overrides` on POST `/v1/simulate` allow analysts to tune key truck physics parameters without persisting profiles to the database.
+
+| Field | OEM source | Override bounds |
+|-------|------------|-----------------|
+| C_rr | truck_configs JSONB | ±20% of OEM default |
+| drag_coefficient | truck_configs JSONB | ±20% of OEM default |
+| usable_kwh | truck_configs JSONB | ±20% of OEM default |
+| aux_kw_base | truck_configs JSONB | ±20% of OEM default |
+| regen_efficiency | truck_configs JSONB | ±20% of OEM default |
+
+### Audit trail
+
+Every simulate response includes `assumptions[]` with `{field, value, source, oem_default}` for each overrideable field:
+
+- **`oem_default`:** Applied value matches OEM (including when overrides omitted or `reset_to_oem=true`)
+- **`user_override`:** Client supplied an in-bounds inline override
+
+Values outside ±20% of OEM return HTTP 422. Implementation: `app/simulation/overrides.py`.

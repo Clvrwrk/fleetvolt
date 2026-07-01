@@ -55,10 +55,24 @@ class ConditionsSpec(BaseModel):
     port_drayage_enabled: bool = False
 
 
-class OverridesSpec(BaseModel):
-    """Inline physics overrides — expanded in Plan 04."""
+class AssumptionEntry(BaseModel):
+    """Single physics parameter audit record for consulting deliverables (D-14)."""
 
-    model_config = {"extra": "allow"}
+    field: str
+    value: float
+    source: str = Field(description="oem_default or user_override")
+    oem_default: float
+
+
+class OverridesSpec(BaseModel):
+    """Inline physics overrides with ±20% OEM bounds (D-14)."""
+
+    reset_to_oem: bool = False
+    C_rr: float | None = Field(default=None, gt=0)
+    drag_coefficient: float | None = Field(default=None, gt=0)
+    usable_kwh: float | None = Field(default=None, gt=0)
+    aux_kw_base: float | None = Field(default=None, gt=0)
+    regen_efficiency: float | None = Field(default=None, gt=0, le=1)
 
 
 class SimulateRequest(BaseModel):
@@ -87,7 +101,7 @@ class SimulateResponse(BaseModel):
     segments: list[SegmentResult]
     kpis: KpiResult
     disclaimer: str
-    assumptions: list[str] = Field(default_factory=list)
+    assumptions: list[AssumptionEntry] = Field(default_factory=list)
     corridor_key: str | None = None
     truck_slug: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
