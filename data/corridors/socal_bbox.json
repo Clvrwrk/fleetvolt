@@ -1,0 +1,9 @@
+{
+  "name": "Southern California regional extract (D-04)",
+  "crs": "EPSG:4326",
+  "bbox": [-121.0, 32.5, -114.0, 37.0],
+  "west": -121.0,
+  "south": 32.5,
+  "east": -114.0,
+  "north": 37.0
+}

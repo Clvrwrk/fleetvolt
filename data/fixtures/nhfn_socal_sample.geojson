@@ -1,0 +1,45 @@
+{
+  "type": "FeatureCollection",
+  "name": "nhfn_socal_sample",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "NHFN": "PHFS",
+        "SIGN1": "I-405",
+        "STFIPS": 6,
+        "LNAME": "San Diego Freeway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-118.45, 33.74],
+          [-118.35, 33.78],
+          [-118.25, 33.82]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NHFN": "NON_PHFS_IS",
+        "SIGN1": "I-10",
+        "STFIPS": 6,
+        "LNAME": "San Bernardino Freeway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-117.65, 34.05],
+          [-117.45, 34.08]
+        ]
+      }
+    }
+  ]
+}
