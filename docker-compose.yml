@@ -84,10 +84,14 @@ services:
     ports:
       - "4000:4000"
     environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
       SIMULATOR_URL: http://simulator:8000
       PORT: "4000"
     depends_on:
-      - simulator
+      postgres:
+        condition: service_healthy
+      simulator:
+        condition: service_started
 
   web:
     build: ./apps/web
