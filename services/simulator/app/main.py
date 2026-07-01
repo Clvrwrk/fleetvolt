@@ -35,6 +35,7 @@ SPATIAL_TABLES = (
     "elevation_profiles",
     "truck_configs",
     "data_freshness",
+    "simulation_runs",
 )
 
 
