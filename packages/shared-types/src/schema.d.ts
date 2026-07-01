@@ -44,6 +44,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/corridors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Corridors */
+        get: operations["list_corridors_v1_corridors_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/elevation/{corridor_key}": {
         parameters: {
             query?: never;
@@ -78,6 +95,23 @@ export interface paths {
         get: operations["get_route_v1_routing_route_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate */
+        post: operations["simulate_v1_simulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -135,6 +169,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/physics/validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Physics Validation */
+        get: operations["physics_validation_v1_physics_validation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -173,6 +224,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AssumptionEntry
+         * @description Single physics parameter audit record for consulting deliverables (D-14).
+         */
+        AssumptionEntry: {
+            /** Field */
+            field: string;
+            /** Value */
+            value: number;
+            /**
+             * Source
+             * @description oem_default or user_override
+             */
+            source: string;
+            /** Oem Default */
+            oem_default: number;
+        };
         /** ChargerNearResponse */
         ChargerNearResponse: {
             /** Station Id */
@@ -190,6 +258,56 @@ export interface components {
              * @description Distance from query point in meters
              */
             distance_m: number;
+        };
+        /** ConditionsSpec */
+        ConditionsSpec: {
+            /** @default ideal */
+            weather_preset: components["schemas"]["WeatherPreset"];
+            /**
+             * Payload Lbs
+             * @default 0
+             */
+            payload_lbs: number;
+            /**
+             * Port Drayage Enabled
+             * @default false
+             */
+            port_drayage_enabled: boolean;
+        };
+        /** CorridorCatalogEntry */
+        CorridorCatalogEntry: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "corridor" | "terminal";
+            /** Corridor Key */
+            corridor_key?: string | null;
+            /** Terminal Key */
+            terminal_key?: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Origin
+             * @description [lat, lon] for corridor presets
+             */
+            origin?: number[] | null;
+            /**
+             * Dest
+             * @description [lat, lon] for corridor presets
+             */
+            dest?: number[] | null;
+            /** Lat */
+            lat?: number | null;
+            /** Lon */
+            lon?: number | null;
+        };
+        /** CorridorsResponse */
+        CorridorsResponse: {
+            /** Presets */
+            presets: components["schemas"]["CorridorCatalogEntry"][];
         };
         /** DataFreshnessResponse */
         DataFreshnessResponse: {
@@ -226,6 +344,24 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** KpiResult */
+        KpiResult: {
+            /** Total Kwh */
+            total_kwh: number;
+            /** Wh Per Mi */
+            wh_per_mi: number;
+            /** Regen Kwh */
+            regen_kwh: number;
+            /** Total Time S */
+            total_time_s: number;
+        };
+        /** LatLon */
+        LatLon: {
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
         };
         /** NhfnStatsResponse */
         NhfnStatsResponse: {
@@ -265,6 +401,27 @@ export interface components {
              */
             ingested_at_max?: string | null;
         };
+        /**
+         * OverridesSpec
+         * @description Inline physics overrides with ±20% OEM bounds (D-14).
+         */
+        OverridesSpec: {
+            /**
+             * Reset To Oem
+             * @default false
+             */
+            reset_to_oem: boolean;
+            /** C Rr */
+            C_rr?: number | null;
+            /** Drag Coefficient */
+            drag_coefficient?: number | null;
+            /** Usable Kwh */
+            usable_kwh?: number | null;
+            /** Aux Kw Base */
+            aux_kw_base?: number | null;
+            /** Regen Efficiency */
+            regen_efficiency?: number | null;
+        };
         /** ProfilePoint */
         ProfilePoint: {
             /** Dist M */
@@ -299,6 +456,56 @@ export interface components {
              * @description Valhalla service status at request time
              */
             valhalla_status: string;
+        };
+        /**
+         * RouteSpec
+         * @description Route selection: corridor preset, custom O/D, or terminal origin.
+         */
+        RouteSpec: {
+            /** Corridor Key */
+            corridor_key?: string | null;
+            origin?: components["schemas"]["LatLon"] | null;
+            dest?: components["schemas"]["LatLon"] | null;
+            /** Terminal Key */
+            terminal_key?: string | null;
+        };
+        /** SegmentResult */
+        SegmentResult: {
+            /** Dist M */
+            dist_m: number;
+            /** Grade */
+            grade: number;
+            /** Speed */
+            speed: number;
+            /** Energy Kwh */
+            energy_kwh: number;
+            /** Soc Pct */
+            soc_pct: number;
+        };
+        /** SimulateRequest */
+        SimulateRequest: {
+            route: components["schemas"]["RouteSpec"];
+            truck: components["schemas"]["TruckSpec"];
+            conditions?: components["schemas"]["ConditionsSpec"];
+            overrides?: components["schemas"]["OverridesSpec"];
+        };
+        /** SimulateResponse */
+        SimulateResponse: {
+            /** Segments */
+            segments: components["schemas"]["SegmentResult"][];
+            kpis: components["schemas"]["KpiResult"];
+            /** Disclaimer */
+            disclaimer: string;
+            /** Assumptions */
+            assumptions?: components["schemas"]["AssumptionEntry"][];
+            /** Corridor Key */
+            corridor_key?: string | null;
+            /** Truck Slug */
+            truck_slug?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         /** StackMetaResponse */
         StackMetaResponse: {
@@ -347,6 +554,33 @@ export interface components {
              */
             source_notes?: string | null;
         };
+        /** TruckSpec */
+        TruckSpec: {
+            /**
+             * Slug
+             * @description Truck config slug matching data/trucks/{slug}.json
+             */
+            slug: string;
+        };
+        /**
+         * ValidationCaseResult
+         * @description Single OEM reference case MAPE result.
+         */
+        ValidationCaseResult: {
+            /** Name */
+            name: string;
+            /** Expected Kwh */
+            expected_kwh: number;
+            /** Actual Kwh */
+            actual_kwh: number;
+            /** Mape Pct */
+            mape_pct: number;
+            /**
+             * Pass
+             * @description True when MAPE is within ±8–12% band
+             */
+            pass: boolean;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -360,6 +594,21 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * ValidationResponse
+         * @description Aggregate validation gate response for GET /v1/physics/validation.
+         */
+        ValidationResponse: {
+            /** Cases */
+            cases: components["schemas"]["ValidationCaseResult"][];
+            /** Overall Pass */
+            overall_pass: boolean;
+        };
+        /**
+         * WeatherPreset
+         * @enum {string}
+         */
+        WeatherPreset: "ideal" | "hot" | "cold" | "headwind";
     };
     responses: never;
     parameters: never;
@@ -427,6 +676,26 @@ export interface operations {
             };
         };
     };
+    list_corridors_v1_corridors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorridorsResponse"];
+                };
+            };
+        };
+    };
     get_elevation_profile_v1_elevation__corridor_key__get: {
         parameters: {
             query?: never;
@@ -483,6 +752,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RouteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_v1_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -563,6 +865,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    physics_validation_v1_physics_validation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationResponse"];
                 };
             };
         };

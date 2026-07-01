@@ -111,12 +111,13 @@ async function proxySimulatorGet(
   request: { log: { error: (obj: object, msg: string) => void }; url?: string },
   reply: { status: (code: number) => { send: (body: unknown) => unknown } },
   path: string,
+  timeoutMs = 5000,
 ) {
   const simulatorUrl = process.env.SIMULATOR_URL ?? "http://localhost:8000";
   const query = request.url?.split("?")[1];
   const url = query ? `${simulatorUrl}${path}?${query}` : `${simulatorUrl}${path}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(url, { signal: controller.signal });
@@ -196,6 +197,10 @@ app.post("/v1/simulate", async (request, reply) => {
 
 app.get("/v1/corridors", async (request, reply) => {
   return proxySimulatorGet(request, reply, "/v1/corridors");
+});
+
+app.get("/v1/physics/validation", async (request, reply) => {
+  return proxySimulatorGet(request, reply, "/v1/physics/validation", 15000);
 });
 
 const port = Number(process.env.PORT ?? 4000);

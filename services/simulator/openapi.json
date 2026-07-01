@@ -116,6 +116,27 @@
         }
       }
     },
+    "/v1/corridors": {
+      "get": {
+        "tags": [
+          "corridors"
+        ],
+        "summary": "List Corridors",
+        "operationId": "list_corridors_v1_corridors_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorridorsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/elevation/{corridor_key}": {
       "get": {
         "tags": [
@@ -237,6 +258,47 @@
         }
       }
     },
+    "/v1/simulate": {
+      "post": {
+        "tags": [
+          "simulate"
+        ],
+        "summary": "Simulate",
+        "operationId": "simulate_v1_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/spatial/nhfn/stats": {
       "get": {
         "tags": [
@@ -325,6 +387,27 @@
         }
       }
     },
+    "/v1/physics/validation": {
+      "get": {
+        "tags": [
+          "validation"
+        ],
+        "summary": "Physics Validation",
+        "operationId": "physics_validation_v1_physics_validation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -368,6 +451,36 @@
   },
   "components": {
     "schemas": {
+      "AssumptionEntry": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "oem_default or user_override"
+          },
+          "oem_default": {
+            "type": "number",
+            "title": "Oem Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "source",
+          "oem_default"
+        ],
+        "title": "AssumptionEntry",
+        "description": "Single physics parameter audit record for consulting deliverables (D-14)."
+      },
       "ChargerNearResponse": {
         "properties": {
           "station_id": {
@@ -418,6 +531,151 @@
           "distance_m"
         ],
         "title": "ChargerNearResponse"
+      },
+      "ConditionsSpec": {
+        "properties": {
+          "weather_preset": {
+            "$ref": "#/components/schemas/WeatherPreset",
+            "default": "ideal"
+          },
+          "payload_lbs": {
+            "type": "number",
+            "maximum": 80000.0,
+            "minimum": 0.0,
+            "title": "Payload Lbs",
+            "default": 0
+          },
+          "port_drayage_enabled": {
+            "type": "boolean",
+            "title": "Port Drayage Enabled",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ConditionsSpec"
+      },
+      "CorridorCatalogEntry": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "corridor",
+              "terminal"
+            ],
+            "title": "Type"
+          },
+          "corridor_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corridor Key"
+          },
+          "terminal_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminal Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin",
+            "description": "[lat, lon] for corridor presets"
+          },
+          "dest": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dest",
+            "description": "[lat, lon] for corridor presets"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "name"
+        ],
+        "title": "CorridorCatalogEntry"
+      },
+      "CorridorsResponse": {
+        "properties": {
+          "presets": {
+            "items": {
+              "$ref": "#/components/schemas/CorridorCatalogEntry"
+            },
+            "type": "array",
+            "title": "Presets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "presets"
+        ],
+        "title": "CorridorsResponse"
       },
       "DataFreshnessResponse": {
         "properties": {
@@ -537,6 +795,56 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "KpiResult": {
+        "properties": {
+          "total_kwh": {
+            "type": "number",
+            "title": "Total Kwh"
+          },
+          "wh_per_mi": {
+            "type": "number",
+            "title": "Wh Per Mi"
+          },
+          "regen_kwh": {
+            "type": "number",
+            "title": "Regen Kwh"
+          },
+          "total_time_s": {
+            "type": "number",
+            "title": "Total Time S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_kwh",
+          "wh_per_mi",
+          "regen_kwh",
+          "total_time_s"
+        ],
+        "title": "KpiResult"
+      },
+      "LatLon": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "LatLon"
+      },
       "NhfnStatsResponse": {
         "properties": {
           "segment_count": {
@@ -624,6 +932,79 @@
         ],
         "title": "NhfnStatsResponse"
       },
+      "OverridesSpec": {
+        "properties": {
+          "reset_to_oem": {
+            "type": "boolean",
+            "title": "Reset To Oem",
+            "default": false
+          },
+          "C_rr": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "C Rr"
+          },
+          "drag_coefficient": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drag Coefficient"
+          },
+          "usable_kwh": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable Kwh"
+          },
+          "aux_kw_base": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aux Kw Base"
+          },
+          "regen_efficiency": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regen Efficiency"
+          }
+        },
+        "type": "object",
+        "title": "OverridesSpec",
+        "description": "Inline physics overrides with \u00b120% OEM bounds (D-14)."
+      },
       "ProfilePoint": {
         "properties": {
           "dist_m": {
@@ -690,6 +1071,169 @@
           "valhalla_status"
         ],
         "title": "RouteResponse"
+      },
+      "RouteSpec": {
+        "properties": {
+          "corridor_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corridor Key"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatLon"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatLon"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "terminal_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminal Key"
+          }
+        },
+        "type": "object",
+        "title": "RouteSpec",
+        "description": "Route selection: corridor preset, custom O/D, or terminal origin."
+      },
+      "SegmentResult": {
+        "properties": {
+          "dist_m": {
+            "type": "number",
+            "title": "Dist M"
+          },
+          "grade": {
+            "type": "number",
+            "title": "Grade"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "energy_kwh": {
+            "type": "number",
+            "title": "Energy Kwh"
+          },
+          "soc_pct": {
+            "type": "number",
+            "title": "Soc Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dist_m",
+          "grade",
+          "speed",
+          "energy_kwh",
+          "soc_pct"
+        ],
+        "title": "SegmentResult"
+      },
+      "SimulateRequest": {
+        "properties": {
+          "route": {
+            "$ref": "#/components/schemas/RouteSpec"
+          },
+          "truck": {
+            "$ref": "#/components/schemas/TruckSpec"
+          },
+          "conditions": {
+            "$ref": "#/components/schemas/ConditionsSpec"
+          },
+          "overrides": {
+            "$ref": "#/components/schemas/OverridesSpec"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route",
+          "truck"
+        ],
+        "title": "SimulateRequest"
+      },
+      "SimulateResponse": {
+        "properties": {
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/SegmentResult"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/KpiResult"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          },
+          "assumptions": {
+            "items": {
+              "$ref": "#/components/schemas/AssumptionEntry"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "corridor_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corridor Key"
+          },
+          "truck_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Truck Slug"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "segments",
+          "kpis",
+          "disclaimer"
+        ],
+        "title": "SimulateResponse"
       },
       "StackMetaResponse": {
         "properties": {
@@ -821,6 +1365,56 @@
         ],
         "title": "TruckConfigSummary"
       },
+      "TruckSpec": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Slug",
+            "description": "Truck config slug matching data/trucks/{slug}.json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "title": "TruckSpec"
+      },
+      "ValidationCaseResult": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "expected_kwh": {
+            "type": "number",
+            "title": "Expected Kwh"
+          },
+          "actual_kwh": {
+            "type": "number",
+            "title": "Actual Kwh"
+          },
+          "mape_pct": {
+            "type": "number",
+            "title": "Mape Pct"
+          },
+          "pass": {
+            "type": "boolean",
+            "title": "Pass",
+            "description": "True when MAPE is within \u00b18\u201312% band"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "expected_kwh",
+          "actual_kwh",
+          "mape_pct",
+          "pass"
+        ],
+        "title": "ValidationCaseResult",
+        "description": "Single OEM reference case MAPE result."
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -860,6 +1454,38 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValidationResponse": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationCaseResult"
+            },
+            "type": "array",
+            "title": "Cases"
+          },
+          "overall_pass": {
+            "type": "boolean",
+            "title": "Overall Pass"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cases",
+          "overall_pass"
+        ],
+        "title": "ValidationResponse",
+        "description": "Aggregate validation gate response for GET /v1/physics/validation."
+      },
+      "WeatherPreset": {
+        "type": "string",
+        "enum": [
+          "ideal",
+          "hot",
+          "cold",
+          "headwind"
+        ],
+        "title": "WeatherPreset"
       }
     }
   }
