@@ -118,6 +118,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/internal/jobs/{run_id}/enqueue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enqueue Simulation Job */
+        post: operations["enqueue_simulation_job_v1_internal_jobs__run_id__enqueue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/spatial/nhfn/stats": {
         parameters: {
             query?: never;
@@ -220,6 +237,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/simulations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Simulation Job
+         * @description Async simulation job submit — implemented on API gateway (:4000).
+         */
+        post: operations["submit_simulation_job_v1_simulations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/simulations/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Poll Simulation Job
+         * @description Poll async job status and outputs — implemented on API gateway (:4000).
+         */
+        get: operations["poll_simulation_job_v1_simulations__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -240,6 +297,10 @@ export interface components {
             source: string;
             /** Oem Default */
             oem_default: number;
+            /** Category */
+            category?: string | null;
+            /** Note */
+            note?: string | null;
         };
         /** ChargerNearResponse */
         ChargerNearResponse: {
@@ -259,6 +320,58 @@ export interface components {
              */
             distance_m: number;
         };
+        /**
+         * ChargingConditionsSpec
+         * @description Charging planner thresholds (D-08, D-09, D-15).
+         */
+        ChargingConditionsSpec: {
+            /**
+             * Soc Trigger Pct
+             * @default 18
+             */
+            soc_trigger_pct: number;
+            /**
+             * Soc Floor Pct
+             * @default 10
+             */
+            soc_floor_pct: number;
+            /**
+             * Target Soc Pct
+             * @default 80
+             */
+            target_soc_pct: number;
+            /**
+             * Min Arrival Soc Pct
+             * @default 10
+             */
+            min_arrival_soc_pct: number;
+        };
+        /**
+         * ChargingStopResult
+         * @description Recommended HD charging stop (D-21).
+         */
+        ChargingStopResult: {
+            /** Station Id */
+            station_id: string;
+            /** Name */
+            name?: string | null;
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+            /** Power Kw */
+            power_kw: number;
+            /** Arrival Soc Pct */
+            arrival_soc_pct: number;
+            /** Departure Soc Pct */
+            departure_soc_pct: number;
+            /** Dwell S */
+            dwell_s: number;
+            /** Energy Added Kwh */
+            energy_added_kwh: number;
+            /** Detour S */
+            detour_s: number;
+        };
         /** ConditionsSpec */
         ConditionsSpec: {
             /** @default ideal */
@@ -273,6 +386,7 @@ export interface components {
              * @default false
              */
             port_drayage_enabled: boolean;
+            charging?: components["schemas"]["ChargingConditionsSpec"];
         };
         /** CorridorCatalogEntry */
         CorridorCatalogEntry: {
@@ -339,6 +453,48 @@ export interface components {
             profile_preview: {
                 [key: string]: components["schemas"]["ProfilePoint"][];
             };
+        };
+        /** EnqueueRequest */
+        EnqueueRequest: {
+            /**
+             * Inputs
+             * @description Scenario inputs matching SimulateRequest shape
+             */
+            inputs: {
+                [key: string]: unknown;
+            };
+        };
+        /** EnqueueResponse */
+        EnqueueResponse: {
+            /** Enqueued */
+            enqueued: boolean;
+            /** Run Id */
+            run_id: string;
+        };
+        /**
+         * FeasibilityResult
+         * @description Three-tier feasibility verdict with infrastructure framing (D-10, D-22).
+         */
+        FeasibilityResult: {
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "feasible" | "critical" | "infeasible";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "public_hd" | "depot_required" | "infrastructure_gap";
+            /** Soc Deficit Kwh */
+            soc_deficit_kwh?: number | null;
+            /** Blocking Reason */
+            blocking_reason?: ("no_charger_in_radius" | "detour_exceeded" | "cannot_reach_destination") | null;
+            /**
+             * Stop Count
+             * @default 0
+             */
+            stop_count: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -481,6 +637,22 @@ export interface components {
             energy_kwh: number;
             /** Soc Pct */
             soc_pct: number;
+            /**
+             * Charging Event
+             * @default false
+             */
+            charging_event: boolean;
+            /** Stop Sequence */
+            stop_sequence?: number | null;
+        };
+        /** SimulateOptions */
+        SimulateOptions: {
+            /**
+             * Include Charging
+             * @description Run greedy charging planner (D-02)
+             * @default true
+             */
+            include_charging: boolean;
         };
         /** SimulateRequest */
         SimulateRequest: {
@@ -488,6 +660,7 @@ export interface components {
             truck: components["schemas"]["TruckSpec"];
             conditions?: components["schemas"]["ConditionsSpec"];
             overrides?: components["schemas"]["OverridesSpec"];
+            options?: components["schemas"]["SimulateOptions"];
         };
         /** SimulateResponse */
         SimulateResponse: {
@@ -506,6 +679,9 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             };
+            /** Charging Stops */
+            charging_stops?: components["schemas"]["ChargingStopResult"][] | null;
+            feasibility?: components["schemas"]["FeasibilityResult"] | null;
         };
         /** StackMetaResponse */
         StackMetaResponse: {
@@ -609,6 +785,40 @@ export interface components {
          * @enum {string}
          */
         WeatherPreset: "ideal" | "hot" | "cold" | "headwind";
+        /**
+         * SimulationJobPollResponse
+         * @description GET /v1/simulations/{id} response (PLAT-02, D-01) — implemented on API gateway.
+         */
+        SimulationJobPollResponse: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "PENDING" | "RUNNING" | "COMPLETE" | "FAILED";
+            outputs?: components["schemas"]["SimulateResponse"] | null;
+            /** Error */
+            error?: {
+                [key: string]: unknown;
+            } | null;
+            /** Duration Ms */
+            duration_ms?: number | null;
+        };
+        /**
+         * SimulationJobSubmitResponse
+         * @description POST /v1/simulations response (PLAT-02, D-01) — implemented on API gateway.
+         */
+        SimulationJobSubmitResponse: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "PENDING" | "RUNNING" | "COMPLETE" | "FAILED";
+            outputs?: components["schemas"]["SimulateResponse"] | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -798,6 +1008,41 @@ export interface operations {
             };
         };
     };
+    enqueue_simulation_job_v1_internal_jobs__run_id__enqueue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnqueueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnqueueResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     nhfn_stats_v1_spatial_nhfn_stats_get: {
         parameters: {
             query?: never;
@@ -927,6 +1172,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StackMetaResponse"];
+                };
+            };
+        };
+    };
+    submit_simulation_job_v1_simulations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationJobSubmitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    poll_simulation_job_v1_simulations__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationJobPollResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

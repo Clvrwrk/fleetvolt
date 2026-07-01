@@ -299,6 +299,59 @@
         }
       }
     },
+    "/v1/internal/jobs/{run_id}/enqueue": {
+      "post": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Enqueue Simulation Job",
+        "operationId": "enqueue_simulation_job_v1_internal_jobs__run_id__enqueue_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnqueueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnqueueResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/spatial/nhfn/stats": {
       "get": {
         "tags": [
@@ -447,6 +500,92 @@
           }
         }
       }
+    },
+    "/v1/simulations": {
+      "post": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Submit Simulation Job",
+        "description": "Async simulation job submit \u2014 implemented on API gateway (:4000).",
+        "operationId": "submit_simulation_job_v1_simulations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationJobSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/{job_id}": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Poll Simulation Job",
+        "description": "Poll async job status and outputs \u2014 implemented on API gateway (:4000).",
+        "operationId": "poll_simulation_job_v1_simulations__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationJobPollResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -469,6 +608,28 @@
           "oem_default": {
             "type": "number",
             "title": "Oem Default"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
           }
         },
         "type": "object",
@@ -532,6 +693,106 @@
         ],
         "title": "ChargerNearResponse"
       },
+      "ChargingConditionsSpec": {
+        "properties": {
+          "soc_trigger_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Soc Trigger Pct",
+            "default": 18.0
+          },
+          "soc_floor_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Soc Floor Pct",
+            "default": 10.0
+          },
+          "target_soc_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Target Soc Pct",
+            "default": 80.0
+          },
+          "min_arrival_soc_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Min Arrival Soc Pct",
+            "default": 10.0
+          }
+        },
+        "type": "object",
+        "title": "ChargingConditionsSpec",
+        "description": "Charging planner thresholds (D-08, D-09, D-15)."
+      },
+      "ChargingStopResult": {
+        "properties": {
+          "station_id": {
+            "type": "string",
+            "title": "Station Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "power_kw": {
+            "type": "number",
+            "title": "Power Kw"
+          },
+          "arrival_soc_pct": {
+            "type": "number",
+            "title": "Arrival Soc Pct"
+          },
+          "departure_soc_pct": {
+            "type": "number",
+            "title": "Departure Soc Pct"
+          },
+          "dwell_s": {
+            "type": "number",
+            "title": "Dwell S"
+          },
+          "energy_added_kwh": {
+            "type": "number",
+            "title": "Energy Added Kwh"
+          },
+          "detour_s": {
+            "type": "number",
+            "title": "Detour S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "station_id",
+          "lat",
+          "lon",
+          "power_kw",
+          "arrival_soc_pct",
+          "departure_soc_pct",
+          "dwell_s",
+          "energy_added_kwh",
+          "detour_s"
+        ],
+        "title": "ChargingStopResult",
+        "description": "Recommended HD charging stop (D-21)."
+      },
       "ConditionsSpec": {
         "properties": {
           "weather_preset": {
@@ -549,6 +810,9 @@
             "type": "boolean",
             "title": "Port Drayage Enabled",
             "default": false
+          },
+          "charging": {
+            "$ref": "#/components/schemas/ChargingConditionsSpec"
           }
         },
         "type": "object",
@@ -781,6 +1045,100 @@
           "profile_preview"
         ],
         "title": "ElevationProfileResponse"
+      },
+      "EnqueueRequest": {
+        "properties": {
+          "inputs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Inputs",
+            "description": "Scenario inputs matching SimulateRequest shape"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inputs"
+        ],
+        "title": "EnqueueRequest"
+      },
+      "EnqueueResponse": {
+        "properties": {
+          "enqueued": {
+            "type": "boolean",
+            "title": "Enqueued"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enqueued",
+          "run_id"
+        ],
+        "title": "EnqueueResponse"
+      },
+      "FeasibilityResult": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "feasible",
+              "critical",
+              "infeasible"
+            ],
+            "title": "Verdict"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "public_hd",
+              "depot_required",
+              "infrastructure_gap"
+            ],
+            "title": "Tier"
+          },
+          "soc_deficit_kwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Soc Deficit Kwh"
+          },
+          "blocking_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "no_charger_in_radius",
+                  "detour_exceeded",
+                  "cannot_reach_destination"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocking Reason"
+          },
+          "stop_count": {
+            "type": "integer",
+            "title": "Stop Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict",
+          "tier"
+        ],
+        "title": "FeasibilityResult",
+        "description": "Three-tier feasibility verdict with infrastructure framing (D-10, D-22)."
       },
       "HTTPValidationError": {
         "properties": {
@@ -1142,6 +1500,22 @@
           "soc_pct": {
             "type": "number",
             "title": "Soc Pct"
+          },
+          "charging_event": {
+            "type": "boolean",
+            "title": "Charging Event",
+            "default": false
+          },
+          "stop_sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Sequence"
           }
         },
         "type": "object",
@@ -1153,6 +1527,18 @@
           "soc_pct"
         ],
         "title": "SegmentResult"
+      },
+      "SimulateOptions": {
+        "properties": {
+          "include_charging": {
+            "type": "boolean",
+            "title": "Include Charging",
+            "description": "Run greedy charging planner (D-02)",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "SimulateOptions"
       },
       "SimulateRequest": {
         "properties": {
@@ -1167,6 +1553,9 @@
           },
           "overrides": {
             "$ref": "#/components/schemas/OverridesSpec"
+          },
+          "options": {
+            "$ref": "#/components/schemas/SimulateOptions"
           }
         },
         "type": "object",
@@ -1225,6 +1614,30 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Metadata"
+          },
+          "charging_stops": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChargingStopResult"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charging Stops"
+          },
+          "feasibility": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeasibilityResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -1486,6 +1899,99 @@
           "headwind"
         ],
         "title": "WeatherPreset"
+      },
+      "SimulationJobPollResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "COMPLETE",
+              "FAILED"
+            ],
+            "title": "Status"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulateResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "SimulationJobPollResponse",
+        "description": "GET /v1/simulations/{id} response (PLAT-02, D-01) \u2014 implemented on API gateway."
+      },
+      "SimulationJobSubmitResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "COMPLETE",
+              "FAILED"
+            ],
+            "title": "Status"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulateResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "SimulationJobSubmitResponse",
+        "description": "POST /v1/simulations response (PLAT-02, D-01) \u2014 implemented on API gateway."
       }
     }
   }

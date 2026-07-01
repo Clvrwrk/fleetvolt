@@ -155,6 +155,27 @@ class SimulateResponse(BaseModel):
     feasibility: FeasibilityResult | None = None
 
 
+JobStatus = Literal["PENDING", "RUNNING", "COMPLETE", "FAILED"]
+
+
+class SimulationJobSubmitResponse(BaseModel):
+    """POST /v1/simulations response (PLAT-02, D-01) — implemented on API gateway."""
+
+    job_id: str
+    status: JobStatus
+    outputs: SimulateResponse | None = None
+
+
+class SimulationJobPollResponse(BaseModel):
+    """GET /v1/simulations/{id} response (PLAT-02, D-01) — implemented on API gateway."""
+
+    job_id: str
+    status: JobStatus
+    outputs: SimulateResponse | None = None
+    error: dict[str, Any] | None = None
+    duration_ms: int | None = None
+
+
 class ValidationCaseResult(BaseModel):
     """Single OEM reference case MAPE result."""
 
