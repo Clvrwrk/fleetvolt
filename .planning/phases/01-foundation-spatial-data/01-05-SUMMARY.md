@@ -106,7 +106,7 @@ Each task was committed atomically:
 2. **Task 2: Truck route API proxy and smoke test** - `02982d1` (feat)
 3. **Task 3: Verify Valhalla truck route POLB to San Bernardino** - human-approved checkpoint (no code commit)
 
-**Plan metadata:** pending (docs commit)
+**Plan metadata:** `6b7ac3b` (docs: complete plan)
 
 ## Files Created/Modified
 
