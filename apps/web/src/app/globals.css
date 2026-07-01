@@ -1,11 +1,67 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
-  --bg: #0f1419;
-  --surface: #1a2332;
-  --text: #e8edf4;
-  --muted: #8b9cb3;
-  --ok: #22c55e;
-  --bad: #ef4444;
-  --border: #2d3a4f;
+  --fv-bg: #efeff5;
+  --fv-surface: #ffffff;
+  --fv-surface-muted: #e5e5eb;
+  --fv-accent: #2d4a6f;
+  --fv-text: #111827;
+  --fv-text-muted: #64748b;
+  --fv-stroke: #8a8a93;
+  --fv-destructive: #b42318;
+
+  --background: var(--fv-bg);
+  --foreground: var(--fv-text);
+  --card: var(--fv-surface);
+  --card-foreground: var(--fv-text);
+  --popover: var(--fv-surface);
+  --popover-foreground: var(--fv-text);
+  --primary: var(--fv-accent);
+  --primary-foreground: #ffffff;
+  --secondary: var(--fv-surface-muted);
+  --secondary-foreground: var(--fv-text);
+  --muted: var(--fv-surface-muted);
+  --muted-foreground: var(--fv-text-muted);
+  --accent: var(--fv-surface-muted);
+  --accent-foreground: var(--fv-text);
+  --destructive: var(--fv-destructive);
+  --border: var(--fv-stroke);
+  --input: var(--fv-stroke);
+  --ring: var(--fv-accent);
+  --radius: 0.625rem;
+
+  --bg: var(--fv-bg);
+  --surface: var(--fv-surface);
+  --text: var(--fv-text);
+  --muted: var(--fv-text-muted);
+  --ok: #16a34a;
+  --bad: var(--fv-destructive);
 }
 
 * {
@@ -14,14 +70,9 @@
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  min-width: 1024px;
+  background: var(--fv-bg);
+  color: var(--fv-text);
   line-height: 1.5;
 }
 
@@ -38,13 +89,13 @@ h1 {
 }
 
 .subtitle {
-  color: var(--muted);
+  color: var(--fv-text-muted);
   margin: 0 0 2rem;
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--fv-surface);
+  border: 1px solid var(--fv-stroke);
   border-radius: 8px;
   padding: 1.25rem;
   margin-bottom: 1rem;
@@ -81,7 +132,7 @@ h1 {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--fv-stroke);
 }
 
 .service-row:last-child {
@@ -91,7 +142,7 @@ h1 {
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--fv-text-muted);
   word-break: break-all;
 }
 
@@ -105,14 +156,44 @@ th,
 td {
   text-align: left;
   padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--fv-stroke);
 }
 
 th {
-  color: var(--muted);
+  color: var(--fv-text-muted);
   font-weight: 500;
 }
 
 .error {
-  color: var(--bad);
+  color: var(--fv-destructive);
+}
+
+.fv-panel {
+  position: relative;
+  background: var(--fv-bg);
+  border-radius: 24px;
+  box-shadow:
+    0 2.8px 2.2px rgba(0, 0, 0, 0.034),
+    0 12.5px 10px rgba(0, 0, 0, 0.06),
+    0 41.8px 33.4px rgba(0, 0, 0, 0.086);
+}
+
+.fv-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(0, 0, 0, 0.02) 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
