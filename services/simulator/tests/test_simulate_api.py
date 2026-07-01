@@ -89,6 +89,7 @@ def _corridor_body() -> dict:
             "port_drayage_enabled": False,
         },
         "overrides": {},
+        "options": {"include_charging": False},
     }
 
 
@@ -105,6 +106,7 @@ def _custom_od_body() -> dict:
             "port_drayage_enabled": False,
         },
         "overrides": {},
+        "options": {"include_charging": False},
     }
 
 

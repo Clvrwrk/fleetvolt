@@ -49,10 +49,20 @@ class TruckSpec(BaseModel):
     )
 
 
+class ChargingConditionsSpec(BaseModel):
+    """Charging planner thresholds (D-08, D-09, D-15)."""
+
+    soc_trigger_pct: float = Field(default=18.0, ge=0, le=100)
+    soc_floor_pct: float = Field(default=10.0, ge=0, le=100)
+    target_soc_pct: float = Field(default=80.0, ge=0, le=100)
+    min_arrival_soc_pct: float = Field(default=10.0, ge=0, le=100)
+
+
 class ConditionsSpec(BaseModel):
     weather_preset: WeatherPreset = WeatherPreset.ideal
     payload_lbs: float = Field(default=0, ge=0, le=80000)
     port_drayage_enabled: bool = False
+    charging: ChargingConditionsSpec = Field(default_factory=ChargingConditionsSpec)
 
 
 class AssumptionEntry(BaseModel):
@@ -75,11 +85,16 @@ class OverridesSpec(BaseModel):
     regen_efficiency: float | None = Field(default=None, gt=0, le=1)
 
 
+class SimulateOptions(BaseModel):
+    include_charging: bool = Field(default=True, description="Run greedy charging planner (D-02)")
+
+
 class SimulateRequest(BaseModel):
     route: RouteSpec
     truck: TruckSpec
     conditions: ConditionsSpec = Field(default_factory=ConditionsSpec)
     overrides: OverridesSpec = Field(default_factory=OverridesSpec)
+    options: SimulateOptions = Field(default_factory=SimulateOptions)
 
 
 class SegmentResult(BaseModel):
@@ -97,6 +112,21 @@ class KpiResult(BaseModel):
     total_time_s: float
 
 
+class ChargingStopResult(BaseModel):
+    """Recommended HD charging stop (D-21)."""
+
+    station_id: str
+    name: str | None = None
+    lat: float
+    lon: float
+    power_kw: float
+    arrival_soc_pct: float
+    departure_soc_pct: float
+    dwell_s: float
+    energy_added_kwh: float
+    detour_s: float
+
+
 class SimulateResponse(BaseModel):
     segments: list[SegmentResult]
     kpis: KpiResult
@@ -105,6 +135,8 @@ class SimulateResponse(BaseModel):
     corridor_key: str | None = None
     truck_slug: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
+    charging_stops: list[ChargingStopResult] | None = None
+    feasibility: dict[str, Any] | None = None
 
 
 class ValidationCaseResult(BaseModel):

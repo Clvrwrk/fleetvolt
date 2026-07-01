@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,11 +11,15 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+from fastapi.testclient import TestClient
 
 from app.simulation.charging_planner import plan_greedy_stops
 from app.simulation.physics_engine import TruckParams
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 ECASCADIA_PATH = PROJECT_ROOT / "data" / "trucks" / "ecascadia_438.json"
 
 SEARCH_RADIUS_M = 40_234.0
@@ -87,6 +92,57 @@ def _mock_route_provider(detour_map: dict[str, float]) -> MagicMock:
 @pytest.fixture
 def mock_db() -> MagicMock:
     return MagicMock()
+
+
+@pytest.fixture
+def simulate_db(db_session):
+    from alembic.config import Config
+
+    from alembic import command
+
+    from data.ingest.elevation import precompute_all
+    from data.ingest.seed_trucks import seed_trucks
+
+    alembic_cfg = Config(str(PROJECT_ROOT / "services" / "simulator" / "alembic.ini"))
+    alembic_cfg.set_main_option(
+        "script_location",
+        str(PROJECT_ROOT / "services" / "simulator" / "alembic"),
+    )
+    command.upgrade(alembic_cfg, "head")
+    seed_trucks(db_session)
+    precompute_all(db_session, use_fixture=True)
+    db_session.commit()
+    return db_session
+
+
+@pytest.fixture
+def client(simulate_db):
+    from app.db import get_db
+    from app.main import app
+
+    def override_get_db():
+        try:
+            yield simulate_db
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+def _corridor_body() -> dict:
+    return {
+        "route": {"corridor_key": "polb_cajon_pass"},
+        "truck": {"slug": "ecascadia_438"},
+        "conditions": {
+            "weather_preset": "ideal",
+            "payload_lbs": 34000,
+            "port_drayage_enabled": False,
+        },
+        "overrides": {},
+        "options": {"include_charging": False},
+    }
 
 
 def test_triggers_at_soc_threshold(
@@ -331,3 +387,42 @@ def test_detour_cap_rejects(
     )
 
     assert stops == []
+
+
+def test_simulate_include_charging_returns_stops_key(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """POST /v1/simulate with include_charging=true includes charging_stops array."""
+    monkeypatch.setattr(
+        "app.simulation.charging_planner.search_hd_chargers",
+        lambda db, lat, lon, radius_m: [],
+    )
+    monkeypatch.setattr(
+        "app.simulation.charging_planner.detour_seconds",
+        lambda *a, **k: 9999.0,
+    )
+
+    body = _corridor_body()
+    body["options"] = {"include_charging": True}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert "charging_stops" in payload
+    assert isinstance(payload["charging_stops"], list)
+    assert "segments" in payload
+    for segment in payload["segments"]:
+        for key in ("dist_m", "grade", "speed", "energy_kwh", "soc_pct"):
+            assert key in segment
+    assert "job_id" not in payload
+
+
+def test_simulate_exclude_charging_omits_stops_key(client: TestClient) -> None:
+    """POST /v1/simulate with include_charging=false preserves Phase 2 response shape."""
+    body = _corridor_body()
+    body["options"] = {"include_charging": False}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert "charging_stops" not in payload
+    assert "job_id" not in payload

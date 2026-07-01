@@ -14,7 +14,7 @@ from app.simulation.schemas import SimulateRequest, SimulateResponse
 router = APIRouter(prefix="/v1", tags=["simulate"])
 
 
-@router.post("/simulate", response_model=SimulateResponse)
+@router.post("/simulate", response_model=SimulateResponse, response_model_exclude_none=True)
 def simulate(
     body: SimulateRequest,
     db: Annotated[Session, Depends(get_db)],

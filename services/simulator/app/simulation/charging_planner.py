@@ -184,7 +184,9 @@ def plan_greedy_stops(
     trigger_pct = float(getattr(conditions, "soc_trigger_pct", 18.0))
     floor_pct = float(getattr(conditions, "soc_floor_pct", 10.0))
 
-    soc = np.array(soc_pct, dtype=np.float64, copy=True)
+    soc = np.asarray(soc_pct, dtype=np.float64)
+    if not soc.flags.writeable:
+        soc = soc.copy()
     stops: list[dict[str, Any]] = []
     n = len(soc)
 

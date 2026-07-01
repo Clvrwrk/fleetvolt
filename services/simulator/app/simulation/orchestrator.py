@@ -19,7 +19,9 @@ from app.simulation.physics_engine import TruckParams, segment_forces
 from app.simulation.route_provider import RouteProvider
 from app.simulation.overrides import apply_truck_overrides
 from app.simulation.port_drayage import apply_port_drayage
+from app.simulation.charging_planner import plan_greedy_stops
 from app.simulation.schemas import (
+    ChargingStopResult,
     ConditionsSpec,
     KpiResult,
     SegmentResult,
@@ -247,29 +249,55 @@ def run_simulation(
         speed_arr,
     )
 
+    soc_working = np.array(soc_result["soc_pct"], dtype=np.float64, copy=True)
+    charging_stops: list[ChargingStopResult] = []
+    feasibility: dict[str, Any] | None = None
+
+    if request.options.include_charging:
+        charge_curve = file_payload.get("charge_curve", [])
+        stop_dicts = plan_greedy_stops(
+            db,
+            raw_segments,
+            soc_working,
+            coordinates,
+            truck,
+            charge_curve,
+            request.conditions.charging,
+            provider,
+        )
+        charging_stops = [ChargingStopResult(**stop) for stop in stop_dicts]
+
+    soc_for_segments = soc_working if request.options.include_charging else soc_result["soc_pct"]
+
     segments = [
         SegmentResult(
             dist_m=round(float(dist_m[i]), 2),
             grade=round(float(grade_pct[i]), 4),
             speed=round(float(speed_arr[i]), 2),
             energy_kwh=round(float(soc_result["energy_kwh"][i]), 4),
-            soc_pct=round(float(soc_result["soc_pct"][i]), 2),
+            soc_pct=round(float(soc_for_segments[i]), 2),
         )
         for i in range(len(raw_segments))
     ]
 
-    return SimulateResponse(
-        segments=segments,
-        kpis=KpiResult(**kpis_raw),
-        disclaimer=DISCLAIMER,
-        assumptions=assumptions,
-        corridor_key=corridor_key,
-        truck_slug=request.truck.slug,
-        metadata={
+    response_kwargs: dict[str, Any] = {
+        "segments": segments,
+        "kpis": KpiResult(**kpis_raw),
+        "disclaimer": DISCLAIMER,
+        "assumptions": assumptions,
+        "corridor_key": corridor_key,
+        "truck_slug": request.truck.slug,
+        "metadata": {
             "elevation_source": elev_result.source,
             "segment_count": len(segments),
             "weather_preset": request.conditions.weather_preset.value,
             "port_drayage_enabled": request.conditions.port_drayage_enabled,
             "payload_lbs": request.conditions.payload_lbs,
         },
-    )
+    }
+
+    if request.options.include_charging:
+        response_kwargs["charging_stops"] = charging_stops
+        response_kwargs["feasibility"] = feasibility
+
+    return SimulateResponse(**response_kwargs)
