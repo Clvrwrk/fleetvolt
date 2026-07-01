@@ -171,8 +171,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | PLAT-04 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 44 total
-- Mapped to phases: 44
+- v1 requirements: 45 total
+- Mapped to phases: 45
 - Unmapped: 0 ✓
 
 ---
