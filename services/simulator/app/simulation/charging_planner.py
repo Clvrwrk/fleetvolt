@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from sqlalchemy import text
@@ -30,6 +30,17 @@ class HdChargerCandidate:
     power_kw: float
     hd_capable: bool
     distance_m: float
+
+
+@dataclass(frozen=True)
+class PlannerStatus:
+    """Greedy planner completion signal for feasibility classifier."""
+
+    complete: bool
+    blocking_reason: Literal[
+        "no_charger_in_radius", "detour_exceeded", "cannot_reach_destination"
+    ] | None = None
+    soc_deficit_kwh: float | None = None
 
 
 def search_hd_chargers(
@@ -168,6 +179,17 @@ def _compute_charge_target(
     return min(100.0, max(default_target, charge_to_soc_needed))
 
 
+def _soc_deficit_kwh(
+    soc: np.ndarray,
+    truck: TruckParams,
+    min_arrival_pct: float,
+) -> float:
+    final = float(soc[-1])
+    if final >= min_arrival_pct:
+        return 0.0
+    return (min_arrival_pct - final) / 100.0 * truck.usable_kwh
+
+
 def plan_greedy_stops(
     db: Session,
     segments: list[dict[str, Any]],
@@ -179,10 +201,11 @@ def plan_greedy_stops(
     route_provider: RouteProvider,
     *,
     station_kw: float = 350.0,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], PlannerStatus]:
     """Greedy first-feasible HD charging stop selection per D-06."""
     trigger_pct = float(getattr(conditions, "soc_trigger_pct", 18.0))
     floor_pct = float(getattr(conditions, "soc_floor_pct", 10.0))
+    min_arrival_pct = float(getattr(conditions, "min_arrival_soc_pct", 10.0))
 
     soc = np.asarray(soc_pct, dtype=np.float64)
     if not soc.flags.writeable:
@@ -193,7 +216,11 @@ def plan_greedy_stops(
     i = 1
     while i < n:
         if float(soc[i]) < floor_pct:
-            return []
+            return [], PlannerStatus(
+                complete=False,
+                blocking_reason="cannot_reach_destination",
+                soc_deficit_kwh=_soc_deficit_kwh(soc, truck, min_arrival_pct),
+            )
 
         crossed_trigger = float(soc[i - 1]) > trigger_pct and float(soc[i]) <= trigger_pct
         if not crossed_trigger:
@@ -218,8 +245,11 @@ def plan_greedy_stops(
                 feasible.append((candidate, detour_s))
 
         if not feasible:
-            i += 1
-            continue
+            return [], PlannerStatus(
+                complete=False,
+                blocking_reason="no_charger_in_radius",
+                soc_deficit_kwh=_soc_deficit_kwh(soc, truck, min_arrival_pct),
+            )
 
         best_candidate, best_detour = min(feasible, key=lambda item: (item[1], -item[0].power_kw))
         arrival_soc = float(soc[i])
@@ -247,8 +277,9 @@ def plan_greedy_stops(
                 "dwell_s": round(dwell_s, 1),
                 "energy_added_kwh": round(energy_kwh, 4),
                 "detour_s": round(best_detour, 1),
+                "segment_index": i,
             }
         )
         i += 1
 
-    return stops
+    return stops, PlannerStatus(complete=True)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -72,6 +72,8 @@ class AssumptionEntry(BaseModel):
     value: float
     source: str = Field(description="oem_default or user_override")
     oem_default: float
+    category: str | None = None
+    note: str | None = None
 
 
 class OverridesSpec(BaseModel):
@@ -103,6 +105,8 @@ class SegmentResult(BaseModel):
     speed: float
     energy_kwh: float
     soc_pct: float
+    charging_event: bool = False
+    stop_sequence: int | None = None
 
 
 class KpiResult(BaseModel):
@@ -127,6 +131,18 @@ class ChargingStopResult(BaseModel):
     detour_s: float
 
 
+class FeasibilityResult(BaseModel):
+    """Three-tier feasibility verdict with infrastructure framing (D-10, D-22)."""
+
+    verdict: Literal["feasible", "critical", "infeasible"]
+    tier: Literal["public_hd", "depot_required", "infrastructure_gap"]
+    soc_deficit_kwh: float | None = None
+    blocking_reason: Literal[
+        "no_charger_in_radius", "detour_exceeded", "cannot_reach_destination"
+    ] | None = None
+    stop_count: int = 0
+
+
 class SimulateResponse(BaseModel):
     segments: list[SegmentResult]
     kpis: KpiResult
@@ -136,7 +152,7 @@ class SimulateResponse(BaseModel):
     truck_slug: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     charging_stops: list[ChargingStopResult] | None = None
-    feasibility: dict[str, Any] | None = None
+    feasibility: FeasibilityResult | None = None
 
 
 class ValidationCaseResult(BaseModel):

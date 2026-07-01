@@ -20,9 +20,16 @@ from app.simulation.route_provider import RouteProvider
 from app.simulation.overrides import apply_truck_overrides
 from app.simulation.port_drayage import apply_port_drayage
 from app.simulation.charging_planner import plan_greedy_stops
+from app.simulation.feasibility import (
+    classify_feasibility,
+    get_charging_assumptions,
+    planner_outcome_from_status,
+    shadow_pass_depot_at_origin,
+)
 from app.simulation.schemas import (
     ChargingStopResult,
     ConditionsSpec,
+    FeasibilityResult,
     KpiResult,
     SegmentResult,
     SimulateRequest,
@@ -251,11 +258,12 @@ def run_simulation(
 
     soc_working = np.array(soc_result["soc_pct"], dtype=np.float64, copy=True)
     charging_stops: list[ChargingStopResult] = []
-    feasibility: dict[str, Any] | None = None
+    feasibility: FeasibilityResult | None = None
+    stop_segment_indices: list[int] = []
 
     if request.options.include_charging:
         charge_curve = file_payload.get("charge_curve", [])
-        stop_dicts = plan_greedy_stops(
+        stop_dicts, public_status = plan_greedy_stops(
             db,
             raw_segments,
             soc_working,
@@ -265,9 +273,39 @@ def run_simulation(
             request.conditions.charging,
             provider,
         )
+        stop_segment_indices = [int(s.pop("segment_index", 0)) for s in stop_dicts]
         charging_stops = [ChargingStopResult(**stop) for stop in stop_dicts]
 
+        shadow_complete: bool | None = None
+        if not public_status.complete:
+            shadow_complete = shadow_pass_depot_at_origin(
+                db,
+                raw_segments,
+                soc_working,
+                coordinates,
+                truck,
+                charge_curve,
+                request.conditions.charging,
+                provider,
+            )
+
+        planner_outcome = planner_outcome_from_status(
+            public_status,
+            shadow_depot_complete=shadow_complete,
+        )
+        feasibility = classify_feasibility(
+            charging_stops,
+            float(soc_working[-1]),
+            request.conditions.charging,
+            planner_outcome,
+        )
+        assumptions = assumptions + get_charging_assumptions()
+
     soc_for_segments = soc_working if request.options.include_charging else soc_result["soc_pct"]
+
+    charging_by_segment: dict[int, int] = {
+        idx: seq + 1 for seq, idx in enumerate(stop_segment_indices)
+    }
 
     segments = [
         SegmentResult(
@@ -276,6 +314,8 @@ def run_simulation(
             speed=round(float(speed_arr[i]), 2),
             energy_kwh=round(float(soc_result["energy_kwh"][i]), 4),
             soc_pct=round(float(soc_for_segments[i]), 2),
+            charging_event=i in charging_by_segment,
+            stop_sequence=charging_by_segment.get(i),
         )
         for i in range(len(raw_segments))
     ]

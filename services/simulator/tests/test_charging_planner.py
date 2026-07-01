@@ -174,7 +174,7 @@ def test_triggers_at_soc_threshold(
         fake_detour,
     )
 
-    stops = plan_greedy_stops(
+    stops, _ = plan_greedy_stops(
         mock_db,
         _synthetic_segments(),
         _soc_crossing_trigger(),
@@ -216,7 +216,7 @@ def test_hd_power_filter(
         lambda *a, **k: 100.0,
     )
 
-    stops = plan_greedy_stops(
+    stops, _ = plan_greedy_stops(
         mock_db,
         _synthetic_segments(),
         _soc_crossing_trigger(),
@@ -259,7 +259,7 @@ def test_radius_fallback(
         lambda *a, **k: 200.0,
     )
 
-    stops = plan_greedy_stops(
+    stops, _ = plan_greedy_stops(
         mock_db,
         _synthetic_segments(),
         _soc_crossing_trigger(),
@@ -299,7 +299,7 @@ def test_greedy_prefers_shorter_detour(
         lambda provider, origin, charger, rejoin: detour_map[charger["station_id"]],
     )
 
-    stops = plan_greedy_stops(
+    stops, _ = plan_greedy_stops(
         mock_db,
         _synthetic_segments(),
         _soc_crossing_trigger(),
@@ -338,7 +338,7 @@ def test_greedy_tiebreak_higher_power(
         lambda provider, origin, charger, rejoin: detour_map[charger["station_id"]],
     )
 
-    stops = plan_greedy_stops(
+    stops, _ = plan_greedy_stops(
         mock_db,
         _synthetic_segments(),
         _soc_crossing_trigger(),
@@ -375,7 +375,7 @@ def test_detour_cap_rejects(
         lambda *a, **k: 650.0,
     )
 
-    stops = plan_greedy_stops(
+    stops, _ = plan_greedy_stops(
         mock_db,
         _synthetic_segments(),
         _soc_crossing_trigger(),
