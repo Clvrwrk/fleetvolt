@@ -76,6 +76,22 @@ Look for `"tileset_last_modified"` or an `"available_actions"` entry including `
 With Valhalla ready and the simulator running:
 
 ```bash
+make valhalla-verify-route
+# or
+bash scripts/verify_valhalla_route.sh
+```
+
+The script polls Valhalla `/status` until route is available, then calls the simulator proxy and asserts `distance_m` > 50000, `len(coordinates)` > 10, and `valhalla_status == ready`.
+
+Integration test (same corridor, excluded from default CI via `@integration`):
+
+```bash
+cd services/simulator && pytest -x -q tests/test_valhalla_route.py::test_polb_to_san_bernardino -m integration
+```
+
+Manual curl check:
+
+```bash
 curl "http://localhost:8000/v1/routing/route?origin_lat=33.754&origin_lon=-118.216&dest_lat=34.108&dest_lon=-117.290"
 ```
 
