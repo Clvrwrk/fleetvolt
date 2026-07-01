@@ -8,6 +8,7 @@ import { SocProfileChart } from "@/components/charts/soc-profile-chart";
 import { RouteMapDynamic } from "@/components/map/route-map-dynamic";
 import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
 import { AssumptionsPanel } from "@/components/results/assumptions-panel";
+import { ComparisonDiffTable } from "@/components/comparison/comparison-diff-table";
 import { ChargingPlanTable } from "@/components/tables/charging-plan-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useScenarioStore } from "@/stores/scenario-store";
@@ -88,9 +89,7 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
       <Tabs defaultValue="charging-plan" data-testid="results-tabs">
         <TabsList>
           <TabsTrigger value="charging-plan">Charging plan</TabsTrigger>
-          <TabsTrigger value="comparison" disabled>
-            Comparison
-          </TabsTrigger>
+          <TabsTrigger value="comparison">Comparison</TabsTrigger>
         </TabsList>
         <TabsContent value="charging-plan">
           <ChargingPlanTable
@@ -99,6 +98,9 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
             onStopSelect={handleStopSelect}
             mapRef={hasMapToken && routeGeometry ? mapRef : undefined}
           />
+        </TabsContent>
+        <TabsContent value="comparison">
+          <ComparisonDiffTable />
         </TabsContent>
       </Tabs>
 
