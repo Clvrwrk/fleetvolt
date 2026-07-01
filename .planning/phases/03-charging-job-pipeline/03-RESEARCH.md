@@ -603,21 +603,22 @@ class SimulateResponse(BaseModel):
 | A4 | Rejoin point for detour = next segment midpoint (not destination) | Pattern 2 | Detour times slightly optimistic vs rejoin-at-destination; may accept marginal stops |
 | A5 | Sync simulate `options.include_charging` defaults to `true` | Claude's discretion | CI tests expecting no charging fields need updating |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact depot_required classification algorithm**
+1. **Exact depot_required classification algorithm** — **RESOLVED (Plan 02)**
    - What we know: D-11 defines tag semantics; depot CRUD deferred
-   - What's unclear: Whether to run shadow planner with virtual depot at origin/destination only
-   - Recommendation: If public greedy fails, run single shadow pass assuming unlimited depot at origin; if shadow succeeds tag `depot_required`, else `infrastructure_gap`
+   - Decision: If public greedy fails, run single shadow pass assuming unlimited depot at origin; if shadow succeeds tag `depot_required`, else `infrastructure_gap`
+   - Implemented in `feasibility.py` per Plan 02 Task 2
 
-2. **FAILED job error payload shape**
+2. **FAILED job error payload shape** — **RESOLVED (Plan 03)**
    - What we know: Store in `simulation_runs.error` JSONB
-   - What's unclear: `{ code, message, stage }` vs plain string
-   - Recommendation: `{ "code": "valhalla_unavailable", "message": "...", "stage": "routing" }` for Phase 4 error display
+   - Decision: `{ "code": "valhalla_unavailable", "message": "...", "stage": "routing" }` for Phase 4 error display
+   - Implemented in `worker.py` per Plan 03 Task 2
 
-3. **Segment charging annotation field name**
+3. **Segment charging annotation field name** — **RESOLVED (Plan 02)**
    - What we know: D-23 leaves naming to orchestrator
-   - Recommendation: Add optional `charging_event: bool = False` on `SegmentResult` plus `stop_sequence: int | None` for Phase 4 hover sync
+   - Decision: Add optional `charging_event: bool = False` on `SegmentResult` plus `stop_sequence: int | None` for Phase 4 hover sync
+   - Implemented in Plan 02 Task 2
 
 ## Environment Availability
 

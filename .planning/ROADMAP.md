@@ -122,7 +122,29 @@ Plans:
   4. Balanced multi-objective optimization weighs time, energy, and cost tradeoffs across stop recommendations
   5. Node Fastify API submits simulation jobs to Python FastAPI/Celery and returns complete results through the correct queue boundary
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Charge curve + greedy HD planner wired into sync simulate (CHRG-01, CHRG-02, CHRG-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — Feasibility verdict, infrastructure tiers, segment annotations (CHRG-04, CHRG-05, CHRG-06 doc)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — simulation_runs migration, inputs_hash, Celery worker, internal enqueue (PLAT-02 backend)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 03-04-PLAN.md — Fastify async job API, cache hit, poll (PLAT-02)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 03-05-PLAN.md — Integration gate, OpenAPI codegen, model_assumptions charging section (CHRG-06, PLAT-02)
 
 ### Phase 4: Analyst Dashboard & Export
 
@@ -181,7 +203,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
-| 3. Charging & Job Pipeline | 0/TBD | Not started | - |
+| 3. Charging & Job Pipeline | 0/5 | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
 | 6. TCO Analysis & Production | 0/TBD | Not started | - |
