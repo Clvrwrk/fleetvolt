@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import type { paths } from "@fleetvolt/shared-types";
+import { registerExportRoutes, type ExportsDeps } from "./exports.js";
 import { registerSimulationRoutes, type SimulationsDeps } from "./simulations.js";
 
 export type StackMetaResponse =
@@ -9,6 +10,7 @@ export type StackMetaResponse =
 export async function buildApp(options?: {
   logger?: boolean;
   simulationsDeps?: SimulationsDeps;
+  exportsDeps?: ExportsDeps;
 }): Promise<FastifyInstance> {
   const app = Fastify({ logger: options?.logger ?? true });
 
@@ -218,6 +220,7 @@ export async function buildApp(options?: {
   });
 
   registerSimulationRoutes(app, options?.simulationsDeps);
+  registerExportRoutes(app, options?.exportsDeps);
 
   return app;
 }

@@ -4,6 +4,7 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: set this to true or false
+  puppeteer: set this to true or false
   sharp: set this to true or false
   unrs-resolver: set this to true or false
 minimumReleaseAgeExclude:
@@ -15,3 +16,6 @@ minimumReleaseAgeExclude:
   - '@turbo/windows-arm64@2.10.2'
   - turbo@2.10.2
   - immer@11.1.9
+  - '@puppeteer/browsers@3.0.6'
+  - puppeteer-core@25.3.0
+  - puppeteer@25.3.0

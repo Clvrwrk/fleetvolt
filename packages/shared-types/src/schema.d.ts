@@ -277,6 +277,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/exports/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Simulation PDF
+         * @description Render consulting PDF report — implemented on API gateway (:4000).
+         */
+        post: operations["export_simulation_pdf_v1_exports_pdf_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -839,6 +859,19 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /**
+         * PdfExportRequest
+         * @description POST /v1/exports/pdf request body (EXPR-02, D-23) — implemented on API gateway.
+         */
+        PdfExportRequest: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Map Snapshot Base64 */
+            map_snapshot_base64?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -1247,6 +1280,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimulationJobPollResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_simulation_pdf_v1_exports_pdf_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PdfExportRequest"];
+            };
+        };
+        responses: {
+            /** @description PDF report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             /** @description Validation Error */

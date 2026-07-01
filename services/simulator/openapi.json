@@ -586,6 +586,49 @@
           }
         }
       }
+    },
+    "/v1/exports/pdf": {
+      "post": {
+        "tags": [
+          "exports"
+        ],
+        "summary": "Export Simulation PDF",
+        "description": "Render consulting PDF report with KPIs, map snapshot, and audit footer \u2014 implemented on API gateway (:4000). Returns application/pdf.",
+        "operationId": "export_simulation_pdf_v1_exports_pdf_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PdfExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF report",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2082,6 +2125,34 @@
         ],
         "title": "SimulationJobSubmitResponse",
         "description": "POST /v1/simulations response (PLAT-02, D-01) \u2014 implemented on API gateway."
+      },
+      "PdfExportRequest": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id",
+            "description": "Simulation run UUID"
+          },
+          "map_snapshot_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Snapshot Base64",
+            "description": "Optional PNG map snapshot as base64 (no data: prefix)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "PdfExportRequest",
+        "description": "POST /v1/exports/pdf request body (EXPR-02, D-23) \u2014 implemented on API gateway."
       }
     }
   }

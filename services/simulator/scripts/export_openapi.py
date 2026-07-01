@@ -15,6 +15,7 @@ if str(SIMULATOR_ROOT) not in sys.path:
 
 from app.main import app  # noqa: E402
 from app.simulation.schemas import (  # noqa: E402
+    PdfExportRequest,
     SimulateRequest,
     SimulationJobPollResponse,
     SimulationJobSubmitResponse,
@@ -43,6 +44,18 @@ def _build_gateway_contract_app() -> FastAPI:
         description="Poll async job status and outputs — implemented on API gateway (:4000).",
     )
     def poll_simulation_job(job_id: uuid.UUID) -> SimulationJobPollResponse:
+        raise NotImplementedError("Documented for OpenAPI codegen only")
+
+    @contract.post(
+        "/v1/exports/pdf",
+        tags=["exports"],
+        summary="Export Simulation PDF",
+        description=(
+            "Render consulting PDF report with KPIs, map snapshot, and audit "
+            "footer — implemented on API gateway (:4000). Returns application/pdf."
+        ),
+    )
+    def export_simulation_pdf(body: PdfExportRequest) -> None:
         raise NotImplementedError("Documented for OpenAPI codegen only")
 
     return contract

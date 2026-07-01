@@ -184,6 +184,16 @@ class SimulationJobPollResponse(BaseModel):
     inputs: dict[str, Any] | None = None
 
 
+class PdfExportRequest(BaseModel):
+    """POST /v1/exports/pdf request body (EXPR-02, D-23) — implemented on API gateway."""
+
+    job_id: str = Field(description="Simulation run UUID")
+    map_snapshot_base64: str | None = Field(
+        default=None,
+        description="Optional PNG map snapshot as base64 (no data: prefix)",
+    )
+
+
 class ValidationCaseResult(BaseModel):
     """Single OEM reference case MAPE result."""
 
