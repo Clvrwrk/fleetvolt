@@ -8,7 +8,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
 
 - [x] **Phase 1: Foundation & Spatial Data** - Docker Compose stack, PostGIS spatial truth, NHFN/chargers/trucks/elevation for POLB corridors (completed 2026-07-01)
 - [x] **Phase 2: Physics Simulation Core** - Segment physics, Valhalla truck routing, POLB/Cajon validation without charging UI (completed 2026-07-01)
-- [ ] **Phase 3: Charging & Job Pipeline** - Rule-based charging stops, feasibility tiers, Fastify→FastAPI/Celery orchestration
+- [x] **Phase 3: Charging & Job Pipeline** - Rule-based charging stops, feasibility tiers, Fastify→FastAPI/Celery orchestration (completed 2026-07-01)
 - [ ] **Phase 4: Analyst Dashboard & Export** - Interactive map, SoC charts, scenario comparison, CSV/JSON/PDF reports
 - [ ] **Phase 5: Corridor Intelligence & Emissions** - NHFN route preference, gap analysis, WTW emissions and energy cost core
 - [ ] **Phase 6: TCO Analysis & Production** - Rolling cumulative TCO chart, assumptions panel, VPS production deployment
@@ -128,23 +128,23 @@ Plans:
 
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Charge curve + greedy HD planner wired into sync simulate (CHRG-01, CHRG-02, CHRG-03)
+- [x] 03-01-PLAN.md — Charge curve + greedy HD planner wired into sync simulate (CHRG-01, CHRG-02, CHRG-03)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-02-PLAN.md — Feasibility verdict, infrastructure tiers, segment annotations (CHRG-04, CHRG-05, CHRG-06 doc)
+- [x] 03-02-PLAN.md — Feasibility verdict, infrastructure tiers, segment annotations (CHRG-04, CHRG-05, CHRG-06 doc)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-03-PLAN.md — simulation_runs migration, inputs_hash, Celery worker, internal enqueue (PLAT-02 backend)
+- [x] 03-03-PLAN.md — simulation_runs migration, inputs_hash, Celery worker, internal enqueue (PLAT-02 backend)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 03-04-PLAN.md — Fastify async job API, cache hit, poll (PLAT-02)
+- [x] 03-04-PLAN.md — Fastify async job API, cache hit, poll (PLAT-02)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 03-05-PLAN.md — Integration gate, OpenAPI codegen, model_assumptions charging section (CHRG-06, PLAT-02)
+- [x] 03-05-PLAN.md — Integration gate, OpenAPI codegen, model_assumptions charging section (CHRG-06, PLAT-02)
 
 ### Phase 4: Analyst Dashboard & Export
 
@@ -160,7 +160,38 @@ Plans:
   4. Simulation results are stored immutably with input hash for cache replay and comparison
   5. User can export full simulation profile as CSV/JSON and PDF report with map snapshot, assumptions table, physics parameter snapshot, and model version
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+
+**Wave 0**
+
+- [ ] 04-00-PLAN.md — API poll audit metadata, routing proxy, web deps and test scaffolds (SCEN-04)
+
+**Wave 1** *(blocked on Wave 0 completion)*
+
+- [ ] 04-01-PLAN.md — Scenario form, async submit/poll, basic results panel (SCEN-04)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-02-PLAN.md — Mapbox SoC-gradient route and charger markers (MAP-01, MAP-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-03-PLAN.md — Recharts SoC profile and map-chart hover sync (MAP-03)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 04-04-PLAN.md — KPI cards, charging table, assumptions panel (MAP-04, MAP-05, MAP-06)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 04-05-PLAN.md — Comparison tray and sensitivity re-run (SCEN-01, SCEN-02)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 04-06-PLAN.md — CSV/JSON client export and Fastify PDF route (EXPR-01, EXPR-02, EXPR-03)
+
 **UI hint**: yes
 
 ### Phase 5: Corridor Intelligence & Emissions
@@ -203,7 +234,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
-| 3. Charging & Job Pipeline | 0/5 | Not started | - |
-| 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
+| 3. Charging & Job Pipeline | 5/5 | Complete    | 2026-07-01 |
+| 4. Analyst Dashboard & Export | 0/7 | Not started | - |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
 | 6. TCO Analysis & Production | 0/TBD | Not started | - |

@@ -598,27 +598,15 @@ export const scenarioFormSchema = z.object({
 | A4 | Headwind sensitivity uses `headwind` preset or conditions extension | SCEN-02 | May need API support for partial headwind |
 | A5 | `pnpm` workspace linking `@fleetvolt/shared-types` into `apps/web` works without extra tsconfig paths | Standard Stack | Build/typecheck failure if paths missing |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Route geometry source of truth**
-   - What we know: Simulator computes coordinates internally; poll outputs omit them.
-   - What's unclear: Whether Valhalla client-side re-fetch always matches cached simulation route.
-   - Recommendation: v1 client fetch via routing API; add `metadata.route_coordinates` to simulator output in follow-up if misalignment observed in UAT.
+1. **Route geometry source of truth** — **RESOLVED:** v1 uses client `GET /v1/routing/route` merged with `outputs.segments[]` in Plan 02 (`route-geometry.ts`). If UAT shows misalignment vs simulated distance, add `metadata.route_coordinates` to simulator output in a gap-closure plan.
 
-2. **Poll payload audit fields**
-   - What we know: DB stores `inputs_hash`, `physics_version`, `charger_version`, `inputs`.
-   - What's unclear: None — extension is straightforward.
-   - Recommendation: Wave 0 task — extend Fastify GET + OpenAPI codegen before dashboard work.
+2. **Poll payload audit fields** — **RESOLVED:** Wave 0 Plan 00 extends Fastify GET/POST cache-hit + OpenAPI codegen with `inputs_hash`, `physics_version`, `charger_version`, `inputs` per D-12/SCEN-04.
 
-3. **Playwright E2E scope**
-   - What we know: STACK.md lists Playwright; no config in repo yet.
-   - What's unclear: User appetite for CI E2E vs manual UAT only (Claude discretion).
-   - Recommendation: One smoke spec `configure → run → export JSON` in Wave 4 final plan; skip full PDF E2E in CI initially (Puppeteer/heavy).
+3. **Playwright E2E scope** — **RESOLVED:** One optional smoke spec in Plan 01 (`scenario-run.spec.ts`) as phase-gate smoke only; unit tests are per-task primary verify. Skip PDF E2E in CI (Puppeteer heavy) — manual UAT for PDF in verify-work.
 
-4. **Sensitivity slider API mapping**
-   - What we know: D-19 says payload ±%, temperature offset, headwind m/s with re-run.
-   - What's unclear: `ConditionsSpec` has `weather_preset` enum only — no continuous temperature/headwind offset fields.
-   - Recommendation: Payload slider maps directly; temperature/headwind sliders map to nearest preset or require Phase 4 API extension — confirm with user during plan review.
+4. **Sensitivity slider API mapping** — **RESOLVED:** Payload slider maps directly to `conditions.payload_lbs`. Temperature and headwind sliders map to discrete `weather_preset` enum (`ideal` / `hot` / `cold` / `headwind`) with UI disclosure label "preset mapping" per Plan 05 Task 3; continuous offset API fields deferred to Phase 5+ unless user requests during UAT.
 
 ## Environment Availability
 
