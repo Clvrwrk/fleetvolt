@@ -1,0 +1,8 @@
+fastapi[standard]==0.138.2
+alembic>=1.16,<1.17
+sqlalchemy==2.0.51
+geoalchemy2==0.20.0
+psycopg[binary,pool]==3.3.4
+pytest>=8,<9
+ruff>=0.15
+httpx>=0.28

@@ -1,0 +1,46 @@
+"""Pytest fixtures for FleetVolt simulator tests."""
+
+from __future__ import annotations
+
+import os
+
+import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session, sessionmaker
+
+DEFAULT_DATABASE_URL = (
+    "postgresql+psycopg://fleetvolt:fleetvolt@localhost:5432/fleetvolt_test"
+)
+
+
+def _database_url() -> str:
+    return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+
+
+@pytest.fixture(scope="session")
+def db_engine():
+    """Session-scoped SQLAlchemy engine; skips if database is unreachable."""
+    url = _database_url()
+    engine = create_engine(url, pool_pre_ping=True)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as exc:  # noqa: BLE001 — pytest skip gate
+        engine.dispose()
+        pytest.skip(f"DATABASE_URL unreachable ({url}): {exc}")
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def db_session(db_engine) -> Session:
+    """Transactional session rolled back after each test."""
+    connection = db_engine.connect()
+    transaction = connection.begin()
+    session = sessionmaker(bind=connection, expire_on_commit=False)()
+    try:
+        yield session
+    finally:
+        session.close()
+        transaction.rollback()
+        connection.close()

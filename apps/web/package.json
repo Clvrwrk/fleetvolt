@@ -1,0 +1,25 @@
+{
+  "name": "@fleetvolt/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port ${PORT:-3000}",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port ${PORT:-3000}",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.30.0",
+    "eslint-config-next": "16.2.9",
+    "typescript": "^6.0.3"
+  }
+}

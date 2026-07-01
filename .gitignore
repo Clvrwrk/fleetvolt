@@ -1,0 +1,13 @@
+data/raw/
+.env
+node_modules/
+__pycache__/
+*.py[cod]
+.turbo/
+dist/
+.next/
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/

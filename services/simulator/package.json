@@ -1,0 +1,10 @@
+{
+  "name": "@fleetvolt/simulator",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "ruff check . && ruff format --check .",
+    "test": "pytest -q",
+    "openapi:export": "node -e \"process.exit(0)\""
+  }
+}

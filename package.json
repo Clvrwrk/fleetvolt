@@ -1,0 +1,20 @@
+{
+  "name": "fleetvolt",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "codegen": "turbo run codegen"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "2.10.2",
+    "typescript": "^6.0.3"
+  }
+}

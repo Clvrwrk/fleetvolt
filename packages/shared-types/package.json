@@ -1,0 +1,13 @@
+{
+  "name": "@fleetvolt/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI-generated TypeScript types (codegen in Plan 06)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "codegen": "node -e \"process.exit(0)\""
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
