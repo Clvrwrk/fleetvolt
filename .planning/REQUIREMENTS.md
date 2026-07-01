@@ -33,12 +33,12 @@
 
 ### Charging
 
-- [ ] **CHRG-01**: System recommends charging stops when projected SoC drops below configurable threshold (default 15–20%)
-- [ ] **CHRG-02**: Charger search filters by minimum power tier (350+ kW MCS-aware) and HD accessibility
-- [ ] **CHRG-03**: System estimates charge dwell time using piecewise SOC-dependent charge curves (not linear kWh/kW)
-- [ ] **CHRG-04**: System returns feasibility verdict (Feasible / Critical / Infeasible) with SoC deficit if infeasible
-- [ ] **CHRG-05**: System tags feasibility tier (public_hd / depot_required / infrastructure_gap) not just binary pass/fail
-- [ ] **CHRG-06**: Balanced multi-objective charging optimization weighs time, energy, and cost tradeoffs
+- [x] **CHRG-01**: System recommends charging stops when projected SoC drops below configurable threshold (default 15–20%)
+- [x] **CHRG-02**: Charger search filters by minimum power tier (350+ kW MCS-aware) and HD accessibility
+- [x] **CHRG-03**: System estimates charge dwell time using piecewise SOC-dependent charge curves (not linear kWh/kW)
+- [x] **CHRG-04**: System returns feasibility verdict (Feasible / Critical / Infeasible) with SoC deficit if infeasible
+- [x] **CHRG-05**: System tags feasibility tier (public_hd / depot_required / infrastructure_gap) not just binary pass/fail
+- [x] **CHRG-06**: Balanced multi-objective charging optimization weighs time, energy, and cost tradeoffs
 
 ### Visualization
 
@@ -54,7 +54,7 @@
 - [ ] **SCEN-01**: User can run and compare 2+ scenarios side-by-side with diff on KPIs and stops
 - [ ] **SCEN-02**: User can adjust sensitivity sliders (payload, temperature, headwind) and see delta KPIs
 - [ ] **SCEN-03**: User can view corridor charging gap analysis highlighting stretches without qualifying chargers
-- [ ] **SCEN-04**: Simulation results stored immutably with input hash for cache replay and comparison
+- [x] **SCEN-04**: Simulation results stored immutably with input hash for cache replay and comparison
 
 ### Export & Reporting
 
@@ -73,7 +73,7 @@
 ### Platform & DevOps
 
 - [x] **PLAT-01**: Local development environment runs via Docker Compose (PostGIS, Redis, Valhalla, Python sim, Next.js, Fastify)
-- [ ] **PLAT-02**: Node Fastify API submits simulation jobs to Python FastAPI/Celery (correct queue boundary)
+- [x] **PLAT-02**: Node Fastify API submits simulation jobs to Python FastAPI/Celery (correct queue boundary)
 - [x] **PLAT-03**: CI runs lint, typecheck, and unit tests on physics validation reference cases
 - [ ] **PLAT-04**: Production deployment runs on VPS via Docker Compose with documented setup
 
@@ -142,13 +142,13 @@ Deferred to future release. Tracked but not in current roadmap.
 | ROUT-01 | Phase 2 | Complete |
 | ROUT-02 | Phase 2 | Complete |
 | ROUT-04 | Phase 2 | Complete |
-| CHRG-01 | Phase 3 | Pending |
-| CHRG-02 | Phase 3 | Pending |
-| CHRG-03 | Phase 3 | Pending |
-| CHRG-04 | Phase 3 | Pending |
-| CHRG-05 | Phase 3 | Pending |
-| CHRG-06 | Phase 3 | Pending |
-| PLAT-02 | Phase 3 | Pending |
+| CHRG-01 | Phase 3 | Complete |
+| CHRG-02 | Phase 3 | Complete |
+| CHRG-03 | Phase 3 | Complete |
+| CHRG-04 | Phase 3 | Complete |
+| CHRG-05 | Phase 3 | Complete |
+| CHRG-06 | Phase 3 | Complete |
+| PLAT-02 | Phase 3 | Complete |
 | MAP-01 | Phase 4 | Pending |
 | MAP-02 | Phase 4 | Pending |
 | MAP-03 | Phase 4 | Pending |
@@ -157,7 +157,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | MAP-06 | Phase 4 | Pending |
 | SCEN-01 | Phase 4 | Pending |
 | SCEN-02 | Phase 4 | Pending |
-| SCEN-04 | Phase 4 | Pending |
+| SCEN-04 | Phase 4 | Complete |
 | EXPR-01 | Phase 4 | Pending |
 | EXPR-02 | Phase 4 | Pending |
 | EXPR-03 | Phase 4 | Pending |

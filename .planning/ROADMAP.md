@@ -160,13 +160,13 @@ Plans:
   4. Simulation results are stored immutably with input hash for cache replay and comparison
   5. User can export full simulation profile as CSV/JSON and PDF report with map snapshot, assumptions table, physics parameter snapshot, and model version
 
-**Plans**: 8 plans
+**Plans**: 1/8 plans executed
 
 Plans:
 
 **Wave 0**
 
-- [ ] 04-00-PLAN.md — API poll audit metadata + routing proxy (SCEN-04)
+- [x] 04-00-PLAN.md — API poll audit metadata + routing proxy (SCEN-04)
 - [ ] 04-07-PLAN.md — Web deps, brand tokens, /status relocation, lib test scaffolds (SCEN-04)
 
 **Wave 1** *(blocked on Wave 0 completion — Plans 00 + 07)*
@@ -236,6 +236,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
 | 3. Charging & Job Pipeline | 5/5 | Complete    | 2026-07-01 |
-| 4. Analyst Dashboard & Export | 0/8 | Not started | - |
+| 4. Analyst Dashboard & Export | 1/8 | In Progress|  |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
 | 6. TCO Analysis & Production | 0/TBD | Not started | - |
