@@ -7,12 +7,15 @@ describe("useScenarioStore submitScenario", () => {
     mock.restoreAll();
     useScenarioStore.setState({
       formInputs: useScenarioStore.getState().formInputs,
+      corridors: [],
       activeJobId: null,
       pollResult: null,
       pollStatus: null,
       isPolling: false,
+      isRouteLoading: false,
       isCacheHit: false,
       error: null,
+      routeCoordinatesByJobId: {},
       abortController: null,
     });
   });

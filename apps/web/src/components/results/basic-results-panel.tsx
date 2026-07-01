@@ -1,12 +1,15 @@
 "use client";
 
 import type { components } from "@fleetvolt/shared-types";
+import { RouteMapDynamic } from "@/components/map/route-map-dynamic";
+import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { deriveKpiSummary } from "@/lib/kpi";
+import { useScenarioStore } from "@/stores/scenario-store";
 
 type SimulationJobPollResponse =
   components["schemas"]["SimulationJobPollResponse"];
@@ -17,6 +20,12 @@ type BasicResultsPanelProps = {
 
 export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
   const outputs = pollResult.outputs;
+  const jobId = pollResult.job_id;
+  const routeGeometry = useScenarioStore(
+    (s) => (jobId ? s.routeCoordinatesByJobId[jobId] : undefined),
+  );
+  const isRouteLoading = useScenarioStore((s) => s.isRouteLoading);
+
   if (!outputs) {
     return null;
   }
@@ -25,6 +34,9 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
   const verdictLabel = kpi.feasibilityVerdict
     ? kpi.feasibilityVerdict.replace(/_/g, " ")
     : "unknown";
+  const segments = outputs.segments ?? [];
+  const chargingStops = outputs.charging_stops ?? [];
+  const hasMapToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 
   return (
     <div className="space-y-6">
@@ -56,6 +68,24 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
             <dd className="mt-1 text-lg font-medium capitalize">{verdictLabel}</dd>
           </div>
         </dl>
+      </div>
+
+      <div className="min-h-[360px]" data-testid="results-map-panel">
+        {!hasMapToken ? (
+          <MapTokenMissingBanner />
+        ) : isRouteLoading || !routeGeometry ? (
+          <div
+            className="min-h-[360px] animate-pulse rounded-lg bg-[var(--fv-surface)]"
+            data-testid="route-map-loading"
+          />
+        ) : (
+          <RouteMapDynamic
+            segments={segments}
+            chargingStops={chargingStops}
+            routeCoords={routeGeometry.coordinates}
+            routeDistanceM={routeGeometry.distance_m}
+          />
+        )}
       </div>
 
       {pollResult.inputs_hash && (

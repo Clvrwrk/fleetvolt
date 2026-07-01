@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import type { components } from "@fleetvolt/shared-types";
 import { ScenarioForm } from "@/components/scenario/scenario-form";
 import { JobStatusBar } from "@/components/scenario/job-status-bar";
@@ -16,6 +17,11 @@ type WorkspaceLayoutProps = {
 
 export function WorkspaceLayout({ trucks, corridors }: WorkspaceLayoutProps) {
   const pollResult = useScenarioStore((s) => s.pollResult);
+  const setCorridors = useScenarioStore((s) => s.setCorridors);
+
+  useEffect(() => {
+    setCorridors(corridors);
+  }, [corridors, setCorridors]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--fv-bg)]">
@@ -34,7 +40,11 @@ export function WorkspaceLayout({ trucks, corridors }: WorkspaceLayoutProps) {
           <JobStatusBar />
         </aside>
 
-        <section className="fv-panel min-w-0 p-6" data-testid="results-canvas">
+        <section
+          className="fv-panel min-w-0 p-6"
+          data-testid="results-canvas"
+          id="results-canvas"
+        >
           {pollResult?.status === "COMPLETE" && pollResult.outputs ? (
             <BasicResultsPanel pollResult={pollResult} />
           ) : (
