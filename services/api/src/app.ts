@@ -209,6 +209,10 @@ export async function buildApp(options?: {
     return proxySimulatorGet(request, reply, "/v1/corridors");
   });
 
+  app.get("/v1/routing/route", async (request, reply) => {
+    return proxySimulatorGet(request, reply, "/v1/routing/route");
+  });
+
   app.get("/v1/physics/validation", async (request, reply) => {
     return proxySimulatorGet(request, reply, "/v1/physics/validation", 15000);
   });
