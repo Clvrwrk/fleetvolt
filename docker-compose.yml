@@ -47,7 +47,11 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
       VALHALLA_URL: http://valhalla:8002
+      NREL_API_KEY: ${NREL_API_KEY:-}
       PORT: "8000"
+      PYTHONPATH: /app:/data
+    volumes:
+      - ./data:/data
     depends_on:
       postgres:
         condition: service_healthy
