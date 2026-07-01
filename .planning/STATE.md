@@ -6,15 +6,15 @@ current_phase: 1
 current_phase_name: Foundation & Spatial Data
 status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-07-01T15:02:48.323Z"
+last_updated: "2026-07-01T15:35:00.000Z"
 last_activity: 2026-07-01
-last_activity_desc: Phase 1 execution started
+last_activity_desc: Completed 01-04 NREL charger ingest plan
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
-  percent: 0
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -29,25 +29,25 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 ## Current Position
 
 Phase: 1 (Foundation & Spatial Data) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-07-01 — Phase 1 execution started
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
+- Total plans completed: 4
 - Average duration: 30 min
-- Total execution time: 0.5 hours
+- Total execution time: 2.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 1 | 6 | 30 min |
+| 1 | 4 | 6 | 30 min |
 
 **Recent Trend:**
 
@@ -65,6 +65,8 @@ Recent decisions affecting current work:
 - Truck models: eCascadia 438 kWh + T680E 375 kWh
 - Emissions core in Phase 5; full TCO chart in Phase 6
 - Deployment: Docker Compose on VPS
+- NREL ingest uses per-connector kW from EV CCS Power Output, not station header max
+- hd_capable requires power >= 350 kW AND CCS/MCS connector per D-06
 
 ### Pending Todos
 
@@ -82,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-01T15:02:48.319Z
-Stopped at: Completed 01-01-PLAN.md
-Resume file: .planning/phases/01-foundation-spatial-data/01-02-PLAN.md
+Last session: 2026-07-01T15:35:00.000Z
+Stopped at: Completed 01-04-PLAN.md
+Resume file: .planning/phases/01-foundation-spatial-data/01-05-PLAN.md
