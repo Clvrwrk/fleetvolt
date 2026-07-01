@@ -10,7 +10,7 @@
 - [x] **DATA-01**: System ingests NHFN freight network shapefiles into PostGIS with spatial indexes for corridor queries
 - [x] **DATA-02**: System ingests NREL AFDC high-power chargers with kW, connector type, operator, and HD-accessibility metadata
 - [x] **DATA-03**: System seeds truck config library with eCascadia 438 kWh and T680E 375 kWh (usable kWh, regen %, aux kW, drag coeff, charge curves)
-- [ ] **DATA-04**: System caches elevation profiles per corridor in PostGIS (USGS 3DEP or Open-Elevation) with bridge artifact filtering
+- [x] **DATA-04**: System caches elevation profiles per corridor in PostGIS (USGS 3DEP or Open-Elevation) with bridge artifact filtering
 - [x] **DATA-05**: Charger database refreshable via scripted weekly update with freshness indicator in UI
 
 ### Physics & Simulation
@@ -74,7 +74,7 @@
 
 - [x] **PLAT-01**: Local development environment runs via Docker Compose (PostGIS, Redis, Valhalla, Python sim, Next.js, Fastify)
 - [ ] **PLAT-02**: Node Fastify API submits simulation jobs to Python FastAPI/Celery (correct queue boundary)
-- [ ] **PLAT-03**: CI runs lint, typecheck, and unit tests on physics validation reference cases
+- [x] **PLAT-03**: CI runs lint, typecheck, and unit tests on physics validation reference cases
 - [ ] **PLAT-04**: Production deployment runs on VPS via Docker Compose with documented setup
 
 ## v2 Requirements
@@ -127,10 +127,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Complete |
-| DATA-04 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
 | PLAT-01 | Phase 1 | Complete |
-| PLAT-03 | Phase 1 | Pending |
+| PLAT-03 | Phase 1 | Complete |
 | PHYS-01 | Phase 2 | Pending |
 | PHYS-02 | Phase 2 | Pending |
 | PHYS-03 | Phase 2 | Pending |

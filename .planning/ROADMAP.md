@@ -6,7 +6,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
 
 ## Phases
 
-- [ ] **Phase 1: Foundation & Spatial Data** - Docker Compose stack, PostGIS spatial truth, NHFN/chargers/trucks/elevation for POLB corridors
+- [x] **Phase 1: Foundation & Spatial Data** - Docker Compose stack, PostGIS spatial truth, NHFN/chargers/trucks/elevation for POLB corridors (completed 2026-07-01)
 - [ ] **Phase 2: Physics Simulation Core** - Segment physics, Valhalla truck routing, POLB/Cajon validation without charging UI
 - [ ] **Phase 3: Charging & Job Pipeline** - Rule-based charging stops, feasibility tiers, Fastify→FastAPI/Celery orchestration
 - [ ] **Phase 4: Analyst Dashboard & Export** - Interactive map, SoC charts, scenario comparison, CSV/JSON/PDF reports
@@ -29,7 +29,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
   4. eCascadia 438 kWh and T680E 375 kWh truck configs are seeded with usable kWh, regen %, aux kW, drag coeff, and charge curves
   5. Cached elevation profiles for POLB/Cajon corridors are available in PostGIS with bridge artifact filtering
 
-**Plans**: 5/6 plans executed
+**Plans**: 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -54,7 +54,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 01-06-PLAN.md — Elevation cache, OpenAPI codegen, GitHub Actions CI (DATA-04, PLAT-03)
+- [x] 01-06-PLAN.md — Elevation cache, OpenAPI codegen, GitHub Actions CI (DATA-04, PLAT-03)
 
 ### Phase 2: Physics Simulation Core
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Spatial Data | 5/6 | In Progress|  |
+| 1. Foundation & Spatial Data | 6/6 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 0/TBD | Not started | - |
 | 3. Charging & Job Pipeline | 0/TBD | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
