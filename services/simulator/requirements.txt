@@ -11,3 +11,5 @@ httpx>=0.28
 geopandas>=1.1,<1.2
 shapely>=2.1,<2.2
 requests>=2.31,<3
+celery[redis]==5.6.3
+redis>=5.0.2,<6.5

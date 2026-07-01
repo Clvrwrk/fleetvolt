@@ -59,6 +59,24 @@ services:
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
+  sim-worker:
+    build: ./services/simulator
+    command: celery -A app.worker worker -c 2 --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      VALHALLA_URL: http://valhalla:8002
+      PYTHONPATH: /app:/data
+    volumes:
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      simulator:
+        condition: service_started
+
   api:
     build:
       context: .
