@@ -3,6 +3,15 @@ type StackMeta = {
   table_counts: Record<string, number>;
 };
 
+type TruckSummary = {
+  id: number;
+  name: string;
+  nameplate_kwh: number;
+  usable_kwh: number;
+  version?: string;
+  source_notes?: string;
+};
+
 type ServiceStatus = {
   name: string;
   ok: boolean;
@@ -33,6 +42,35 @@ async function fetchStackMeta(): Promise<
   }
 }
 
+async function fetchTrucks(): Promise<
+  { ok: true; data: TruckSummary[] } | { ok: false; error: string }
+> {
+  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+  try {
+    const response = await fetch(`${apiUrl}/v1/trucks`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `API returned ${response.status}: ${await response.text()}`,
+      };
+    }
+    const data = (await response.json()) as TruckSummary[];
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function usablePct(truck: TruckSummary): string {
+  const pct = (truck.usable_kwh / truck.nameplate_kwh) * 100;
+  return `${pct.toFixed(1)}%`;
+}
+
 function Badge({ ok }: { ok: boolean }) {
   return (
     <span className={`badge ${ok ? "badge-ok" : "badge-bad"}`}>
@@ -42,7 +80,10 @@ function Badge({ ok }: { ok: boolean }) {
 }
 
 export default async function HomePage() {
-  const result = await fetchStackMeta();
+  const [result, trucksResult] = await Promise.all([
+    fetchStackMeta(),
+    fetchTrucks(),
+  ]);
 
   if (!result.ok) {
     return (
@@ -138,6 +179,38 @@ export default async function HomePage() {
               ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="card">
+        <h2>Truck configs</h2>
+        {trucksResult.ok ? (
+          trucksResult.data.length > 0 ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Usable / Nameplate</th>
+                  <th>Usable %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trucksResult.data.map((truck) => (
+                  <tr key={truck.id}>
+                    <td>{truck.name}</td>
+                    <td className="mono">
+                      {truck.usable_kwh} / {truck.nameplate_kwh} kWh
+                    </td>
+                    <td>{usablePct(truck)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No truck configs seeded yet. Run <code>python -m data.ingest.seed_trucks</code>.</p>
+          )
+        ) : (
+          <p className="error">Failed to load trucks: {trucksResult.error}</p>
+        )}
       </div>
     </main>
   );
