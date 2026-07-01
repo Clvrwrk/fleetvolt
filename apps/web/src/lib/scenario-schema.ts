@@ -46,3 +46,39 @@ export function toSimulateRequest(values: ScenarioFormValues): SimulateRequest {
     options: { include_charging: true },
   };
 }
+
+/** Maps temperature offset slider to discrete weather preset (A3). */
+export function weatherPresetFromTemperatureOffset(
+  offsetC: number,
+): ScenarioFormValues["weather_preset"] {
+  if (offsetC < -10) {
+    return "cold";
+  }
+  if (offsetC > 10) {
+    return "hot";
+  }
+  return "ideal";
+}
+
+/** Headwind ≥8 m/s maps to headwind preset; otherwise temperature mapping applies (A4). */
+export function weatherPresetFromSensitivity(
+  temperatureOffsetC: number,
+  headwindMs: number,
+): ScenarioFormValues["weather_preset"] {
+  if (headwindMs >= 8) {
+    return "headwind";
+  }
+  return weatherPresetFromTemperatureOffset(temperatureOffsetC);
+}
+
+export function clampPayloadLbs(lbs: number): number {
+  return Math.min(80000, Math.max(20000, Math.round(lbs)));
+}
+
+export function payloadLbsFromAdjustmentPercent(
+  baselineLbs: number,
+  adjustmentPercent: number,
+): number {
+  const adjusted = baselineLbs * (1 + adjustmentPercent / 100);
+  return clampPayloadLbs(adjusted);
+}
