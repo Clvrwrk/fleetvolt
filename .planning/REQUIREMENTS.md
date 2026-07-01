@@ -72,7 +72,7 @@
 
 ### Platform & DevOps
 
-- [ ] **PLAT-01**: Local development environment runs via Docker Compose (PostGIS, Redis, Valhalla, Python sim, Next.js, Fastify)
+- [x] **PLAT-01**: Local development environment runs via Docker Compose (PostGIS, Redis, Valhalla, Python sim, Next.js, Fastify)
 - [ ] **PLAT-02**: Node Fastify API submits simulation jobs to Python FastAPI/Celery (correct queue boundary)
 - [ ] **PLAT-03**: CI runs lint, typecheck, and unit tests on physics validation reference cases
 - [ ] **PLAT-04**: Production deployment runs on VPS via Docker Compose with documented setup
@@ -129,7 +129,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-03 | Phase 1 | Pending |
 | DATA-04 | Phase 1 | Pending |
 | DATA-05 | Phase 1 | Pending |
-| PLAT-01 | Phase 1 | Pending |
+| PLAT-01 | Phase 1 | Complete |
 | PLAT-03 | Phase 1 | Pending |
 | PHYS-01 | Phase 2 | Pending |
 | PHYS-02 | Phase 2 | Pending |
@@ -171,6 +171,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | PLAT-04 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 45 total
 - Mapped to phases: 45
 - Unmapped: 0 ✓
