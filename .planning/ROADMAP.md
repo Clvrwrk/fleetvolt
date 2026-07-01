@@ -84,13 +84,13 @@ Plans:
   4. Physics validation passes ±8–12% MAPE on OEM reference test cases
   5. Class 8 truck routes generate via Valhalla with height/weight/axle restrictions; POLB terminal presets and corridor pairs are selectable; single scenario completes in <10s p95
 
-**Plans**: 5 plans
+**Plans**: 1/5 plans executed
 
 Plans:
 
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Physics engine core, SoC integration, 10-mile segmentation, OEM reference fixtures (PHYS-02, PHYS-03, PHYS-05)
+- [x] 02-01-PLAN.md — Physics engine core, SoC integration, 10-mile segmentation, OEM reference fixtures (PHYS-02, PHYS-03, PHYS-05)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -180,7 +180,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
-| 2. Physics Simulation Core | 0/4 | Not started | - |
+| 2. Physics Simulation Core | 1/5 | In Progress|  |
 | 3. Charging & Job Pipeline | 0/TBD | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
