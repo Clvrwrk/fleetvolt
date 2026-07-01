@@ -27,10 +27,18 @@ services:
 
   valhalla:
     image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    environment:
+      tile_urls: ""
     volumes:
       - ./data/valhalla/custom_files:/custom_files
     ports:
       - "8002:8002"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/status"]
+      interval: 60s
+      timeout: 10s
+      retries: 10
+      start_period: 3600s
 
   simulator:
     build: ./services/simulator
@@ -38,6 +46,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
+      VALHALLA_URL: http://valhalla:8002
       PORT: "8000"
     depends_on:
       postgres:
