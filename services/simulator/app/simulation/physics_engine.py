@@ -64,26 +64,35 @@ def segment_forces(
     truck: TruckParams,
     *,
     temp_c: float = 20.0,
+    rho: float | None = None,
+    headwind_mph: float = 0.0,
+    thermal_factor: float = 1.0,
     aux_kw: float | np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute traction and auxiliary power (W) for batch segments."""
     _ = np.asarray(dist_m, dtype=np.float64)  # reserved for future distance-weighted aux
     grade = np.asarray(grade_pct, dtype=np.float64)
     speed = np.asarray(speed_mph, dtype=np.float64)
-    rho = air_density(temp_c)
+    rho_val = float(rho) if rho is not None else air_density(temp_c)
 
-    f_roll, f_aero, f_grade = force_components(
+    f_roll, _, f_grade = force_components(
         grade,
         speed,
         truck.mass_kg,
         truck.C_rr,
         truck.drag_coefficient,
         truck.frontal_area_m2,
-        rho,
+        rho_val,
     )
+    v_eff = (speed + headwind_mph) * MPS_PER_MPH
+    f_aero = 0.5 * rho_val * truck.drag_coefficient * truck.frontal_area_m2 * v_eff**2
     f_traction = f_roll + f_aero + f_grade
     v = speed * MPS_PER_MPH
     p_traction = f_traction * v
+
+    if thermal_factor > 0 and thermal_factor != 1.0:
+        discharge_mask = p_traction > 0
+        p_traction = np.where(discharge_mask, p_traction / thermal_factor, p_traction)
 
     if aux_kw is None:
         aux_w = np.full_like(p_traction, truck.aux_kw_base * 1000.0)

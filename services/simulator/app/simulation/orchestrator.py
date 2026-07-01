@@ -17,17 +17,18 @@ from app.simulation.elevation_service import ElevationService, ElevationServiceE
 from app.simulation.kpi_aggregator import aggregate_kpis
 from app.simulation.physics_engine import TruckParams, segment_forces
 from app.simulation.route_provider import RouteProvider
+from app.simulation.port_drayage import apply_port_drayage
 from app.simulation.schemas import (
     ConditionsSpec,
     KpiResult,
     SegmentResult,
     SimulateRequest,
     SimulateResponse,
-    WeatherPreset,
 )
 from app.simulation.segment_builder import build_segments
 from app.simulation.soc_integrator import integrate_soc
 from app.simulation.speed_resolver import TruckSpeedParams, resolve_speeds
+from app.simulation.weather import apply_weather
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +45,6 @@ DISCLAIMER = (
     "Results depend on OEM assumptions, cached elevation, and posted speed limits. "
     "Verify against manufacturer claims before stakeholder decisions."
 )
-
-WEATHER_TEMP_C: dict[WeatherPreset, float] = {
-    WeatherPreset.ideal: 20.0,
-    WeatherPreset.hot: 35.0,
-    WeatherPreset.cold: 0.0,
-    WeatherPreset.headwind: 20.0,
-}
 
 
 def _load_corridor_fixture(corridor_key: str) -> dict[str, Any]:
@@ -169,7 +163,7 @@ def run_simulation(
 
     origin_lat, origin_lon, dest_lat, dest_lon, corridor_key = _resolve_endpoints(request)
     truck = _load_truck_params(db, request.truck.slug, request.conditions)
-    temp_c = WEATHER_TEMP_C[request.conditions.weather_preset]
+    weather = apply_weather(truck, request.conditions)
 
     try:
         if corridor_key:
@@ -215,8 +209,23 @@ def run_simulation(
     grade_pct = np.array([s["grade_pct"] for s in raw_segments], dtype=np.float64)
     speed_arr = np.array(speed_mph, dtype=np.float64)
 
+    aux_kw = np.full(len(raw_segments), truck.aux_kw_base * weather.aux_mult, dtype=np.float64)
+    speed_arr, aux_kw = apply_port_drayage(
+        raw_segments,
+        speed_arr,
+        aux_kw,
+        enabled=request.conditions.port_drayage_enabled,
+    )
+
     p_traction, p_aux = segment_forces(
-        dist_m, grade_pct, speed_arr, truck, temp_c=temp_c,
+        dist_m,
+        grade_pct,
+        speed_arr,
+        truck,
+        rho=weather.rho,
+        headwind_mph=weather.headwind_mph,
+        thermal_factor=weather.thermal_factor,
+        aux_kw=aux_kw,
     )
     soc_result = integrate_soc(p_traction, p_aux, dist_m, speed_arr, truck)
     kpis_raw = aggregate_kpis(
@@ -248,6 +257,7 @@ def run_simulation(
             "elevation_source": elev_result.source,
             "segment_count": len(segments),
             "weather_preset": request.conditions.weather_preset.value,
+            "port_drayage_enabled": request.conditions.port_drayage_enabled,
             "payload_lbs": request.conditions.payload_lbs,
         },
     )

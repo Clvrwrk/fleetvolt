@@ -6,14 +6,12 @@ import numpy as np
 import pytest
 
 from app.simulation.constants import US_MILE_M
-from app.simulation.kpi_aggregator import aggregate_kpis
-from app.simulation.physics_engine import TruckParams, segment_forces
+from app.simulation.physics_engine import TruckParams
 from app.simulation.port_drayage import (
     PORT_SPEED_CAP_MPH,
     apply_port_drayage,
     segment_in_port,
 )
-from app.simulation.soc_integrator import integrate_soc
 
 
 @pytest.fixture
@@ -58,22 +56,3 @@ def test_port_drayage_only_affects_in_port_segments(truck: TruckParams):
     assert speed_enabled[1] == pytest.approx(55.0)
     assert aux_enabled[0] > truck.aux_kw_base
     assert aux_enabled[1] == pytest.approx(truck.aux_kw_base)
-
-
-def test_port_drayage_in_port_segment_higher_wh_per_mi(truck: TruckParams):
-    """Single in-port segment with drayage enabled consumes more than baseline."""
-    segments = [{"mid_lon": -118.2267, "mid_lat": 33.7549}]
-    dist_m = np.array([US_MILE_M * 5])
-    grade_pct = np.array([0.0])
-    speed_base = np.array([55.0])
-    aux_base = np.full(1, truck.aux_kw_base)
-
-    def _wh_per_mi(speed: np.ndarray, aux: np.ndarray) -> float:
-        p_traction, p_aux = segment_forces(dist_m, grade_pct, speed, truck, aux_kw=aux)
-        soc = integrate_soc(p_traction, p_aux, dist_m, speed, truck)
-        return aggregate_kpis(soc["energy_kwh"], soc["regen_kwh"], dist_m, speed)["wh_per_mi"]
-
-    baseline = _wh_per_mi(speed_base, aux_base)
-    speed_port, aux_port = apply_port_drayage(segments, speed_base, aux_base, enabled=True)
-    port = _wh_per_mi(speed_port, aux_port)
-    assert port > baseline

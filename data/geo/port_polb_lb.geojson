@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "name": "port_polb_lb",
+  "description": "Simplified POLB/Long Beach harbor boundary for geo-fenced drayage profile (D-10). Digitized from public harbor GIS — approximate terminal basin extent.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "POLB/LB Harbor Basin",
+        "source": "FleetVolt simplified boundary for Phase 2 drayage geo-fence"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-118.285, 33.732],
+            [-118.170, 33.732],
+            [-118.170, 33.768],
+            [-118.285, 33.768],
+            [-118.285, 33.732]
+          ]
+        ]
+      }
+    }
+  ]
+}
