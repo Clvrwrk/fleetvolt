@@ -69,6 +69,63 @@ def _geojson_to_lon_lat_pairs(shape: object) -> list[list[float]]:
     return coordinates
 
 
+def _decode_polyline(encoded: str, precision: int = 6) -> list[list[float]]:
+    """Decode Valhalla/Google encoded polyline to GeoJSON [lon, lat] pairs."""
+    factor = 10**precision
+    coordinates: list[list[float]] = []
+    index = 0
+    lat = 0
+    lon = 0
+    length = len(encoded)
+
+    while index < length:
+        shift = 0
+        result = 0
+        while True:
+            if index >= length:
+                break
+            byte = ord(encoded[index]) - 63
+            index += 1
+            result |= (byte & 0x1F) << shift
+            shift += 5
+            if byte < 0x20:
+                break
+        delta_lat = ~(result >> 1) if (result & 1) else (result >> 1)
+        lat += delta_lat
+
+        shift = 0
+        result = 0
+        while True:
+            if index >= length:
+                break
+            byte = ord(encoded[index]) - 63
+            index += 1
+            result |= (byte & 0x1F) << shift
+            shift += 5
+            if byte < 0x20:
+                break
+        delta_lon = ~(result >> 1) if (result & 1) else (result >> 1)
+        lon += delta_lon
+
+        coordinates.append([lon / factor, lat / factor])
+
+    return coordinates
+
+
+def _leg_coordinates(leg: dict) -> tuple[list[list[float]], str | None]:
+    shape = leg.get("shape")
+    encoded_polyline = leg.get("encoded_polyline")
+
+    if isinstance(shape, str):
+        return _decode_polyline(shape), shape
+    if isinstance(shape, dict):
+        coords = shape.get("coordinates")
+        if isinstance(coords, list):
+            return _geojson_to_lon_lat_pairs(coords), encoded_polyline
+    coordinates = _geojson_to_lon_lat_pairs(shape)
+    return coordinates, encoded_polyline
+
+
 @router.get("/route", response_model=RouteResponse)
 def get_route(
     origin_lat: Annotated[float, Query(description="Origin latitude")],
@@ -120,9 +177,7 @@ def get_route(
         distance_m = float(summary["length"]) * 1000.0
         duration_s = float(summary["time"])
         leg = trip["legs"][0]
-        shape = leg.get("shape")
-        encoded_polyline = leg.get("encoded_polyline")
-        coordinates = _geojson_to_lon_lat_pairs(shape)
+        coordinates, encoded_polyline = _leg_coordinates(leg)
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=502,
