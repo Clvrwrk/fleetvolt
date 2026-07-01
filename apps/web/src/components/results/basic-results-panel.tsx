@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MapRef } from "react-map-gl/mapbox";
 import type { components } from "@fleetvolt/shared-types";
 import { KpiCardRow } from "@/components/kpi/kpi-card-row";
@@ -30,10 +30,39 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
   const jobId = pollResult.job_id;
   const mapRef = useRef<MapRef | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  const registerMapSnapshotCapture = useScenarioStore(
+    (s) => s.registerMapSnapshotCapture,
+  );
   const routeGeometry = useScenarioStore(
     (s) => (jobId ? s.routeCoordinatesByJobId[jobId] : undefined),
   );
   const isRouteLoading = useScenarioStore((s) => s.isRouteLoading);
+  const hasMapToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
+
+  useEffect(() => {
+    if (!hasMapToken || !routeGeometry) {
+      registerMapSnapshotCapture(null);
+      return;
+    }
+
+    registerMapSnapshotCapture(async () => {
+      const map = mapRef.current?.getMap();
+      if (!map) {
+        return null;
+      }
+
+      return new Promise((resolve) => {
+        map.once("idle", () => {
+          resolve(map.getCanvas().toDataURL("image/png"));
+        });
+        map.triggerRepaint();
+      });
+    });
+
+    return () => {
+      registerMapSnapshotCapture(null);
+    };
+  }, [hasMapToken, registerMapSnapshotCapture, routeGeometry]);
 
   if (!outputs) {
     return null;
@@ -41,7 +70,6 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
 
   const segments = outputs.segments ?? [];
   const chargingStops = outputs.charging_stops ?? [];
-  const hasMapToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 
   const handleStopSelect = (stop: ChargingStop) => {
     const index = chargingStops.indexOf(stop);

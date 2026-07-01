@@ -65,6 +65,7 @@ type ScenarioStore = {
   isSensitivityUpdating: boolean;
   sensitivityPollSequence: number;
   sensitivityDeltaKpis: SensitivityDeltaKpis | null;
+  captureMapSnapshot: (() => Promise<string | null>) | null;
   setFormInputs: (inputs: Partial<ScenarioFormValues>) => void;
   setActiveDistanceM: (distanceM: number | null) => void;
   getActiveSegmentIndex: () => number;
@@ -76,6 +77,9 @@ type ScenarioStore = {
   submitScenario: () => Promise<void>;
   submitSensitivityRun: (body: SimulateRequest) => Promise<void>;
   resetError: () => void;
+  registerMapSnapshotCapture: (
+    capture: (() => Promise<string | null>) | null,
+  ) => void;
 };
 
 const COMPARISON_LABELS: ComparisonLabel[] = ["A", "B", "C"];
@@ -353,6 +357,12 @@ export const useScenarioStore = create<ScenarioStore>()(
     isSensitivityUpdating: false,
     sensitivityPollSequence: 0,
     sensitivityDeltaKpis: null,
+    captureMapSnapshot: null,
+
+    registerMapSnapshotCapture: (capture) =>
+      set((state) => {
+        state.captureMapSnapshot = capture;
+      }),
 
     setFormInputs: (inputs) =>
       set((state) => {

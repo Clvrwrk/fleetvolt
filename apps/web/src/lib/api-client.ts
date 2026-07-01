@@ -7,6 +7,7 @@ type SimulationJobPollResponse =
 type SimulateRequest = components["schemas"]["SimulateRequest"];
 type CorridorsResponse = components["schemas"]["CorridorsResponse"];
 type TruckConfigSummary = components["schemas"]["TruckConfigSummary"];
+type PdfExportRequest = components["schemas"]["PdfExportRequest"];
 
 const base = "/api/v1";
 
@@ -53,4 +54,18 @@ export async function getTrucks(): Promise<TruckConfigSummary[]> {
 export async function getCorridors(): Promise<CorridorsResponse> {
   const res = await fetch(`${base}/corridors`);
   return parseJson(res);
+}
+
+export async function postPdfExport(body: PdfExportRequest): Promise<Blob> {
+  const res = await fetch(`${base}/exports/pdf`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error(`API ${res.status}: ${await res.text()}`);
+  }
+
+  return res.blob();
 }

@@ -8,6 +8,7 @@ import { SensitivitySliders } from "@/components/scenario/sensitivity-sliders";
 import { JobStatusBar } from "@/components/scenario/job-status-bar";
 import { BasicResultsPanel } from "@/components/results/basic-results-panel";
 import { Badge } from "@/components/ui/badge";
+import { ExportMenu } from "@/components/export/export-menu";
 import { useScenarioStore } from "@/stores/scenario-store";
 
 type TruckConfigSummary = components["schemas"]["TruckConfigSummary"];
@@ -31,9 +32,12 @@ export function WorkspaceLayout({ trucks, corridors }: WorkspaceLayoutProps) {
     <div className="flex min-h-screen flex-col bg-[var(--fv-bg)]">
       <header className="flex h-14 items-center justify-between border-b border-[var(--fv-stroke)] px-6">
         <h1 className="text-xl font-medium tracking-tight">FleetVolt Route</h1>
-        <Badge variant="outline" data-testid="compare-header-badge">
-          Compare {comparisonCount}/3
-        </Badge>
+        <div className="flex items-center gap-4">
+          <ExportMenu />
+          <Badge variant="outline" data-testid="compare-header-badge">
+            Compare {comparisonCount}/3
+          </Badge>
+        </div>
       </header>
 
       <div className="grid flex-1 grid-cols-[320px_1fr] gap-6 p-6">
