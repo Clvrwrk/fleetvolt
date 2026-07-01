@@ -22,6 +22,18 @@ from app.simulation.route_provider import RouteGeometry  # noqa: E402
 
 SEGMENT_KEYS = ("dist_m", "grade", "speed", "energy_kwh", "soc_pct")
 KPI_KEYS = ("total_kwh", "wh_per_mi", "regen_kwh", "total_time_s")
+CHARGING_STOP_KEYS = (
+    "station_id",
+    "lat",
+    "lon",
+    "power_kw",
+    "arrival_soc_pct",
+    "departure_soc_pct",
+    "dwell_s",
+    "energy_added_kwh",
+    "detour_s",
+)
+FEASIBILITY_KEYS = ("verdict", "tier", "stop_count")
 
 MOCK_ROUTE = RouteGeometry(
     distance_m=50_000.0,
@@ -110,7 +122,7 @@ def _custom_od_body() -> dict:
     }
 
 
-def _assert_simulate_response(body: dict) -> None:
+def _assert_simulate_response(body: dict, *, include_charging: bool = False) -> None:
     assert "segments" in body
     assert len(body["segments"]) > 0
     for segment in body["segments"]:
@@ -119,14 +131,33 @@ def _assert_simulate_response(body: dict) -> None:
     assert "kpis" in body
     for key in KPI_KEYS:
         assert key in body["kpis"], f"missing kpi key {key}"
-    assert "charging_stops" not in body
+    assert "disclaimer" in body
+    assert body["disclaimer"]
+    assert "assumptions" in body
+    assert isinstance(body["assumptions"], list)
     assert "job_id" not in body
+
+    if include_charging:
+        assert "charging_stops" in body
+        assert isinstance(body["charging_stops"], list)
+        for stop in body["charging_stops"]:
+            for key in CHARGING_STOP_KEYS:
+                assert key in stop, f"missing charging stop key {key}"
+        assert "feasibility" in body
+        feasibility = body["feasibility"]
+        for key in FEASIBILITY_KEYS:
+            assert key in feasibility, f"missing feasibility key {key}"
+        assert feasibility["verdict"] in {"feasible", "critical", "infeasible"}
+        assert feasibility["tier"] in {"public_hd", "depot_required", "infrastructure_gap"}
+    else:
+        assert "charging_stops" not in body or body.get("charging_stops") in (None, [])
+        assert "feasibility" not in body or body.get("feasibility") is None
 
 
 def test_simulate_corridor_preset_happy_path(client: TestClient):
     response = client.post("/v1/simulate", json=_corridor_body())
     assert response.status_code == 200, response.text
-    _assert_simulate_response(response.json())
+    _assert_simulate_response(response.json(), include_charging=False)
 
 
 def test_simulate_custom_od_happy_path(client: TestClient, monkeypatch: pytest.MonkeyPatch):
@@ -148,7 +179,7 @@ def test_simulate_custom_od_happy_path(client: TestClient, monkeypatch: pytest.M
 
     response = client.post("/v1/simulate", json=_custom_od_body())
     assert response.status_code == 200, response.text
-    _assert_simulate_response(response.json())
+    _assert_simulate_response(response.json(), include_charging=False)
 
 
 def test_overrides_audit(client: TestClient):
@@ -198,3 +229,39 @@ def test_overrides_defaults_oem_assumptions(client: TestClient):
     fields = {a["field"] for a in assumptions}
     assert "C_rr" in fields
     assert "usable_kwh" in fields
+
+
+def test_simulate_with_charging_enabled(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """POST polb_cajon_pass with include_charging=true returns charging_stops and feasibility."""
+    monkeypatch.setattr(
+        "app.simulation.charging_planner.search_hd_chargers",
+        lambda db, lat, lon, radius_m: [],
+    )
+    monkeypatch.setattr(
+        "app.simulation.charging_planner.detour_seconds",
+        lambda *a, **k: 9999.0,
+    )
+
+    body = _corridor_body()
+    body["options"] = {"include_charging": True}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    _assert_simulate_response(payload, include_charging=True)
+    assert payload["feasibility"]["verdict"] in {"feasible", "critical", "infeasible"}
+
+
+def test_simulate_charging_disabled_parity(client: TestClient):
+    """POST with include_charging=false preserves Phase 2 segment shape without charging fields."""
+    body = _corridor_body()
+    body["options"] = {"include_charging": False}
+    response = client.post("/v1/simulate", json=body)
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    _assert_simulate_response(payload, include_charging=False)
+    for segment in payload["segments"]:
+        assert set(segment.keys()) >= set(SEGMENT_KEYS)
+        assert "charging_event" not in segment or segment.get("charging_event") is False
