@@ -1,7 +1,10 @@
 data/raw/*
 !data/raw/nrel/
+!data/raw/elevation/
 data/raw/nrel/*
 !data/raw/nrel/chargers_sample.csv
+data/raw/elevation/*
+!data/raw/elevation/sample_profile.json
 .env
 node_modules/
 __pycache__/
