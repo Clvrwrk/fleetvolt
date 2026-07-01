@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { components } from "@fleetvolt/shared-types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

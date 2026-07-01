@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Map, {
   Layer,
   Popup,
@@ -34,6 +34,8 @@ export type RouteMapProps = {
   routeCoords: [number, number][];
   routeDistanceM?: number;
   mapRef?: React.RefObject<MapRef | null>;
+  selectedStopId?: string | null;
+  onSelectStop?: (stopId: string | null) => void;
 };
 
 type SelectedStop = ChargingStop & { id: string };
@@ -44,17 +46,46 @@ function formatDwellMinutes(dwellS: number): string {
   return `${Math.round(dwellS / 60)} min`;
 }
 
+function stopKey(stop: ChargingStop, index: number): string {
+  return stop.station_id || String(index);
+}
+
 export function RouteMap({
   segments,
   chargingStops,
   routeCoords,
   routeDistanceM = 0,
   mapRef,
+  selectedStopId,
+  onSelectStop,
 }: RouteMapProps) {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const [selectedStop, setSelectedStop] = useState<SelectedStop | null>(null);
   const setActiveDistanceM = useScenarioStore((s) => s.setActiveDistanceM);
   const activeDistanceM = useScenarioStore((s) => s.activeDistanceM);
+
+  useEffect(() => {
+    if (selectedStopId == null) {
+      setSelectedStop(null);
+      return;
+    }
+
+    const index = chargingStops.findIndex(
+      (stop, idx) => stopKey(stop, idx) === selectedStopId,
+    );
+    const stop = chargingStops[index];
+    if (!stop) {
+      setSelectedStop(null);
+      return;
+    }
+
+    setSelectedStop({
+      ...stop,
+      id: selectedStopId,
+      name: stop.name ?? "Charging stop",
+      station_id: stop.station_id || selectedStopId,
+    });
+  }, [chargingStops, selectedStopId]);
   const activeSegmentIndex = useMemo(
     () =>
       activeDistanceM == null
@@ -149,9 +180,10 @@ export function RouteMap({
       if (feature?.layer?.id === "charger-circles" && feature.properties) {
         event.originalEvent.stopPropagation();
         const props = feature.properties;
-        setSelectedStop({
-          id: String(feature.id ?? props.name),
-          station_id: String(feature.id ?? props.name),
+        const stopId = String(feature.id ?? props.name);
+        const nextStop: SelectedStop = {
+          id: stopId,
+          station_id: stopId,
           name: String(props.name),
           lat: (feature.geometry as GeoJSON.Point).coordinates[1]!,
           lon: (feature.geometry as GeoJSON.Point).coordinates[0]!,
@@ -161,13 +193,16 @@ export function RouteMap({
           dwell_s: Number(props.dwell_s),
           energy_added_kwh: 0,
           detour_s: 0,
-        });
+        };
+        setSelectedStop(nextStop);
+        onSelectStop?.(stopId);
         return;
       }
 
       setSelectedStop(null);
+      onSelectStop?.(null);
     },
-    [],
+    [onSelectStop],
   );
 
   const onMapMouseMove = useCallback(
