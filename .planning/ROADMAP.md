@@ -29,7 +29,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
   4. eCascadia 438 kWh and T680E 375 kWh truck configs are seeded with usable kWh, regen %, aux kW, drag coeff, and charge curves
   5. Cached elevation profiles for POLB/Cajon corridors are available in PostGIS with bridge artifact filtering
 
-**Plans**: 6/6 plans complete
+**Plans**: 7/9 plans executed
 
 Plans:
 **Wave 1**
@@ -55,6 +55,20 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [x] 01-06-PLAN.md — Elevation cache, OpenAPI codegen, GitHub Actions CI (DATA-04, PLAT-03)
+
+**Gap closure** *(from 01-VERIFICATION.md — gaps_found)*
+
+**Wave 1** *(gap closure)*
+
+- [x] 01-07-PLAN.md — Build SoCal OSM PBF locally, Makefile/verify tooling, Valhalla tile-build checkpoint (PLAT-01, D-14)
+
+**Wave 2** *(gap closure; blocked on 01-07)*
+
+- [ ] 01-08-PLAN.md — Prove POLB→San Bernardino truck route via integration test + verify script (PLAT-01)
+
+**Wave 3** *(gap closure; blocked on 01-07, 01-08)*
+
+- [ ] 01-09-PLAN.md — Full stack runtime smoke + GitHub Actions CI green checkpoints (PLAT-01, PLAT-03)
 
 ### Phase 2: Physics Simulation Core
 
@@ -143,7 +157,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Spatial Data | 6/6 | Complete   | 2026-07-01 |
+| 1. Foundation & Spatial Data | 7/9 | In Progress|  |
 | 2. Physics Simulation Core | 0/TBD | Not started | - |
 | 3. Charging & Job Pipeline | 0/TBD | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
