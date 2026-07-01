@@ -29,7 +29,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
   4. eCascadia 438 kWh and T680E 375 kWh truck configs are seeded with usable kWh, regen %, aux kW, drag coeff, and charge curves
   5. Cached elevation profiles for POLB/Cajon corridors are available in PostGIS with bridge artifact filtering
 
-**Plans**: 1/6 plans executed
+**Plans**: 2/6 plans executed
 
 Plans:
 **Wave 1**
@@ -42,7 +42,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — Truck config seeds eCascadia/T680E and list API (DATA-03)
+- [x] 01-03-PLAN.md — Truck config seeds eCascadia/T680E and list API (DATA-03)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Spatial Data | 1/6 | In Progress|  |
+| 1. Foundation & Spatial Data | 2/6 | In Progress|  |
 | 2. Physics Simulation Core | 0/TBD | Not started | - |
 | 3. Charging & Job Pipeline | 0/TBD | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |

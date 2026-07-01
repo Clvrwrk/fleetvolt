@@ -9,7 +9,7 @@
 
 - [ ] **DATA-01**: System ingests NHFN freight network shapefiles into PostGIS with spatial indexes for corridor queries
 - [ ] **DATA-02**: System ingests NREL AFDC high-power chargers with kW, connector type, operator, and HD-accessibility metadata
-- [ ] **DATA-03**: System seeds truck config library with eCascadia 438 kWh and T680E 375 kWh (usable kWh, regen %, aux kW, drag coeff, charge curves)
+- [x] **DATA-03**: System seeds truck config library with eCascadia 438 kWh and T680E 375 kWh (usable kWh, regen %, aux kW, drag coeff, charge curves)
 - [ ] **DATA-04**: System caches elevation profiles per corridor in PostGIS (USGS 3DEP or Open-Elevation) with bridge artifact filtering
 - [ ] **DATA-05**: Charger database refreshable via scripted weekly update with freshness indicator in UI
 
@@ -126,7 +126,7 @@ Deferred to future release. Tracked but not in current roadmap.
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Pending |
 | DATA-05 | Phase 1 | Pending |
 | PLAT-01 | Phase 1 | Complete |
