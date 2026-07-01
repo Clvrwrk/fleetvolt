@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import os
 import sys
+import time
 import uuid
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -27,6 +30,11 @@ from app.simulation.inputs_hash import (  # noqa: E402
 )
 from app.simulation.route_provider import RouteGeometry  # noqa: E402
 from app.worker import execute_simulation_run  # noqa: E402
+
+API_URL = os.environ.get("API_URL", "http://localhost:4000")
+SIMULATOR_URL = os.environ.get("SIMULATOR_URL", "http://localhost:8000")
+POLL_TIMEOUT_S = 120
+POLL_INTERVAL_S = 2.0
 
 MOCK_ROUTE = RouteGeometry(
     distance_m=50_000.0,
@@ -62,6 +70,14 @@ def _corridor_inputs() -> dict:
         "overrides": {},
         "options": {"include_charging": True},
     }
+
+
+def _api_reachable() -> bool:
+    try:
+        response = httpx.get(f"{API_URL}/health", timeout=3.0)
+        return response.status_code == 200
+    except httpx.HTTPError:
+        return False
 
 
 @pytest.fixture
@@ -226,3 +242,56 @@ def test_enqueue_to_worker_lifecycle(client: TestClient, simulate_db):
         json={"inputs": _corridor_inputs()},
     )
     assert response.status_code == 200
+
+
+@pytest.mark.integration
+def test_async_submit_poll_complete():
+    """Fastify POST/GET async lifecycle — requires API, simulator, worker stack."""
+    if not _api_reachable():
+        pytest.skip(f"API unreachable at {API_URL}")
+
+    submit = httpx.post(
+        f"{API_URL}/v1/simulations",
+        json=_corridor_inputs(),
+        timeout=30.0,
+    )
+    assert submit.status_code == 200, submit.text
+    payload = submit.json()
+    assert "job_id" in payload
+    assert payload["status"] in {"PENDING", "COMPLETE"}
+
+    if payload["status"] == "COMPLETE":
+        outputs = payload.get("outputs") or {}
+    else:
+        job_id = payload["job_id"]
+        deadline = time.monotonic() + POLL_TIMEOUT_S
+        outputs = None
+        last_status = payload["status"]
+
+        while time.monotonic() < deadline:
+            poll = httpx.get(
+                f"{API_URL}/v1/simulations/{job_id}",
+                timeout=15.0,
+            )
+            assert poll.status_code == 200, poll.text
+            poll_payload = poll.json()
+            last_status = poll_payload["status"]
+
+            if last_status == "COMPLETE":
+                outputs = poll_payload.get("outputs") or {}
+                break
+            if last_status == "FAILED":
+                pytest.fail(f"Async job failed: {poll_payload.get('error')}")
+
+            time.sleep(POLL_INTERVAL_S)
+
+        assert outputs is not None, f"Timed out waiting for COMPLETE (last={last_status})"
+
+    assert "segments" in outputs
+    assert "charging_stops" in outputs
+    assert "feasibility" in outputs
+    assert outputs["feasibility"]["verdict"] in {
+        "feasible",
+        "critical",
+        "infeasible",
+    }
