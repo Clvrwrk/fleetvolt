@@ -1,8 +1,18 @@
 import type { components } from "@fleetvolt/shared-types";
+import type { RouteCoordinates } from "./route-geometry.js";
 
 type Segment = components["schemas"]["SegmentResult"];
 
 export type MapboxExpression = unknown[];
+
+export type RouteGeoJsonFeature = {
+  type: "Feature";
+  properties: Record<string, never>;
+  geometry: {
+    type: "LineString";
+    coordinates: RouteCoordinates;
+  };
+};
 
 export function socColor(soc: number): string {
   if (soc > 40) return "#16A34A";
@@ -21,14 +31,29 @@ export function buildSocGradientExpression(
     socColor(initialSoc),
   ];
 
-  if (totalDistM <= 0) {
+  if (totalDistM <= 0 || segments.length === 0) {
     return stops;
   }
 
+  let cumulativeDistM = 0;
   for (const segment of segments) {
-    const progress = Math.min(1, segment.dist_m / totalDistM);
+    cumulativeDistM += segment.dist_m;
+    const progress = Math.min(1, cumulativeDistM / totalDistM);
     stops.push(progress, socColor(segment.soc_pct));
   }
 
   return stops;
+}
+
+export function buildRouteGeoJsonSource(
+  routeCoords: RouteCoordinates,
+): RouteGeoJsonFeature {
+  return {
+    type: "Feature",
+    properties: {},
+    geometry: {
+      type: "LineString",
+      coordinates: routeCoords,
+    },
+  };
 }
