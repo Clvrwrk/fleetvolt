@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it, mock, afterEach } from "node:test";
 import { buildApp } from "./app.js";
+import {
+  CHARGER_VERSION,
+  PHYSICS_VERSION,
+  computeInputsHash,
+} from "./inputs_hash.js";
 import type { SimulationsDeps } from "./simulations.js";
 
 const CORRIDOR_BODY = {
@@ -95,6 +100,56 @@ describe("POST /v1/simulations", () => {
     await app.close();
   });
 
+  it("returns COMPLETE on cache hit with audit metadata per D-15", async () => {
+    const expectedHash = computeInputsHash(
+      CORRIDOR_BODY,
+      PHYSICS_VERSION,
+      CHARGER_VERSION,
+    );
+    const fetchCalls: string[] = [];
+    const mockFetch = mock.fn(async (url: string | URL | Request) => {
+      fetchCalls.push(String(url));
+      return new Response(JSON.stringify({ enqueued: true }), { status: 200 });
+    });
+
+    const deps: SimulationsDeps = {
+      pool: createMockPool({
+        onCacheLookup: () => ({
+          id: "cached-run-id",
+          status: "COMPLETE",
+          outputs: MOCK_OUTPUTS,
+          inputs_hash: expectedHash,
+          physics_version: PHYSICS_VERSION,
+          charger_version: CHARGER_VERSION,
+          inputs: CORRIDOR_BODY,
+        }),
+      }),
+      fetchFn: mockFetch as unknown as typeof fetch,
+      simulatorUrl: "http://simulator:8000",
+    };
+
+    const app = await buildApp({ logger: false, simulationsDeps: deps });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/simulations",
+      payload: CORRIDOR_BODY,
+    });
+
+    assert.equal(response.statusCode, 200);
+    const payload = response.json();
+    assert.equal(payload.job_id, "cached-run-id");
+    assert.equal(payload.status, "COMPLETE");
+    assert.deepEqual(payload.outputs, MOCK_OUTPUTS);
+    assert.equal(payload.inputs_hash, expectedHash);
+    assert.equal(payload.physics_version, PHYSICS_VERSION);
+    assert.equal(payload.charger_version, CHARGER_VERSION);
+    assert.deepEqual(payload.inputs, CORRIDOR_BODY);
+    assert.equal(fetchCalls.length, 0);
+
+    await app.close();
+  });
+
   it("returns COMPLETE on cache hit without enqueue", async () => {
     const fetchCalls: string[] = [];
     const mockFetch = mock.fn(async (url: string | URL | Request) => {
@@ -136,6 +191,55 @@ describe("POST /v1/simulations", () => {
 describe("GET /v1/simulations/:id", () => {
   afterEach(() => {
     mock.restoreAll();
+  });
+
+  it("returns audit metadata when row is COMPLETE per D-12", async () => {
+    const runId = "22222222-2222-4222-8222-222222222222";
+    const inputsHash = computeInputsHash(
+      CORRIDOR_BODY,
+      PHYSICS_VERSION,
+      CHARGER_VERSION,
+    );
+    const deps: SimulationsDeps = {
+      pool: createMockPool({
+        onGet: (id) =>
+          id === runId
+            ? {
+                id: runId,
+                status: "COMPLETE",
+                outputs: MOCK_OUTPUTS,
+                error: null,
+                duration_ms: 1234,
+                inputs_hash: inputsHash,
+                physics_version: PHYSICS_VERSION,
+                charger_version: CHARGER_VERSION,
+                inputs: CORRIDOR_BODY,
+              }
+            : undefined,
+      }),
+      fetchFn: fetch,
+      simulatorUrl: "http://simulator:8000",
+    };
+
+    const app = await buildApp({ logger: false, simulationsDeps: deps });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/v1/simulations/${runId}`,
+    });
+
+    assert.equal(response.statusCode, 200);
+    const payload = response.json();
+    assert.equal(payload.job_id, runId);
+    assert.equal(payload.status, "COMPLETE");
+    assert.deepEqual(payload.outputs, MOCK_OUTPUTS);
+    assert.equal(payload.duration_ms, 1234);
+    assert.equal(payload.inputs_hash, inputsHash);
+    assert.equal(payload.physics_version, PHYSICS_VERSION);
+    assert.equal(payload.charger_version, CHARGER_VERSION);
+    assert.deepEqual(payload.inputs, CORRIDOR_BODY);
+
+    await app.close();
   });
 
   it("returns status and outputs when row is COMPLETE", async () => {
