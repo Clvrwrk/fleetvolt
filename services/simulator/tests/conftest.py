@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 DEFAULT_DATABASE_URL = (
     "postgresql+psycopg://fleetvolt:fleetvolt@localhost:5432/fleetvolt_test"
