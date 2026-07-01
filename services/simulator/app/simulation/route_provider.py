@@ -221,25 +221,22 @@ class RouteProvider:
         dest_lat: float,
         dest_lon: float,
     ) -> dict:
-        return {
-            "locations": [
+        return self._locations_route_body(
+            [
                 {"lat": origin_lat, "lon": origin_lon},
                 {"lat": dest_lat, "lon": dest_lon},
-            ],
+            ]
+        )
+
+    def _locations_route_body(self, locations: list[dict[str, float]]) -> dict:
+        return {
+            "locations": locations,
             "costing": "truck",
             "costing_options": {"truck": CLASS8_TRUCK_OPTIONS},
             "shape_format": "geojson",
         }
 
-    def get_route(
-        self,
-        origin_lat: float,
-        origin_lon: float,
-        dest_lat: float,
-        dest_lon: float,
-    ) -> RouteGeometry:
-        """Return Class 8 truck route geometry via Valhalla /route."""
-        route_body = self._route_body(origin_lat, origin_lon, dest_lat, dest_lon)
+    def _post_route(self, route_body: dict) -> RouteGeometry:
         logger.debug("Valhalla route request costing=truck options=%s", CLASS8_TRUCK_OPTIONS)
 
         with httpx.Client() as client:
@@ -261,6 +258,24 @@ class RouteProvider:
                 raise RuntimeError(f"Valhalla route request failed: {exc}") from exc
 
             return parse_route_response(response.json())
+
+    def get_route_locations(self, locations: list[dict[str, float]]) -> RouteGeometry:
+        """Return Class 8 truck route geometry for multi-stop locations."""
+        if len(locations) < 2:
+            raise ValueError("At least two locations required for routing")
+        route_body = self._locations_route_body(locations)
+        return self._post_route(route_body)
+
+    def get_route(
+        self,
+        origin_lat: float,
+        origin_lon: float,
+        dest_lat: float,
+        dest_lon: float,
+    ) -> RouteGeometry:
+        """Return Class 8 truck route geometry via Valhalla /route."""
+        route_body = self._route_body(origin_lat, origin_lon, dest_lat, dest_lon)
+        return self._post_route(route_body)
 
     def get_trace_attributes(self, coordinates: list[list[float]]) -> dict:
         """POST /trace_attributes for per-edge posted speeds."""
