@@ -162,6 +162,7 @@ None — feasibility classifier fully wired on sync path.
 - FOUND: services/simulator/tests/test_feasibility.py
 - FOUND: services/simulator/tests/test_simulate_api.py (updated)
 - FOUND: b5bdc70
+- FOUND: 6fbf676
 - FOUND: 505f58c
 
 ---
