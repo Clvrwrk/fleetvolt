@@ -6,15 +6,15 @@ current_phase: 1
 current_phase_name: Foundation & Spatial Data
 status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-07-01T15:35:00.000Z"
+last_updated: "2026-07-01T15:14:34.099Z"
 last_activity: 2026-07-01
-last_activity_desc: Completed 01-04 NREL charger ingest plan
+last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 ## Current Position
 
 Phase: 1 (Foundation & Spatial Data) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-07-01 — Phase 1 execution started
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -67,6 +67,8 @@ Recent decisions affecting current work:
 - Deployment: Docker Compose on VPS
 - NREL ingest uses per-connector kW from EV CCS Power Output, not station header max
 - hd_capable requires power >= 350 kW AND CCS/MCS connector per D-06
+- SoCal bbox -121.0,32.5,-114.0,37.0 for Valhalla extract per D-14
+- Valhalla route proxy uses costing=truck with Class 8 height/weight/axle params
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-01T15:35:00.000Z
-Stopped at: Completed 01-04-PLAN.md
-Resume file: .planning/phases/01-foundation-spatial-data/01-05-PLAN.md
+Last session: 2026-07-01T15:14:34.095Z
+Stopped at: Completed 01-05-PLAN.md
+Resume file: .planning/phases/01-foundation-spatial-data/01-06-PLAN.md
