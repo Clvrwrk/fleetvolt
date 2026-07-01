@@ -2,11 +2,22 @@
 
 FleetVolt uses a **SoCal regional** OpenStreetMap extract — not a US West or national graph — for Class 8 truck routing via Valhalla.
 
+The `socal.osm.pbf` file is **local-only** (~100 MB+) and is never committed to git.
+
 ## Bbox
 
 `-121.0,32.5,-114.0,37.0` (west,south,east,north) — covers POLB, Inland Empire, Cajon Pass, and the southern NV border.
 
 ## Build the OSM extract
+
+Primary workflow:
+
+```bash
+make valhalla-pbf
+make valhalla-verify-pbf
+```
+
+Or run the script directly:
 
 ```bash
 bash scripts/build_socal_pbf.sh
@@ -20,14 +31,17 @@ The script downloads `california-latest.osm.pbf` from [Geofabrik](https://downlo
 
 If `osmium-tool` is unavailable:
 
-1. Install osmium-tool and re-run the script, **or**
-2. Manually place a pre-built `socal.osm.pbf` at `data/valhalla/custom_files/socal.osm.pbf` (same bbox). A team artifact URL may be published here when available.
+1. Install osmium-tool and re-run `make valhalla-pbf`, **or**
+2. Set `VALHALLA_SOCAL_PBF_URL` to a trusted team prebuilt artifact (HTTPS) and re-run:
 
-Optional integrity check after download:
+   ```bash
+   export VALHALLA_SOCAL_PBF_URL="https://example.com/artifacts/socal.osm.pbf"
+   make valhalla-pbf
+   ```
 
-```bash
-shasum -a 256 data/valhalla/custom_files/socal.osm.pbf
-```
+   Only use URLs from trusted internal sources. The verify script prints SHA256 for integrity checking.
+
+3. Manually place a pre-built `socal.osm.pbf` at `data/valhalla/custom_files/socal.osm.pbf` (same bbox), then run `make valhalla-verify-pbf`.
 
 ## Start Valhalla
 
@@ -41,7 +55,7 @@ The container mounts `./data/valhalla/custom_files` at `/custom_files` and build
 
 The initial tile build is CPU-heavy and may take **30–90 minutes**. During this time:
 
-- `curl http://localhost:8002/status` may return errors or show tiles still loading
+- `make valhalla-status` or `curl http://localhost:8002/status` may return errors or show tiles still loading
 - The Compose healthcheck uses a **3600s start period** so the container is not marked unhealthy prematurely
 - Built tiles persist in `data/valhalla/custom_files/` on the host — subsequent starts are much faster
 
@@ -50,6 +64,8 @@ The initial tile build is CPU-heavy and may take **30–90 minutes**. During thi
 Wait until status reports tiles loaded:
 
 ```bash
+make valhalla-status
+# or
 curl -s http://localhost:8002/status | jq .
 ```
 

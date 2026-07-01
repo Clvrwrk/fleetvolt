@@ -17,3 +17,6 @@ dist/
 venv/
 .pytest_cache/
 .ruff_cache/
+data/valhalla/custom_files/socal.osm.pbf
+data/valhalla/custom_files/*.osm.pbf
+data/valhalla/custom_files/valhalla_tiles/
