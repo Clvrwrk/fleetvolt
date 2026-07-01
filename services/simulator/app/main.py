@@ -10,8 +10,10 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.routes.routing import router as routing_router
 
 app = FastAPI(title="FleetVolt Simulator", version="0.1.0")
+app.include_router(routing_router)
 
 SPATIAL_TABLES = (
     "nhfn_network",
