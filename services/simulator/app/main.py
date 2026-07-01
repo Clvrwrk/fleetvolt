@@ -15,6 +15,7 @@ from app.routes.corridors import router as corridors_router
 from app.routes.elevation import router as elevation_router
 from app.routes.routing import router as routing_router
 from app.routes.simulate import router as simulate_router
+from app.routes.simulations import router as simulations_router
 from app.routes.spatial import router as spatial_router
 from app.routes.trucks import router as trucks_router
 from app.routes.validation import router as validation_router
@@ -25,6 +26,7 @@ app.include_router(corridors_router)
 app.include_router(elevation_router)
 app.include_router(routing_router)
 app.include_router(simulate_router)
+app.include_router(simulations_router)
 app.include_router(spatial_router)
 app.include_router(trucks_router)
 app.include_router(validation_router)
