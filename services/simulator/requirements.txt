@@ -6,3 +6,6 @@ psycopg[binary,pool]==3.3.4
 pytest>=8,<9
 ruff>=0.15
 httpx>=0.28
+geopandas>=1.1,<1.2
+shapely>=2.1,<2.2
+requests>=2.31,<3

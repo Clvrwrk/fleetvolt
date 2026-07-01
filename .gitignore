@@ -1,4 +1,7 @@
-data/raw/
+data/raw/*
+!data/raw/nrel/
+data/raw/nrel/*
+!data/raw/nrel/chargers_sample.csv
 .env
 node_modules/
 __pycache__/

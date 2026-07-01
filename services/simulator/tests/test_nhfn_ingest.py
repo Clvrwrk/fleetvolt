@@ -26,7 +26,6 @@ def nhfn_loaded(db_session):
         source_path=FIXTURE_PATH,
         download_year=2024,
     )
-    db_session.commit()
     assert count > 0
     return count
 
@@ -87,11 +86,9 @@ def test_load_idempotent(db_session):
         source_path=FIXTURE_PATH,
         download_year=2024,
     )
-    db_session.commit()
     second = nhfn.load_nhfn(
         db_session,
         source_path=FIXTURE_PATH,
         download_year=2024,
     )
-    db_session.commit()
     assert first == second

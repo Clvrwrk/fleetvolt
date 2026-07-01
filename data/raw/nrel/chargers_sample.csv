@@ -1,0 +1,6 @@
+Station ID,Station Name,Latitude,Longitude,Street Address,City,State,ZIP,EV Connector Types,EV CCS Power Output (kW),EV Pricing,Status Code,Groups With Access Code,Access Days Time,Facility Type,Intersection Directions,EV Level1 EVSE Num,EV Level2 EVSE Num,EV DC Fast Count,EV Network,Date Last Confirmed
+900001,POLB Depot MCS Hub,33.754,-118.216,100 Pier A Plaza,Long Beach,CA,90802,J3271,400,Free,Available,Public,24 hours,TRUCK_STOP,,0,0,4,Electrify America,2026-06-01
+900002,LA Low Power Site,33.950,-118.400,500 Example Blvd,Los Angeles,CA,90001,J1772COMBO,150,Per kWh,Available,Public,24 hours,PARKING_GARAGE,,0,2,2,EVgo,2026-06-01
+900003,Inland Empire HD CCS,34.100,-117.300,1000 Logistics Way,Ontario,CA,91761,J1772COMBO,350,Per kWh,Available,Public,24 hours,TRUCK_STOP,,0,0,2,EV Connect,2026-06-01
+900004,Portland Distant HD,45.515,-122.678,200 NW Example St,Portland,OR,97201,J1772COMBO,500,Per kWh,Available,Public,24 hours,TRUCK_STOP,,0,0,4,ChargePoint,2026-06-01
+900005,Barstow Corridor MCS,34.900,-117.023,300 Main St,Barstow,CA,92311,J3271,375,Per kWh,Available,Public,24 hours,TRUCK_STOP,,0,0,2,Tesla,2026-06-01
