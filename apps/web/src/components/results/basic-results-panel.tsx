@@ -7,6 +7,7 @@ import { KpiCardRow } from "@/components/kpi/kpi-card-row";
 import { SocProfileChart } from "@/components/charts/soc-profile-chart";
 import { RouteMapDynamic } from "@/components/map/route-map-dynamic";
 import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
+import { AssumptionsPanel } from "@/components/results/assumptions-panel";
 import { ChargingPlanTable } from "@/components/tables/charging-plan-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useScenarioStore } from "@/stores/scenario-store";
@@ -101,6 +102,7 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
         </TabsContent>
       </Tabs>
 
+      <AssumptionsPanel pollResult={pollResult} />
     </div>
   );
 }
