@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fleetvolt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fleetvolt}
+      POSTGRES_DB: ${POSTGRES_DB:-fleetvolt}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fleetvolt} -d ${POSTGRES_DB:-fleetvolt}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    volumes:
+      - ./data/valhalla/custom_files:/custom_files
+    ports:
+      - "8002:8002"
+
+  simulator:
+    build: ./services/simulator
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
+      PORT: "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  api:
+    build: ./services/api
+    ports:
+      - "4000:4000"
+    environment:
+      SIMULATOR_URL: http://simulator:8000
+      PORT: "4000"
+    depends_on:
+      - simulator
+
+  web:
+    build: ./apps/web
+    ports:
+      - "3000:3000"
+    environment:
+      API_URL: http://api:4000
+      PORT: "3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
