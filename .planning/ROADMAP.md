@@ -236,6 +236,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
 | 3. Charging & Job Pipeline | 5/5 | Complete    | 2026-07-01 |
-| 4. Analyst Dashboard & Export | 0/7 | Not started | - |
+| 4. Analyst Dashboard & Export | 0/8 | Not started | - |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
 | 6. TCO Analysis & Production | 0/TBD | Not started | - |
