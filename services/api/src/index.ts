@@ -1,5 +1,9 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import type { paths } from "@fleetvolt/shared-types";
+
+export type StackMetaResponse =
+  paths["/v1/meta/stack"]["get"]["responses"]["200"]["content"]["application/json"];
 
 const app = Fastify({ logger: true });
 

@@ -7,6 +7,12 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
+    "@fleetvolt/api#typecheck": {
+      "dependsOn": ["^codegen", "^typecheck"]
+    },
+    "@fleetvolt/web#typecheck": {
+      "dependsOn": ["^codegen", "^typecheck"]
+    },
     "test": {
       "dependsOn": ["^build"],
       "outputs": []

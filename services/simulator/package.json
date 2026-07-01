@@ -5,6 +5,6 @@
   "scripts": {
     "lint": "ruff check . && ruff format --check .",
     "test": "pytest -q",
-    "openapi:export": "node -e \"process.exit(0)\""
+    "openapi:export": "python scripts/export_openapi.py"
   }
 }

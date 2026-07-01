@@ -2,12 +2,16 @@
   "name": "@fleetvolt/shared-types",
   "version": "0.1.0",
   "private": true,
-  "description": "OpenAPI-generated TypeScript types (codegen in Plan 06)",
+  "description": "OpenAPI-generated TypeScript types from simulator service",
+  "exports": {
+    ".": "./src/schema.d.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "codegen": "node -e \"process.exit(0)\""
+    "codegen": "openapi-typescript ../../services/simulator/openapi.json -o ./src/schema.d.ts"
   },
   "devDependencies": {
+    "openapi-typescript": "7.13.0",
     "typescript": "^6.0.3"
   }
 }

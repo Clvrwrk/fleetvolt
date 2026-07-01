@@ -1,0 +1,866 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FleetVolt Simulator",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/chargers/near": {
+      "get": {
+        "tags": [
+          "chargers"
+        ],
+        "summary": "Chargers Near",
+        "description": "Return chargers within radius of a point, sorted by distance.",
+        "operationId": "chargers_near_v1_chargers_near_get",
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Query latitude (WGS84)",
+              "title": "Lat"
+            },
+            "description": "Query latitude (WGS84)"
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Query longitude (WGS84)",
+              "title": "Lon"
+            },
+            "description": "Query longitude (WGS84)"
+          },
+          {
+            "name": "radius_m",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Search radius in meters",
+              "default": 50000,
+              "title": "Radius M"
+            },
+            "description": "Search radius in meters"
+          },
+          {
+            "name": "hd_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Return only hd_capable chargers",
+              "default": false,
+              "title": "Hd Only"
+            },
+            "description": "Return only hd_capable chargers"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChargerNearResponse"
+                  },
+                  "title": "Response Chargers Near V1 Chargers Near Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/data/freshness": {
+      "get": {
+        "tags": [
+          "chargers"
+        ],
+        "summary": "Data Freshness",
+        "description": "Return freshness metadata for all ingested datasets.",
+        "operationId": "data_freshness_v1_data_freshness_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DataFreshnessResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Data Freshness V1 Data Freshness Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/elevation/{corridor_key}": {
+      "get": {
+        "tags": [
+          "elevation"
+        ],
+        "summary": "Get Elevation Profile",
+        "description": "Return cached elevation profile metadata and preview for a corridor.",
+        "operationId": "get_elevation_profile_v1_elevation__corridor_key__get",
+        "parameters": [
+          {
+            "name": "corridor_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Corridor Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElevationProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/routing/route": {
+      "get": {
+        "tags": [
+          "routing"
+        ],
+        "summary": "Get Route",
+        "description": "Return a Class 8 truck route via Valhalla truck costing.",
+        "operationId": "get_route_v1_routing_route_get",
+        "parameters": [
+          {
+            "name": "origin_lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Origin latitude",
+              "title": "Origin Lat"
+            },
+            "description": "Origin latitude"
+          },
+          {
+            "name": "origin_lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Origin longitude",
+              "title": "Origin Lon"
+            },
+            "description": "Origin longitude"
+          },
+          {
+            "name": "dest_lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Destination latitude",
+              "title": "Dest Lat"
+            },
+            "description": "Destination latitude"
+          },
+          {
+            "name": "dest_lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Destination longitude",
+              "title": "Dest Lon"
+            },
+            "description": "Destination longitude"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/spatial/nhfn/stats": {
+      "get": {
+        "tags": [
+          "spatial"
+        ],
+        "summary": "Nhfn Stats",
+        "operationId": "nhfn_stats_v1_spatial_nhfn_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NhfnStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/trucks": {
+      "get": {
+        "tags": [
+          "trucks"
+        ],
+        "summary": "List Trucks",
+        "operationId": "list_trucks_v1_trucks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TruckConfigSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Trucks V1 Trucks Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/trucks/{truck_id}": {
+      "get": {
+        "tags": [
+          "trucks"
+        ],
+        "summary": "Get Truck",
+        "operationId": "get_truck_v1_trucks__truck_id__get",
+        "parameters": [
+          {
+            "name": "truck_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Truck Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TruckConfigDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/meta/stack": {
+      "get": {
+        "summary": "Stack Meta",
+        "operationId": "stack_meta_v1_meta_stack_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StackMetaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChargerNearResponse": {
+        "properties": {
+          "station_id": {
+            "type": "string",
+            "title": "Station Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "power_kw": {
+            "type": "number",
+            "title": "Power Kw"
+          },
+          "hd_capable": {
+            "type": "boolean",
+            "title": "Hd Capable"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
+          },
+          "distance_m": {
+            "type": "number",
+            "title": "Distance M",
+            "description": "Distance from query point in meters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "station_id",
+          "power_kw",
+          "hd_capable",
+          "distance_m"
+        ],
+        "title": "ChargerNearResponse"
+      },
+      "DataFreshnessResponse": {
+        "properties": {
+          "dataset_name": {
+            "type": "string",
+            "title": "Dataset Name"
+          },
+          "last_ingested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Ingested At"
+          },
+          "row_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Count"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_name"
+        ],
+        "title": "DataFreshnessResponse"
+      },
+      "ElevationProfileResponse": {
+        "properties": {
+          "corridor_key": {
+            "type": "string",
+            "title": "Corridor Key"
+          },
+          "point_count": {
+            "type": "integer",
+            "title": "Point Count"
+          },
+          "max_grade_pct": {
+            "type": "number",
+            "title": "Max Grade Pct"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "profile_preview": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/ProfilePoint"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Profile Preview",
+            "description": "First and last three profile points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "corridor_key",
+          "point_count",
+          "max_grade_pct",
+          "profile_preview"
+        ],
+        "title": "ElevationProfileResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "NhfnStatsResponse": {
+        "properties": {
+          "segment_count": {
+            "type": "integer",
+            "title": "Segment Count",
+            "description": "Number of NHFN linework segments loaded"
+          },
+          "bbox_west": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox West",
+            "description": "Western extent (degrees)"
+          },
+          "bbox_south": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox South",
+            "description": "Southern extent (degrees)"
+          },
+          "bbox_east": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox East",
+            "description": "Eastern extent (degrees)"
+          },
+          "bbox_north": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox North",
+            "description": "Northern extent (degrees)"
+          },
+          "source_sample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Sample",
+            "description": "Example provenance source label"
+          },
+          "ingested_at_max": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingested At Max",
+            "description": "Most recent ingest timestamp across NHFN rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "segment_count"
+        ],
+        "title": "NhfnStatsResponse"
+      },
+      "ProfilePoint": {
+        "properties": {
+          "dist_m": {
+            "type": "number",
+            "title": "Dist M"
+          },
+          "elev_m": {
+            "type": "number",
+            "title": "Elev M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dist_m",
+          "elev_m"
+        ],
+        "title": "ProfilePoint"
+      },
+      "RouteResponse": {
+        "properties": {
+          "distance_m": {
+            "type": "number",
+            "title": "Distance M",
+            "description": "Route length in meters"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S",
+            "description": "Estimated travel time in seconds"
+          },
+          "encoded_polyline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encoded Polyline",
+            "description": "Valhalla encoded polyline when shape_format is not geojson"
+          },
+          "coordinates": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Coordinates",
+            "description": "GeoJSON [lon, lat] coordinate pairs along the route"
+          },
+          "valhalla_status": {
+            "type": "string",
+            "title": "Valhalla Status",
+            "description": "Valhalla service status at request time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distance_m",
+          "duration_s",
+          "valhalla_status"
+        ],
+        "title": "RouteResponse"
+      },
+      "StackMetaResponse": {
+        "properties": {
+          "postgres_version": {
+            "type": "string",
+            "title": "Postgres Version"
+          },
+          "table_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Table Counts",
+            "description": "Row counts for core spatial tables"
+          }
+        },
+        "type": "object",
+        "required": [
+          "postgres_version",
+          "table_counts"
+        ],
+        "title": "StackMetaResponse"
+      },
+      "TruckConfigDetail": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "source_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Notes"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "params"
+        ],
+        "title": "TruckConfigDetail"
+      },
+      "TruckConfigSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "nameplate_kwh": {
+            "type": "number",
+            "title": "Nameplate Kwh"
+          },
+          "usable_kwh": {
+            "type": "number",
+            "title": "Usable Kwh"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "source_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Notes",
+            "description": "Truncated OEM source notes (max 200 chars)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "nameplate_kwh",
+          "usable_kwh"
+        ],
+        "title": "TruckConfigSummary"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
