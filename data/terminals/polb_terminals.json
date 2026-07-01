@@ -1,0 +1,44 @@
+[
+  {
+    "terminal_key": "pct",
+    "name": "Pacific Container Terminal (PCT)",
+    "lat": 33.7542,
+    "lon": -118.2165,
+    "description": "POLB Pacific Container Terminal — primary drayage origin for POLB basin corridors"
+  },
+  {
+    "terminal_key": "tti",
+    "name": "Total Terminals International (TTI)",
+    "lat": 33.7428,
+    "lon": -118.1923,
+    "description": "POLB TTI terminal — Long Beach side of POLB complex"
+  },
+  {
+    "terminal_key": "its",
+    "name": "International Transportation Service (ITS)",
+    "lat": 33.7485,
+    "lon": -118.2089,
+    "description": "POLB ITS terminal — Pier J area container handling"
+  },
+  {
+    "terminal_key": "pier_a",
+    "name": "Pier A",
+    "lat": 33.7398,
+    "lon": -118.2785,
+    "description": "POLB Pier A — west basin terminal"
+  },
+  {
+    "terminal_key": "pier_j",
+    "name": "Pier J",
+    "lat": 33.7512,
+    "lon": -118.1856,
+    "description": "POLB Pier J — east basin terminal adjacent to ITS"
+  },
+  {
+    "terminal_key": "lbct",
+    "name": "Long Beach Container Terminal (LBCT)",
+    "lat": 33.7549,
+    "lon": -118.2267,
+    "description": "Automated LBCT terminal — POLB drayage origin option"
+  }
+]
