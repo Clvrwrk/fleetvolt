@@ -11,7 +11,6 @@ export const scenarioFormSchema = z.object({
   weather_preset: weatherPresetSchema,
   payload_lbs: z.number().min(20000).max(80000),
   port_drayage_enabled: z.boolean(),
-  include_charging: z.literal(true).default(true),
 });
 
 export type ScenarioFormValues = z.infer<typeof scenarioFormSchema>;
@@ -23,7 +22,6 @@ export const DEFAULT_SCENARIO_FORM: ScenarioFormValues = {
   weather_preset: "ideal",
   payload_lbs: 34000,
   port_drayage_enabled: false,
-  include_charging: true,
 };
 
 export const TRUCK_SLUG_BY_NAME: Record<string, string> = {
@@ -45,6 +43,6 @@ export function toSimulateRequest(values: ScenarioFormValues): SimulateRequest {
       port_drayage_enabled: values.port_drayage_enabled,
     },
     overrides: { reset_to_oem: false },
-    options: { include_charging: values.include_charging },
+    options: { include_charging: true },
   };
 }

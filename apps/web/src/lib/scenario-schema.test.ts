@@ -10,7 +10,6 @@ describe("scenarioFormSchema", () => {
       weather_preset: "ideal",
       payload_lbs: 15000,
       port_drayage_enabled: false,
-      include_charging: true,
     });
     assert.equal(result.success, false);
   });
@@ -22,7 +21,6 @@ describe("scenarioFormSchema", () => {
       weather_preset: "ideal",
       payload_lbs: 34000,
       port_drayage_enabled: false,
-      include_charging: true,
     });
     assert.equal(result.success, true);
   });

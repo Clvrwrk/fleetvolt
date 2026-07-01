@@ -76,6 +76,12 @@ body {
   line-height: 1.5;
 }
 
+.workspace-page main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 main {
   max-width: 960px;
   margin: 0 auto;
