@@ -12,6 +12,7 @@ import {
   type ScenarioFormValues,
   toSimulateRequest,
 } from "@/lib/scenario-schema";
+import { findSegmentIndexByDistanceM } from "@/lib/segment-lookup";
 import type { components } from "@fleetvolt/shared-types";
 
 type SimulationJobPollResponse =
@@ -35,7 +36,10 @@ type ScenarioStore = {
   error: { message: string; stage?: string } | null;
   routeCoordinatesByJobId: Record<string, RouteGeometryCache>;
   abortController: AbortController | null;
+  activeDistanceM: number | null;
   setFormInputs: (inputs: Partial<ScenarioFormValues>) => void;
+  setActiveDistanceM: (distanceM: number | null) => void;
+  getActiveSegmentIndex: () => number;
   setCorridors: (corridors: CorridorCatalogEntry[]) => void;
   submitScenario: () => Promise<void>;
   resetError: () => void;
@@ -112,6 +116,7 @@ export const useScenarioStore = create<ScenarioStore>()(
     error: null,
     routeCoordinatesByJobId: {},
     abortController: null,
+    activeDistanceM: null,
 
     setFormInputs: (inputs) =>
       set((state) => {
@@ -128,6 +133,20 @@ export const useScenarioStore = create<ScenarioStore>()(
         state.error = null;
       }),
 
+    setActiveDistanceM: (distanceM) =>
+      set((state) => {
+        state.activeDistanceM = distanceM;
+      }),
+
+    getActiveSegmentIndex: () => {
+      const { activeDistanceM, pollResult } = get();
+      const segments = pollResult?.outputs?.segments ?? [];
+      if (activeDistanceM == null || segments.length === 0) {
+        return -1;
+      }
+      return findSegmentIndexByDistanceM(segments, activeDistanceM);
+    },
+
     submitScenario: async () => {
       const { formInputs, abortController: previous, corridors } = get();
       previous?.abort();
@@ -143,6 +162,7 @@ export const useScenarioStore = create<ScenarioStore>()(
         state.pollResult = null;
         state.pollStatus = null;
         state.activeJobId = null;
+        state.activeDistanceM = null;
         state.abortController = controller;
       });
 
