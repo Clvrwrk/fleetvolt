@@ -126,7 +126,7 @@ Each task was committed atomically:
 2. **Task 2: Weekly refresh script and charger spatial API** - `b3f6dba` (feat)
 3. **Task 3: Checkpoint — Verify live NREL charger ingest near POLB** - human approved (no code commit)
 
-**Plan metadata:** pending (docs commit)
+**Plan metadata:** `88716a1` (docs: complete plan)
 
 ## Files Created/Modified
 
