@@ -1,0 +1,20 @@
+{
+  "name": "Freightliner eCascadia 438 kWh",
+  "nameplate_kwh": 438,
+  "usable_kwh": 394,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 26000,
+  "drag_coefficient": 0.65,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0065,
+  "regen_efficiency": 0.70,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 350 },
+    { "soc_pct": 40, "max_kw": 320 },
+    { "soc_pct": 70, "max_kw": 180 },
+    { "soc_pct": 90, "max_kw": 80 }
+  ],
+  "source_notes": "Freightliner eCascadia public spec sheet (438 kWh pack, CCS up to 350 kW). Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve. Charge curve breakpoints from OEM CCS taper documentation (D-11)."
+}

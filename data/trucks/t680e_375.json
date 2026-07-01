@@ -1,0 +1,20 @@
+{
+  "name": "Kenworth T680E 375 kWh",
+  "nameplate_kwh": 375,
+  "usable_kwh": 338,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 25500,
+  "drag_coefficient": 0.66,
+  "frontal_area_m2": 9.6,
+  "C_rr": 0.0068,
+  "regen_efficiency": 0.68,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.91,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 250 },
+    { "soc_pct": 40, "max_kw": 220 },
+    { "soc_pct": 70, "max_kw": 130 },
+    { "soc_pct": 90, "max_kw": 65 }
+  ],
+  "source_notes": "Kenworth T680E public spec sheet (375 kWh pack, CCS charging). Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve. Charge curve breakpoints from OEM CCS taper documentation (D-11)."
+}
