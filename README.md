@@ -51,6 +51,41 @@ Open the stack status page at http://localhost:3000.
 
 See [apps/web/README.md](./apps/web/README.md) for web-specific notes.
 
+### Runtime verification
+
+Verify the two behaviors below before treating Phase 1 foundation as runtime-proven. These steps confirm PLAT-01 (local stack) and PLAT-03 (CI pipeline).
+
+#### 1. Full stack smoke (PLAT-01)
+
+**Prerequisite:** Valhalla needs SoCal tiles. If `data/valhalla/custom_files/socal.osm.pbf` is missing, run `make valhalla-pbf` first (requires osmium-tool and network). First Valhalla tile build can take 30–90 minutes.
+
+```bash
+docker compose up --build
+# or: docker compose up --build -d && docker compose logs -f
+```
+
+Confirm all six services reach running/healthy state (`postgres`, `redis`, `valhalla`, `simulator`, `api`, `web`):
+
+```bash
+docker compose ps
+curl http://localhost:8000/v1/meta/stack   # expect 200 with postgres_version and table_counts
+curl http://localhost:4000/v1/meta/stack   # Fastify proxy returns same metadata
+```
+
+Open http://localhost:3000 — the stack status page should render service badges and non-error PostGIS table counts.
+
+#### 2. CI pipeline (PLAT-03)
+
+Push to `main` or open a PR, then confirm the [GitHub Actions CI workflow](https://github.com/cleverwork/fleetvolt/actions/workflows/ci.yml) completes green:
+
+- Ruff lint
+- `turbo lint` / `turbo typecheck`
+- OpenAPI codegen drift check
+- `pytest -m "not integration"`
+- `turbo test`
+
+Use the [Actions tab](https://github.com/cleverwork/fleetvolt/actions) to inspect the latest `lint-typecheck-test` job on `main`.
+
 ### CI and local verification
 
 GitHub Actions runs lint, typecheck, pytest, and OpenAPI drift checks on every push to `main`. Without Docker/PostGIS locally, DB-backed tests skip gracefully; the unit test `test_filter_bridge_spikes_removes_synthetic_drop` always runs.
