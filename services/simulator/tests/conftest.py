@@ -23,6 +23,16 @@ def _database_url() -> str:
     return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
+def pytest_collection_modifyitems(config, items) -> None:
+    """Skip integration tests in CI unless explicitly opted in."""
+    if not os.environ.get("CI"):
+        return
+    skip_integration = pytest.mark.skip(reason="integration test skipped in CI")
+    for item in items:
+        if "integration" in item.keywords:
+            item.add_marker(skip_integration)
+
+
 @pytest.fixture(scope="session")
 def db_engine():
     """Session-scoped SQLAlchemy engine; skips if database is unreachable."""

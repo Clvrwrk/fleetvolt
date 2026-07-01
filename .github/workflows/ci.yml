@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.5
+        env:
+          POSTGRES_USER: fleetvolt
+          POSTGRES_PASSWORD: fleetvolt
+          POSTGRES_DB: fleetvolt_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fleetvolt -d fleetvolt_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://fleetvolt:fleetvolt@localhost:5432/fleetvolt_test
+      CI: "true"
+      NREL_API_KEY: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        run: corepack prepare pnpm@11.9.0 --activate
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r services/simulator/requirements.txt
+
+      - name: Run Alembic migrations
+        working-directory: services/simulator
+        run: alembic upgrade head
+
+      - name: Seed spatial fixtures
+        env:
+          PYTHONPATH: ${{ github.workspace }}/services/simulator:${{ github.workspace }}
+        run: |
+          python -m data.ingest.seed_trucks
+          python -m data.ingest.elevation --precompute --fixture
+          python -c "
+          import sys
+          from pathlib import Path
+          repo = Path('${{ github.workspace }}')
+          sys.path[:0] = [str(repo / 'services' / 'simulator'), str(repo)]
+          from app.db import SessionLocal
+          from data.ingest import nhfn
+          from data.ingest.chargers import ingest
+          session = SessionLocal()
+          try:
+              nhfn.load_nhfn(session, source_path=repo / 'data/fixtures/nhfn_socal_sample.geojson', download_year=2024)
+              ingest(session, use_fixture=True)
+              session.commit()
+          finally:
+              session.close()
+          "
+
+      - name: Ruff lint (simulator)
+        working-directory: services/simulator
+        run: ruff check .
+
+      - name: Turbo lint and typecheck
+        run: pnpm turbo run lint typecheck --filter=!@fleetvolt/web
+
+      - name: OpenAPI codegen drift check
+        run: |
+          pnpm turbo run codegen
+          git diff --exit-code packages/shared-types/src/schema.d.ts services/simulator/openapi.json
+
+      - name: Pytest (unit + DB; skip integration)
+        working-directory: services/simulator
+        run: pytest -q -m "not integration"
+
+      - name: Turbo test (Node packages)
+        run: pnpm turbo run test --filter=!@fleetvolt/web --filter=!@fleetvolt/simulator

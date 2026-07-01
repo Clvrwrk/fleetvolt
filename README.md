@@ -1,5 +1,7 @@
 # FleetVolt Route v2 — Documentation Set
 
+[![CI](https://github.com/cleverwork/fleetvolt/actions/workflows/ci.yml/badge.svg)](https://github.com/cleverwork/fleetvolt/actions/workflows/ci.yml)
+
 **Purpose**: Revised, realistic, and buildable documentation for the Class 8 EV drayage & corridor energy modeling platform.  
 **Based on**: Original PRD teardown + strategic alignment with POLB / zero-emission freight work.  
 **Date**: June 17, 2026
@@ -48,6 +50,20 @@ curl http://localhost:8000/v1/meta/stack
 Open the stack status page at http://localhost:3000.
 
 See [apps/web/README.md](./apps/web/README.md) for web-specific notes.
+
+### CI and local verification
+
+GitHub Actions runs lint, typecheck, pytest, and OpenAPI drift checks on every push to `main`. Without Docker/PostGIS locally, DB-backed tests skip gracefully; the unit test `test_filter_bridge_spikes_removes_synthetic_drop` always runs.
+
+With Compose PostGIS available:
+
+```bash
+export DATABASE_URL=postgresql+psycopg://fleetvolt:fleetvolt@localhost:5432/fleetvolt_test
+cd services/simulator && alembic upgrade head
+python -m data.ingest.elevation --precompute --fixture
+pytest tests/test_elevation_cache.py -q
+pnpm turbo run lint typecheck test
+```
 
 ## Next Actions
 
