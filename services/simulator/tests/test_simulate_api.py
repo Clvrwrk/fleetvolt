@@ -252,6 +252,11 @@ def test_simulate_with_charging_enabled(
     payload = response.json()
     _assert_simulate_response(payload, include_charging=True)
     assert payload["feasibility"]["verdict"] in {"feasible", "critical", "infeasible"}
+    assert payload["feasibility"]["tier"] in {
+        "public_hd",
+        "depot_required",
+        "infrastructure_gap",
+    }
 
 
 def test_simulate_charging_disabled_parity(client: TestClient):
