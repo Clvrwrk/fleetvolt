@@ -804,6 +804,16 @@ export interface components {
             } | null;
             /** Duration Ms */
             duration_ms?: number | null;
+            /** Inputs Hash */
+            inputs_hash?: string | null;
+            /** Physics Version */
+            physics_version?: string | null;
+            /** Charger Version */
+            charger_version?: string | null;
+            /** Inputs */
+            inputs?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * SimulationJobSubmitResponse
@@ -818,6 +828,16 @@ export interface components {
              */
             status: "PENDING" | "RUNNING" | "COMPLETE" | "FAILED";
             outputs?: components["schemas"]["SimulateResponse"] | null;
+            /** Inputs Hash */
+            inputs_hash?: string | null;
+            /** Physics Version */
+            physics_version?: string | null;
+            /** Charger Version */
+            charger_version?: string | null;
+            /** Inputs */
+            inputs?: {
+                [key: string]: unknown;
+            } | null;
         };
     };
     responses: never;

@@ -14,6 +14,28 @@ interface SimulationRunRow extends Record<string, unknown> {
   outputs?: unknown;
   error?: unknown;
   duration_ms?: number | null;
+  inputs_hash?: string | null;
+  physics_version?: string | null;
+  charger_version?: string | null;
+  inputs?: unknown;
+}
+
+function appendAuditFields(
+  payload: Record<string, unknown>,
+  row: SimulationRunRow,
+): void {
+  if (row.inputs_hash != null) {
+    payload.inputs_hash = row.inputs_hash;
+  }
+  if (row.physics_version != null) {
+    payload.physics_version = row.physics_version;
+  }
+  if (row.charger_version != null) {
+    payload.charger_version = row.charger_version;
+  }
+  if (row.inputs !== undefined && row.inputs !== null) {
+    payload.inputs = row.inputs;
+  }
 }
 
 export interface DbPool {
@@ -44,7 +66,8 @@ export function createSimulationsHandlers(deps: SimulationsDeps = defaultDeps) {
     const hash = computeInputsHash(body, PHYSICS_VERSION, CHARGER_VERSION);
 
     const cached = await deps.pool.query(
-      `SELECT id, status, outputs FROM simulation_runs
+      `SELECT id, status, outputs, inputs_hash, physics_version, charger_version, inputs
+       FROM simulation_runs
        WHERE inputs_hash = $1 AND status = 'COMPLETE'
        ORDER BY created_at DESC LIMIT 1`,
       [hash],
@@ -52,11 +75,13 @@ export function createSimulationsHandlers(deps: SimulationsDeps = defaultDeps) {
 
     if (cached.rows[0]) {
       const row = cached.rows[0] as SimulationRunRow;
-      return {
+      const payload: Record<string, unknown> = {
         job_id: row.id,
         status: "COMPLETE",
         outputs: row.outputs,
       };
+      appendAuditFields(payload, row);
+      return payload;
     }
 
     const inserted = await deps.pool.query(
@@ -137,7 +162,8 @@ export function createSimulationsHandlers(deps: SimulationsDeps = defaultDeps) {
     const { id } = request.params;
 
     const result = await deps.pool.query(
-      `SELECT id, status, outputs, error, duration_ms
+      `SELECT id, status, outputs, error, duration_ms,
+              inputs_hash, physics_version, charger_version, inputs
        FROM simulation_runs
        WHERE id = $1`,
       [id],
@@ -165,6 +191,8 @@ export function createSimulationsHandlers(deps: SimulationsDeps = defaultDeps) {
     if (row.duration_ms != null) {
       payload.duration_ms = row.duration_ms;
     }
+
+    appendAuditFields(payload, row);
 
     return payload;
   }

@@ -164,6 +164,10 @@ class SimulationJobSubmitResponse(BaseModel):
     job_id: str
     status: JobStatus
     outputs: SimulateResponse | None = None
+    inputs_hash: str | None = None
+    physics_version: str | None = None
+    charger_version: str | None = None
+    inputs: dict[str, Any] | None = None
 
 
 class SimulationJobPollResponse(BaseModel):
@@ -174,6 +178,10 @@ class SimulationJobPollResponse(BaseModel):
     outputs: SimulateResponse | None = None
     error: dict[str, Any] | None = None
     duration_ms: int | None = None
+    inputs_hash: str | None = None
+    physics_version: str | None = None
+    charger_version: str | None = None
+    inputs: dict[str, Any] | None = None
 
 
 class ValidationCaseResult(BaseModel):
