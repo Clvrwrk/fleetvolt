@@ -26,7 +26,7 @@
 
 ### Routing & Corridors
 
-- [ ] **ROUT-01**: System generates Class 8 truck routes via Valhalla with height/weight/axle restrictions
+- [x] **ROUT-01**: System generates Class 8 truck routes via Valhalla with height/weight/axle restrictions
 - [ ] **ROUT-02**: User can select POLB terminal presets and pre-configured corridor pairs (POLB → Inland Empire, Cajon Pass)
 - [ ] **ROUT-03**: System prefers or validates routes against NHFN freight network where data supports
 - [ ] **ROUT-04**: Simulation completes single scenario in <10 seconds p95 on target VPS hardware
@@ -139,7 +139,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | PHYS-06 | Phase 2 | Pending |
 | PHYS-07 | Phase 2 | Pending |
 | PHYS-08 | Phase 2 | Pending |
-| ROUT-01 | Phase 2 | Pending |
+| ROUT-01 | Phase 2 | Complete |
 | ROUT-02 | Phase 2 | Pending |
 | ROUT-04 | Phase 2 | Pending |
 | CHRG-01 | Phase 3 | Pending |
