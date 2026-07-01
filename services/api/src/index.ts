@@ -108,12 +108,12 @@ app.get("/v1/trucks", async (request, reply) => {
 });
 
 async function proxySimulatorGet(
-  request: { log: { error: (obj: object, msg: string) => void } },
+  request: { log: { error: (obj: object, msg: string) => void }; url?: string },
   reply: { status: (code: number) => { send: (body: unknown) => unknown } },
   path: string,
 ) {
   const simulatorUrl = process.env.SIMULATOR_URL ?? "http://localhost:8000";
-  const query = (request as { url?: string }).url?.split("?")[1];
+  const query = request.url?.split("?")[1];
   const url = query ? `${simulatorUrl}${path}?${query}` : `${simulatorUrl}${path}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -141,12 +141,61 @@ async function proxySimulatorGet(
   }
 }
 
+async function proxySimulatorPost(
+  request: {
+    log: { error: (obj: object, msg: string) => void };
+    body: unknown;
+  },
+  reply: { status: (code: number) => { send: (body: unknown) => unknown } },
+  path: string,
+  timeoutMs = 15000,
+) {
+  const simulatorUrl = process.env.SIMULATOR_URL ?? "http://localhost:8000";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${simulatorUrl}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request.body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const message = await response.text();
+      return reply.status(response.status).send({
+        error: "simulator_error",
+        message,
+      });
+    }
+
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeout);
+    request.log.error({ err: error }, "simulator unreachable");
+    return reply.status(503).send({
+      error: "simulator_unreachable",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 app.get("/v1/chargers/near", async (request, reply) => {
   return proxySimulatorGet(request, reply, "/v1/chargers/near");
 });
 
 app.get("/v1/data/freshness", async (request, reply) => {
   return proxySimulatorGet(request, reply, "/v1/data/freshness");
+});
+
+app.post("/v1/simulate", async (request, reply) => {
+  return proxySimulatorPost(request, reply, "/v1/simulate");
+});
+
+app.get("/v1/corridors", async (request, reply) => {
+  return proxySimulatorGet(request, reply, "/v1/corridors");
 });
 
 const port = Number(process.env.PORT ?? 4000);
