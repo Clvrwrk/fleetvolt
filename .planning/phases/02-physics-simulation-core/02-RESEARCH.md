@@ -530,7 +530,7 @@ def validation_pass(mape_pct: float, lo: float = 8.0, hi: float = 12.0) -> bool:
 | A5 | Port polygon from simplified POLB/LB GeoJSON in `data/geo/` | Port Drayage | Boundary inaccuracy near terminal gates |
 | A6 | Public Open-Elevation stable enough for custom-route fallback | Environment | Need self-hosted Open-Elevation container fallback |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Route-history speed overlay algorithm (RESOLVED: approach selected, detail open)**
    - What we know: D-08 requires overlay on posted limits; must document in `model_assumptions.md`
@@ -558,12 +558,11 @@ def validation_pass(mape_pct: float, lo: float = 8.0, hi: float = 12.0) -> bool:
 8. **Response segment detail level (RESOLVED: D-04)**
    - Decision: always full segment arrays
 
-9. **Flat-highway OEM reference constants (OPEN — discretion)**
-   - What we know: must cite eCascadia/T680E public specs
-   - Recommendation: store in `data/validation/reference_cases.json`; eCascadia 438 kWh ~230 mi regional / T680E 375 kWh ~210 mi at OEM stated payload/speed — verify against spec sheets during implementation
+9. **Flat-highway OEM reference constants (RESOLVED)**
+   - Decision: store in `data/validation/reference_cases.json`; eCascadia 438 kWh ~230 mi regional / T680E 375 kWh ~210 mi at OEM stated payload/speed — verify against spec sheets during Plan 01 implementation
 
-10. **Port polygon GeoJSON source (OPEN — discretion)**
-    - Recommendation: simplified POLB + LB harbor boundary from public port GIS or manual digitization; store as `data/geo/port_polb_lb.geojson`
+10. **Port polygon GeoJSON source (RESOLVED)**
+    - Decision: simplified POLB + LB harbor boundary from public port GIS or manual digitization; store as `data/geo/port_polb_lb.geojson` (Plan 04)
 
 ## Environment Availability
 

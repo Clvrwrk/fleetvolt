@@ -84,7 +84,7 @@ Plans:
   4. Physics validation passes ±8–12% MAPE on OEM reference test cases
   5. Class 8 truck routes generate via Valhalla with height/weight/axle restrictions; POLB terminal presets and corridor pairs are selectable; single scenario completes in <10s p95
 
-**Plans**: 4 plans
+**Plans**: 5 plans
 
 Plans:
 
@@ -98,11 +98,15 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — Sync POST /v1/simulate vertical slice, corridors catalog, Fastify proxy (PHYS-01, PHYS-05, ROUT-02, ROUT-04)
+- [ ] 02-03-PLAN.md — Sync POST /v1/simulate vertical slice, corridors + terminal catalog, Fastify proxy (PHYS-01, PHYS-05, ROUT-02)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — Weather presets, port geo-fence, overrides audit, validation endpoint, OpenAPI codegen (PHYS-04–08, ROUT-04)
+- [ ] 02-04-PLAN.md — Weather presets, port geo-fence, overrides audit trail (PHYS-04, PHYS-07, PHYS-08)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 02-05-PLAN.md — Validation endpoint, MAPE CI gate, fixture perf smoke, OpenAPI codegen (PHYS-06, ROUT-04)
 
 ### Phase 3: Charging & Job Pipeline
 
