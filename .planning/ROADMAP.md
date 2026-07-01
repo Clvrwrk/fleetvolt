@@ -160,7 +160,7 @@ Plans:
   4. Simulation results are stored immutably with input hash for cache replay and comparison
   5. User can export full simulation profile as CSV/JSON and PDF report with map snapshot, assumptions table, physics parameter snapshot, and model version
 
-**Plans**: 5/8 plans executed
+**Plans**: 6/8 plans executed
 
 Plans:
 
@@ -183,7 +183,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 04-04-PLAN.md — KPI cards, charging table, assumptions panel (MAP-04, MAP-05, MAP-06)
+- [x] 04-04-PLAN.md — KPI cards, charging table, assumptions panel (MAP-04, MAP-05, MAP-06)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -236,6 +236,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
 | 3. Charging & Job Pipeline | 5/5 | Complete    | 2026-07-01 |
-| 4. Analyst Dashboard & Export | 5/8 | In Progress|  |
+| 4. Analyst Dashboard & Export | 6/8 | In Progress|  |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
 | 6. TCO Analysis & Production | 0/TBD | Not started | - |

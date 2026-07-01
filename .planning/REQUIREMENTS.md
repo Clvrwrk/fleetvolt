@@ -45,9 +45,9 @@
 - [x] **MAP-01**: User sees interactive map with route polyline color-coded by SoC gradient
 - [x] **MAP-02**: User sees charger markers sized/colored by power level with popup details
 - [x] **MAP-03**: User sees SoC/energy profile chart synced with map hover along route
-- [ ] **MAP-04**: User sees KPI cards (total kWh, Wh/mi, stops, dwell time, final SoC, feasibility verdict)
-- [ ] **MAP-05**: User sees charging plan table (location, arrival SoC, charge kWh/time, departure SoC)
-- [ ] **MAP-06**: User sees assumptions & limitations panel with model version and disclaimer
+- [x] **MAP-04**: User sees KPI cards (total kWh, Wh/mi, stops, dwell time, final SoC, feasibility verdict)
+- [x] **MAP-05**: User sees charging plan table (location, arrival SoC, charge kWh/time, departure SoC)
+- [x] **MAP-06**: User sees assumptions & limitations panel with model version and disclaimer
 
 ### Scenario Analysis
 
@@ -152,9 +152,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | MAP-01 | Phase 4 | Complete |
 | MAP-02 | Phase 4 | Complete |
 | MAP-03 | Phase 4 | Complete |
-| MAP-04 | Phase 4 | Pending |
-| MAP-05 | Phase 4 | Pending |
-| MAP-06 | Phase 4 | Pending |
+| MAP-04 | Phase 4 | Complete |
+| MAP-05 | Phase 4 | Complete |
+| MAP-06 | Phase 4 | Complete |
 | SCEN-01 | Phase 4 | Pending |
 | SCEN-02 | Phase 4 | Pending |
 | SCEN-04 | Phase 4 | Complete |
