@@ -2,9 +2,12 @@
 
 import { useEffect } from "react";
 import type { components } from "@fleetvolt/shared-types";
+import { ComparisonTray } from "@/components/comparison/comparison-tray";
 import { ScenarioForm } from "@/components/scenario/scenario-form";
+import { SensitivitySliders } from "@/components/scenario/sensitivity-sliders";
 import { JobStatusBar } from "@/components/scenario/job-status-bar";
 import { BasicResultsPanel } from "@/components/results/basic-results-panel";
+import { Badge } from "@/components/ui/badge";
 import { useScenarioStore } from "@/stores/scenario-store";
 
 type TruckConfigSummary = components["schemas"]["TruckConfigSummary"];
@@ -17,6 +20,7 @@ type WorkspaceLayoutProps = {
 
 export function WorkspaceLayout({ trucks, corridors }: WorkspaceLayoutProps) {
   const pollResult = useScenarioStore((s) => s.pollResult);
+  const comparisonCount = useScenarioStore((s) => s.comparisonScenarios.length);
   const setCorridors = useScenarioStore((s) => s.setCorridors);
 
   useEffect(() => {
@@ -25,8 +29,11 @@ export function WorkspaceLayout({ trucks, corridors }: WorkspaceLayoutProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--fv-bg)]">
-      <header className="flex h-14 items-center border-b border-[var(--fv-stroke)] px-6">
+      <header className="flex h-14 items-center justify-between border-b border-[var(--fv-stroke)] px-6">
         <h1 className="text-xl font-medium tracking-tight">FleetVolt Route</h1>
+        <Badge variant="outline" data-testid="compare-header-badge">
+          Compare {comparisonCount}/3
+        </Badge>
       </header>
 
       <div className="grid flex-1 grid-cols-[320px_1fr] gap-6 p-6">
@@ -37,6 +44,8 @@ export function WorkspaceLayout({ trucks, corridors }: WorkspaceLayoutProps) {
             </h2>
             <ScenarioForm trucks={trucks} corridors={corridors} />
           </div>
+          <SensitivitySliders />
+          <ComparisonTray />
           <JobStatusBar />
         </aside>
 

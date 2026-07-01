@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { components } from "@fleetvolt/shared-types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -41,6 +43,10 @@ export function ScenarioForm({ trucks, corridors }: ScenarioFormProps) {
   const setFormInputs = useScenarioStore((s) => s.setFormInputs);
   const isPolling = useScenarioStore((s) => s.isPolling);
   const storedInputs = useScenarioStore((s) => s.formInputs);
+  const addToComparison = useScenarioStore((s) => s.addToComparison);
+  const setAddToComparison = useScenarioStore((s) => s.setAddToComparison);
+  const pinCurrentResult = useScenarioStore((s) => s.pinCurrentResult);
+  const [comparisonNotice, setComparisonNotice] = useState<string | null>(null);
 
   const corridorPresets = corridors.filter(
     (c) => c.type === "corridor" && c.corridor_key,
@@ -55,7 +61,19 @@ export function ScenarioForm({ trucks, corridors }: ScenarioFormProps) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setFormInputs(values);
+    setComparisonNotice(null);
     await submitScenario();
+
+    if (!useScenarioStore.getState().addToComparison) {
+      return;
+    }
+
+    const pinResult = pinCurrentResult();
+    if (pinResult === "full") {
+      setComparisonNotice(
+        "Comparison tray is full (3/3). Remove a scenario to pin this run.",
+      );
+    }
   });
 
   return (
@@ -170,6 +188,25 @@ export function ScenarioForm({ trucks, corridors }: ScenarioFormProps) {
           Port drayage aux load
         </Label>
       </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="add-to-comparison"
+          checked={addToComparison}
+          onCheckedChange={(checked) => {
+            setAddToComparison(checked === true);
+          }}
+        />
+        <Label htmlFor="add-to-comparison" className="normal-case">
+          Add to comparison
+        </Label>
+      </div>
+
+      {comparisonNotice ? (
+        <Alert className="border-[var(--fv-stroke)] bg-[var(--fv-surface-muted)] text-foreground">
+          <AlertDescription>{comparisonNotice}</AlertDescription>
+        </Alert>
+      ) : null}
 
       <Button
         type="submit"
