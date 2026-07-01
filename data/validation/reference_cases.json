@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "description": "OEM validation reference cases for PHYS-06 MAPE gate (D-11)",
+  "cases": {
+    "flat_highway_oem": {
+      "truck_id": "ecascadia_438",
+      "description": "Ideal flat highway regional range — eCascadia 438 kWh OEM validation",
+      "distance_mi": 230,
+      "payload_lbs": 45000,
+      "speed_mph": 65,
+      "grade_pct": 0.0,
+      "weather_preset": "ideal",
+      "temp_c": 20,
+      "expected_wh_per_mi": 1713,
+      "expected_total_kwh": 394,
+      "tolerance_mape_pct": [8, 12],
+      "source_notes": "Freightliner eCascadia 438 kWh public spec: ~230 mi regional range at OEM stated payload/speed under ideal conditions. Usable pack 394 kWh (data/trucks/ecascadia_438.json). Wh/mi = 394/230 ≈ 1713 Wh/mi."
+    },
+    "polb_cajon_grade": {
+      "truck_id": "ecascadia_438",
+      "corridor_key": "polb_cajon_pass",
+      "description": "POLB to Cajon Pass corridor with grade — D-11 validation case 2",
+      "payload_lbs": 45000,
+      "weather_preset": "ideal",
+      "temp_c": 20,
+      "expected_total_kwh": [320, 480],
+      "tolerance_mape_pct": [8, 12],
+      "source_notes": "Expected total kWh band for POLB→Cajon Pass Class 8 corridor (~75–90 mi). Band allows ±8–12% MAPE tuning during Phase 2 validation (Plan 05). Corridor preset: data/corridors/polb_cajon_pass.json."
+    }
+  }
+}
