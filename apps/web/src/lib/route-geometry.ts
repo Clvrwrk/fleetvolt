@@ -1,3 +1,4 @@
+import { along, length, lineSlice, lineString } from "@turf/turf";
 import type { components } from "@fleetvolt/shared-types";
 
 type Segment = components["schemas"]["SegmentResult"];
@@ -91,5 +92,52 @@ export function mergeRouteWithSegments(
     routeCoords,
     totalDistM,
     routeDistanceM,
+  };
+}
+
+export function sliceRouteByDistanceM(
+  routeCoords: RouteCoordinates,
+  startM: number,
+  endM: number,
+  totalDistM: number,
+): RouteCoordinates {
+  if (routeCoords.length < 2 || totalDistM <= 0 || endM <= startM) {
+    return [];
+  }
+
+  const line = lineString(routeCoords);
+  const lineLenM = length(line, { units: "meters" });
+  if (lineLenM <= 0) {
+    return [];
+  }
+
+  const startAlong = Math.max(0, (startM / totalDistM) * lineLenM);
+  const endAlong = Math.min(lineLenM, (endM / totalDistM) * lineLenM);
+  if (endAlong <= startAlong) {
+    return [];
+  }
+
+  const startPt = along(line, startAlong, { units: "meters" });
+  const endPt = along(line, endAlong, { units: "meters" });
+  const sliced = lineSlice(startPt, endPt, line);
+  return sliced.geometry.coordinates as RouteCoordinates;
+}
+
+export function segmentDistanceBoundsM(
+  segments: Segment[],
+  index: number,
+): { startM: number; endM: number } {
+  if (index < 0 || index >= segments.length) {
+    return { startM: 0, endM: 0 };
+  }
+
+  let startM = 0;
+  for (let i = 0; i < index; i += 1) {
+    startM += segments[i]!.dist_m;
+  }
+
+  return {
+    startM,
+    endM: startM + segments[index]!.dist_m,
   };
 }

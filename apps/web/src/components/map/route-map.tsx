@@ -8,14 +8,20 @@ import Map, {
   type MapMouseEvent,
   type MapRef,
 } from "react-map-gl/mapbox";
-import { bbox, lineString } from "@turf/turf";
+import { bbox, lineString, nearestPointOnLine, point } from "@turf/turf";
 import type { ExpressionSpecification } from "mapbox-gl";
 import type { components } from "@fleetvolt/shared-types";
 import {
   buildRouteGeoJsonSource,
   buildSocGradientExpression,
 } from "@/lib/segment-geojson";
-import { mergeRouteWithSegments } from "@/lib/route-geometry";
+import {
+  mergeRouteWithSegments,
+  segmentDistanceBoundsM,
+  sliceRouteByDistanceM,
+} from "@/lib/route-geometry";
+import { findSegmentIndexByDistanceM } from "@/lib/segment-lookup";
+import { useScenarioStore } from "@/stores/scenario-store";
 import { MapTokenMissingBanner } from "./map-token-missing-banner";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -34,10 +40,6 @@ type SelectedStop = ChargingStop & { id: string };
 
 const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
 
-function chargerColor(powerKw: number): string {
-  return powerKw >= 350 ? "#2D4A6F" : "#8A8A93";
-}
-
 function formatDwellMinutes(dwellS: number): string {
   return `${Math.round(dwellS / 60)} min`;
 }
@@ -51,6 +53,15 @@ export function RouteMap({
 }: RouteMapProps) {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const [selectedStop, setSelectedStop] = useState<SelectedStop | null>(null);
+  const setActiveDistanceM = useScenarioStore((s) => s.setActiveDistanceM);
+  const activeDistanceM = useScenarioStore((s) => s.activeDistanceM);
+  const activeSegmentIndex = useMemo(
+    () =>
+      activeDistanceM == null
+        ? -1
+        : findSegmentIndexByDistanceM(segments, activeDistanceM),
+    [activeDistanceM, segments],
+  );
 
   const merged = useMemo(
     () => mergeRouteWithSegments(routeCoords, segments, routeDistanceM),
@@ -70,6 +81,26 @@ export function RouteMap({
       ) as ExpressionSpecification,
     [segments, merged.totalDistM],
   );
+
+  const activeSegmentFeature = useMemo(() => {
+    if (activeSegmentIndex < 0) {
+      return null;
+    }
+
+    const { startM, endM } = segmentDistanceBoundsM(segments, activeSegmentIndex);
+    const coords = sliceRouteByDistanceM(
+      merged.routeCoords,
+      startM,
+      endM,
+      merged.totalDistM,
+    );
+
+    if (coords.length < 2) {
+      return null;
+    }
+
+    return buildRouteGeoJsonSource(coords);
+  }, [activeSegmentIndex, merged.routeCoords, merged.totalDistM, segments]);
 
   const chargerFeatures = useMemo(
     () => ({
@@ -139,6 +170,29 @@ export function RouteMap({
     [],
   );
 
+  const onMapMouseMove = useCallback(
+    (event: MapMouseEvent) => {
+      if (merged.routeCoords.length < 2 || merged.totalDistM <= 0) {
+        return;
+      }
+
+      const line = lineString(merged.routeCoords);
+      const nearest = nearestPointOnLine(
+        line,
+        point([event.lngLat.lng, event.lngLat.lat]),
+      );
+      const location = nearest.properties?.location;
+      if (typeof location === "number") {
+        setActiveDistanceM(location * merged.totalDistM);
+      }
+    },
+    [merged.routeCoords, merged.totalDistM, setActiveDistanceM],
+  );
+
+  const onMapMouseLeave = useCallback(() => {
+    setActiveDistanceM(null);
+  }, [setActiveDistanceM]);
+
   if (!token) {
     return <MapTokenMissingBanner />;
   }
@@ -160,8 +214,10 @@ export function RouteMap({
         preserveDrawingBuffer
         initialViewState={initialViewState}
         style={{ width: "100%", height: "100%", minHeight: 360 }}
-        interactiveLayerIds={["charger-circles"]}
+        interactiveLayerIds={["route-soc", "charger-circles"]}
         onClick={onMapClick}
+        onMouseMove={onMapMouseMove}
+        onMouseLeave={onMapMouseLeave}
         aria-label={`Route map with ${chargingStops.length} charging stops`}
       >
         <Source id="route" type="geojson" data={routeFeature} lineMetrics>
@@ -174,6 +230,19 @@ export function RouteMap({
             }}
           />
         </Source>
+
+        {activeSegmentFeature && (
+          <Source id="route-active" type="geojson" data={activeSegmentFeature}>
+            <Layer
+              id="route-active-casing"
+              type="line"
+              paint={{
+                "line-color": "#FFFFFF",
+                "line-width": 9,
+              }}
+            />
+          </Source>
+        )}
 
         {chargingStops.length > 0 && (
           <Source id="chargers" type="geojson" data={chargerFeatures}>

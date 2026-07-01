@@ -1,6 +1,7 @@
 "use client";
 
 import type { components } from "@fleetvolt/shared-types";
+import { SocProfileChart } from "@/components/charts/soc-profile-chart";
 import { RouteMapDynamic } from "@/components/map/route-map-dynamic";
 import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
 import {
@@ -70,22 +71,35 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
         </dl>
       </div>
 
-      <div className="min-h-[360px]" data-testid="results-map-panel">
-        {!hasMapToken ? (
-          <MapTokenMissingBanner />
-        ) : isRouteLoading || !routeGeometry ? (
-          <div
-            className="min-h-[360px] animate-pulse rounded-lg bg-[var(--fv-surface)]"
-            data-testid="route-map-loading"
-          />
-        ) : (
-          <RouteMapDynamic
+      <div
+        className="flex min-h-[360px] flex-col gap-4 lg:flex-row"
+        data-testid="results-primary-panel"
+      >
+        <div className="min-h-[360px] flex-[3]" data-testid="results-map-panel">
+          {!hasMapToken ? (
+            <MapTokenMissingBanner />
+          ) : isRouteLoading || !routeGeometry ? (
+            <div
+              className="min-h-[360px] animate-pulse rounded-lg bg-[var(--fv-surface)]"
+              data-testid="route-map-loading"
+            />
+          ) : (
+            <RouteMapDynamic
+              segments={segments}
+              chargingStops={chargingStops}
+              routeCoords={routeGeometry.coordinates}
+              routeDistanceM={routeGeometry.distance_m}
+            />
+          )}
+        </div>
+
+        <div className="min-h-[240px] flex-[2]" data-testid="results-chart-panel">
+          <SocProfileChart
             segments={segments}
             chargingStops={chargingStops}
-            routeCoords={routeGeometry.coordinates}
-            routeDistanceM={routeGeometry.distance_m}
+            routeCoords={routeGeometry?.coordinates}
           />
-        )}
+        </div>
       </div>
 
       {pollResult.inputs_hash && (
