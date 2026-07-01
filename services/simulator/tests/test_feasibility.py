@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from app.simulation.feasibility import (
     PlannerOutcome,
     classify_feasibility,
@@ -141,3 +143,17 @@ def test_greedy_assumption_entry():
     assert "0.35" in text or "energy" in text.lower()
     assert "0.25" in text or "cost" in text.lower()
     assert "greedy" in text.lower() or "first-feasible" in text.lower()
+
+
+def test_charging_assumptions_doc_weights():
+    """CHRG-06 doc matches model_assumptions.md deferred weight strings (T-03-12)."""
+    doc_path = Path(__file__).resolve().parents[1] / "docs" / "model_assumptions.md"
+    doc_text = doc_path.read_text(encoding="utf-8")
+    assert "## Charging Planner" in doc_text
+    assert "0.40" in doc_text
+    assert "0.35" in doc_text
+    assert "0.25" in doc_text
+    assert "first-feasible" in doc_text.lower() or "greedy first-feasible" in doc_text.lower()
+    assert "18%" in doc_text
+    assert "piecewise" in doc_text.lower() or "band-by-band" in doc_text.lower()
+    assert "or-tools" not in doc_text.lower()

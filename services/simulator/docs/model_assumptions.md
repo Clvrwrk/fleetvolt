@@ -124,3 +124,83 @@ pass = 8% ≤ MAPE ≤ 12%   (calibration band per D-11)
 - **Phase 2 calibration:** `expected_total_kwh` values tuned in Plan 05 so current segment physics lands in the 8–12% band against cached fixtures. OEM nameplate claims documented in `source_notes`; calibrated expected values reflect conservative aux/aero vs OEM ideal-cycle marketing range.
 
 Implementation: `app/simulation/validation_cases.py`, `app/routes/validation.py`.
+
+## Charging Planner
+
+Phase 3 adds greedy HD charging stop recommendations and feasibility verdicts on top of the Phase 2 physics pipeline (CHRG-01–06, PLAT-02).
+
+### Greedy first-feasible algorithm (D-06)
+
+v1 uses a **greedy first-feasible** planner, not a scored multi-objective optimizer. At each low-SoC event along the forward SoC profile, the planner searches for the nearest HD-capable charger that can restore enough energy to reach the next segment or destination within the detour limit. Stops are added iteratively until the route completes or no feasible charger exists.
+
+This is acceptable for MVP consulting feasibility because:
+
+- POLB drayage scenarios need transparent, auditable stop lists — not opaque solver output
+- Greedy detour-min + power-max tie-break produces defensible recommendations analysts can explain to clients
+- Scored multi-objective ranking (CHRG-06 v2) is explicitly deferred; weights are documented below for future upgrade
+
+Implementation: `app/simulation/charging_planner.py` — `plan_greedy_stops()`.
+
+### CHRG-06 deferred multi-objective weights (D-07)
+
+v1 does **not** implement weighted time/energy/cost scoring or external solver-based optimization. Intended v2 scored-greedy weights:
+
+| Objective | Intended weight |
+|-----------|-----------------|
+| Time (dwell + detour) | **0.40** |
+| Energy (kWh added) | **0.35** |
+| Cost (placeholder tariff) | **0.25** |
+
+v1 tie-break (D-20): among feasible candidates, prefer **shortest detour time**, then **highest `power_kw`**.
+
+The simulate response `assumptions[]` entry `charging_greedy_strategy` documents these deferred weights via `get_charging_assumptions()` in `app/simulation/feasibility.py`. Values in the response mirror this section (time=0.4, energy=0.35, cost=0.25 as documented placeholders).
+
+### SoC thresholds (D-08, D-09, D-15)
+
+| Parameter | Default | Override path |
+|-----------|---------|---------------|
+| Charge-search trigger | **18%** SoC | `conditions.charging.soc_trigger_pct` |
+| Hard safety floor | **10%** SoC | `conditions.charging.soc_floor_pct` |
+| Charge target at each stop | **80%** SoC | `conditions.charging.target_soc_pct` |
+| Minimum arrival at destination | **10%** SoC | `conditions.charging.min_arrival_soc_pct` |
+
+The planner fires a stop search when forward SoC drops to the trigger; candidates must not leave the truck below the floor. Destination arrival must meet the minimum arrival target (charge-to level may be raised above 80% on the final stop).
+
+### Charger search (D-17, D-18, D-19)
+
+| Constraint | Value |
+|------------|-------|
+| Primary search radius | **25 mi** (40,234 m) from low-SoC point |
+| Fallback radius | **50 mi** (80,468 m) if zero HD candidates in primary radius |
+| HD filter | `hd_capable = true` **and** `power_kw >= 350` (MCS-aware tier) |
+| Max detour per stop | **10 min** (600 s) — Valhalla corridor→charger→rejoin vs direct continuation |
+
+Spatial query reuses `GET /v1/chargers/near` PostGIS search; detour validation via `app/simulation/detour_validator.py`.
+
+### Dwell integration (D-14)
+
+Dwell seconds at each stop are computed from the truck OEM **piecewise charge curve** (`charge_curve[]` with `soc_pct` / `max_kw` breakpoints in `data/trucks/*.json`). Energy is integrated **band-by-band** along the curve from arrival SoC to charge target — **not** linear `kWh / rated_kW`.
+
+Implementation: `app/simulation/charge_curve.py` — `integrate_charge_curve()`.
+
+### Feasibility tiers (D-10, D-11, D-12)
+
+**Verdict** (`feasibility.verdict`):
+
+| Verdict | Meaning |
+|---------|---------|
+| `feasible` | Route completes with comfortable margins |
+| `critical` | Route completes but violates comfort margin (arrival SoC 5–10%, or single stop with <30 min dwell buffer) |
+| `infeasible` | Route cannot complete with public HD infrastructure |
+
+**Infrastructure tier** (`feasibility.tier`):
+
+| Tier | Meaning |
+|------|---------|
+| `public_hd` | Completable using public HD chargers within search/detour constraints |
+| `depot_required` | Public HD insufficient; shadow pass with unlimited depot charge at origin succeeds |
+| `infrastructure_gap` | No charger set satisfies constraints even with depot assumption |
+
+Infeasible responses include `soc_deficit_kwh` and `blocking_reason` (`no_charger_in_radius`, `detour_exceeded`, `cannot_reach_destination`).
+
+Implementation: `app/simulation/feasibility.py` — `classify_feasibility()`.
