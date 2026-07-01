@@ -20,7 +20,7 @@
 - [x] **PHYS-03**: Simulation integrates elevation profiles and demonstrates grade impact on Cajon Pass corridor
 - [x] **PHYS-04**: Simulation applies weather presets (Ideal / Hot / Cold / Headwind) affecting battery thermal efficiency
 - [x] **PHYS-05**: Simulation projects forward SoC profile and outputs KPIs (total kWh, Wh/mi, regen recovered, total time)
-- [ ] **PHYS-06**: Physics model validates against OEM ideal-case range within ±8–12% MAPE on reference test cases
+- [x] **PHYS-06**: Physics model validates against OEM ideal-case range within ±8–12% MAPE on reference test cases
 - [x] **PHYS-07**: User can enable port drayage profile (stop-go, elevated aux, lower speed cap) for POLB basin segments
 - [x] **PHYS-08**: User can override truck physics parameters with reset-to-OEM option and assumptions audit trail
 
@@ -29,7 +29,7 @@
 - [x] **ROUT-01**: System generates Class 8 truck routes via Valhalla with height/weight/axle restrictions
 - [x] **ROUT-02**: User can select POLB terminal presets and pre-configured corridor pairs (POLB → Inland Empire, Cajon Pass)
 - [ ] **ROUT-03**: System prefers or validates routes against NHFN freight network where data supports
-- [ ] **ROUT-04**: Simulation completes single scenario in <10 seconds p95 on target VPS hardware
+- [x] **ROUT-04**: Simulation completes single scenario in <10 seconds p95 on target VPS hardware
 
 ### Charging
 
@@ -136,12 +136,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | PHYS-03 | Phase 2 | Complete |
 | PHYS-04 | Phase 2 | Complete |
 | PHYS-05 | Phase 2 | Complete |
-| PHYS-06 | Phase 2 | Pending |
+| PHYS-06 | Phase 2 | Complete |
 | PHYS-07 | Phase 2 | Complete |
 | PHYS-08 | Phase 2 | Complete |
 | ROUT-01 | Phase 2 | Complete |
 | ROUT-02 | Phase 2 | Complete |
-| ROUT-04 | Phase 2 | Pending |
+| ROUT-04 | Phase 2 | Complete |
 | CHRG-01 | Phase 3 | Pending |
 | CHRG-02 | Phase 3 | Pending |
 | CHRG-03 | Phase 3 | Pending |

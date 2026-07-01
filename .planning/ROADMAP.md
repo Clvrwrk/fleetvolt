@@ -7,7 +7,7 @@ FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics
 ## Phases
 
 - [x] **Phase 1: Foundation & Spatial Data** - Docker Compose stack, PostGIS spatial truth, NHFN/chargers/trucks/elevation for POLB corridors (completed 2026-07-01)
-- [ ] **Phase 2: Physics Simulation Core** - Segment physics, Valhalla truck routing, POLB/Cajon validation without charging UI
+- [x] **Phase 2: Physics Simulation Core** - Segment physics, Valhalla truck routing, POLB/Cajon validation without charging UI (completed 2026-07-01)
 - [ ] **Phase 3: Charging & Job Pipeline** - Rule-based charging stops, feasibility tiers, Fastify→FastAPI/Celery orchestration
 - [ ] **Phase 4: Analyst Dashboard & Export** - Interactive map, SoC charts, scenario comparison, CSV/JSON/PDF reports
 - [ ] **Phase 5: Corridor Intelligence & Emissions** - NHFN route preference, gap analysis, WTW emissions and energy cost core
@@ -84,7 +84,7 @@ Plans:
   4. Physics validation passes ±8–12% MAPE on OEM reference test cases
   5. Class 8 truck routes generate via Valhalla with height/weight/axle restrictions; POLB terminal presets and corridor pairs are selectable; single scenario completes in <10s p95
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans complete
 
 Plans:
 
@@ -106,7 +106,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 02-05-PLAN.md — Validation endpoint, MAPE CI gate, fixture perf smoke, OpenAPI codegen (PHYS-06, ROUT-04)
+- [x] 02-05-PLAN.md — Validation endpoint, MAPE CI gate, fixture perf smoke, OpenAPI codegen (PHYS-06, ROUT-04)
 
 ### Phase 3: Charging & Job Pipeline
 
@@ -180,7 +180,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Spatial Data | 9/9 | Complete   | 2026-07-01 |
-| 2. Physics Simulation Core | 4/5 | In Progress|  |
+| 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
 | 3. Charging & Job Pipeline | 0/TBD | Not started | - |
 | 4. Analyst Dashboard & Export | 0/TBD | Not started | - |
 | 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
