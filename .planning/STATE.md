@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Progress
-current_phase_name: Phase 12 EXECUTING — Wave 0 (12-01) DONE; Wave 1 next
+current_phase_name: Phase 12 EXECUTING — Waves 0+1 DONE; Wave 2 next
 status: executing
-stopped_at: "Phase 12 Wave 0 COMPLETE: 12-01 converged Convex schema DONE + verified (16 tables = 6 Phase-7 preserved byte-compat + 10 new; provenance 13 sources + optional method/inputs; simulations metadata-only; LIVE push to sensible-oriole-832 succeeded; provenance.test 7/7; tsc clean except pre-existing scenario-form.tsx). NEXT ACTION = execute Wave 1 IN PARALLEL: 12-02 (spatial layer + PostGIS parity harness) ∥ 12-03 (FAF zone-061 ingest). Docker stack UP for parity fixtures."
-last_updated: "2026-07-07T09:10:00.000Z"
+stopped_at: "Phase 12 Waves 0+1 COMPLETE. Wave0 12-01 schema (16 tables). Wave1: 12-02 spatial layer + PostGIS parity gate (22/22 tests, parity 7/7 on BOTH backends; fixture thin=6-row docker seed, 12-04 re-captures after live ingest) + 12-03 FAF zone-061 ingest (105,329 freightOD rows live, verified $1.32T/395M-truck-ktons matches ground truth, freightContext query bounded, prep test 4/4). NOTE: both Wave-1 executors CRASHED mid-run on Anthropic 'credit too low' 400; recovered from atomic commits + finished in-chat (fixed 3 real defects: loader module-resolution, 32k read-limit via by_key index, missing freightContext query). NEXT ACTION = Wave 2 (12-04 chargers ∥ 12-05 carriers ∥ 12-06 CalTrans ∥ 12-07 NATD+OSM). Docker stack UP. Convex dev deploy sensible-oriole-832 live w/ geospatial component + faf/* functions."
+last_updated: "2026-07-07T11:35:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Executed + verified Phase 12 Wave 0 (12-01 converged schema)
+last_activity_desc: Recovered+completed Phase 12 Wave 1 (12-02 spatial parity + 12-03 FAF ingest) after executor billing crash
 progress:
   total_phases: 4
   completed_phases: 1
