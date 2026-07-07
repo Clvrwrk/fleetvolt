@@ -29,7 +29,9 @@ A planner or analyst can configure a realistic POLB drayage + inland corridor sc
 - Strict Technical Brand Geometry aesthetic (framed CAD container, blueprint grid, JetBrains Mono, GSAP motion)
 - Public/paid data (BTS/FAF, Caltrans AADT/GIS, PeMS, FHWA, FMCSA, Google Traffic) with sources surfaced in a technical footer
 
-**Key context:** This milestone introduces a NEW parallel tech stack for the `/pulse` surface only — Next.js 15 (App Router) on Vercel, Convex (state/DB), Google Maps JS API, WorkOS auth, Sentry, GSAP. This intentionally overrides v1's Docker/PostGIS/Valhalla/"no-Google-API" constraints for this visualization surface. The existing FleetVolt Route simulation app (Phases 1–4 shipped) is unaffected. Demo target: Friday July 11, 2026. Phases continue numbering from Phase 7 (v1 Phases 5–6 remain deferred, not built).
+**Key context:** This milestone introduces a NEW parallel tech stack for the `/pulse` surface only — Next.js 15 (App Router) on Vercel, Convex (state/DB), Google Maps JS API, WorkOS auth, Sentry, GSAP. This intentionally overrides v1's Docker/PostGIS/Valhalla/"no-Google-API" constraints for this surface. The existing FleetVolt Route simulation app (Phases 1–4 shipped) is unaffected. Demo target: Friday July 11, 2026. Phases continue numbering from Phase 7 (v1 Phases 5–6 remain deferred, not built).
+
+**Production domain:** `fleetvolt.network` (Google Maps key referrer allowlist: `http://localhost:3000/*`, `http://127.0.0.1:3000/*`, `https://fleetvolt.network/*`, `https://*.fleetvolt.network/*`). Convex dev deployment: `sensible-oriole-832`. Local creds live in `apps/web/.env.local` (git-ignored), sourced from `~/.config/cleverwork/master.env`.
 
 ## Requirements
 
