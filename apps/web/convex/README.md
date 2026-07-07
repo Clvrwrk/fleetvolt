@@ -1,25 +1,50 @@
-# FleetVolt Convex Backend (Phase 7)
+# Convex — FleetVolt Freight Pulse (`/pulse`)
 
-Reactive data layer for the `/pulse` Freight Pulse surface. Provenance-tagged
-multi-source freight data + anonymous view state.
+Real-time data layer for the Freight Pulse visualization surface (Phase 7+). Separate,
+parallel stack from the v1 simulation backend (Docker/PostGIS/Valhalla/FastAPI) — Convex
+serves only the `/pulse` surface.
 
-## Dependency audit (T-07-SC)
+## Bootstrap
 
-All net-new npm dependencies for Phase 7 are installed **once** in Wave 0
-(this plan, `apps/web`) so downstream map/ingest waves never install packages —
-a single reviewable supply-chain trust point. Versions pinned exactly. Download
-counts are npm last-month figures from `07-RESEARCH.md § Package Legitimacy Audit`
-(fetched 2026-07-06); all first-party or foundation-maintained, no typosquats.
+```
+cd apps/web
+npx convex dev        # interactive first run: logs in, creates/links the deployment,
+                      # writes NEXT_PUBLIC_CONVEX_URL + CONVEX_DEPLOYMENT into .env.local,
+                      # and generates convex/_generated (typed api + dataModel).
+```
 
-| Package | Resolved | Downloads/mo | Verdict |
-|---|---|---|---|
-| `convex` | 1.42.1 | 3,677,297 | ✅ First-party (Convex Inc.); client + React bindings + codegen |
-| `@vis.gl/react-google-maps` | 1.9.0 | 7,782,691 | ✅ vis.gl/OpenJS + Google-team maintained |
-| `gsap` | 3.15.0 | 15,212,003 | ✅ Webflow-owned; all plugins free ≥3.13 |
-| `@gsap/react` | 2.1.2 | 4,206,910 | ✅ Official GSAP React adapter |
-| `simplify-js` | 1.2.4 | 613,909 | ✅ mourner (Leaflet author); stable/low-churn |
-| `@types/google.maps` (dev) | 3.65.2 | (DefinitelyTyped) | ✅ Bundled transitively by @vis.gl; pinned for editor types |
+Keep `npx convex dev` running alongside `pnpm dev` during development so schema/function
+changes regenerate `convex/_generated`. For CI / non-interactive codegen use a deploy key:
 
-`@turf/turf` 7.3.5 was already installed (kept, no change). `@fontsource/jetbrains-mono`
-was intentionally NOT added — JetBrains Mono already loads via `next/font/google`
-in `layout.tsx`. No peer-dependency errors reported against React 19.2.7.
+```
+CONVEX_DEPLOY_KEY="<deploy-key>" npx convex codegen
+```
+
+Dev deployment: `sensible-oriole-832`.
+
+## Auth model (Phase 7)
+
+**Unauthenticated by design (D-06).** WorkOS auth is deferred to Phase 10. This deployment
+uses a plain `ConvexReactClient` + `ConvexProvider` — NOT `ConvexProviderWithAuth`. No Convex
+function calls `ctx.auth`.
+
+`userFilters` rows are keyed by an **anonymous localStorage UUID** (`filterKey`), not a user id
+(D-07). In Phase 10 the key is rekeyed to the WorkOS subject id when auth lands.
+
+## Schema (`schema.ts`)
+
+Six tables: `ports`, `highwaySegments`, `freightFlows`, `hotspots`, `marketSizing`, `userFilters`.
+
+Every ingested/data record carries a shared **`provenance`** object
+`{ source, fetchedAt, usefulnessScore, matchMethod }` (validator in `lib/provenance.ts`,
+DINT-01 / SRC-01). `usefulnessScore` is a rubric OUTPUT computed at ingest (DINT-03,
+`data-review-gate` skill) — never a hardcoded catalog assumption. Simulated/estimated values
+carry `source: "SIMULATED" | "ESTIMATE"` and must render distinctly from measured data (SRC-04).
+
+## Files
+
+- `lib/provenance.ts` — shared provenance validator (reused across all data tables)
+- `schema.ts` — 6-table schema + indexes
+- `ports.ts` — `list`, `getByCode` queries (no auth)
+- `userFilters.ts` — `get` (by anonymous filterKey), `upsert` (no auth)
+- `_generated/` — Convex codegen output (do not edit by hand)
