@@ -20,8 +20,6 @@ from dataclasses import dataclass
 import httpx
 from pydantic import BaseModel, Field
 
-from app.simulation.constants import US_MILE_M
-
 logger = logging.getLogger(__name__)
 
 # --- PTV Developer Routing API configuration (P11-04/P11-05) ---
@@ -148,41 +146,6 @@ def decode_polyline(encoded: str, precision: int = 6) -> list[list[float]]:
     return coordinates
 
 
-def leg_coordinates(leg: dict) -> tuple[list[list[float]], str | None]:
-    """Extract [lon, lat] pairs and optional encoded polyline from a Valhalla leg."""
-    shape = leg.get("shape")
-    encoded_polyline = leg.get("encoded_polyline")
-
-    if isinstance(shape, str):
-        return decode_polyline(shape), shape
-    if isinstance(shape, dict):
-        coords = shape.get("coordinates")
-        if isinstance(coords, list):
-            return _geojson_to_lon_lat_pairs(coords), encoded_polyline
-    coordinates = _geojson_to_lon_lat_pairs(shape)
-    return coordinates, encoded_polyline
-
-
-def parse_route_response(payload: dict) -> RouteGeometry:
-    """Parse Valhalla /route JSON into RouteGeometry."""
-    try:
-        trip = payload["trip"]
-        summary = trip["summary"]
-        distance_m = float(summary["length"]) * 1000.0
-        duration_s = float(summary["time"])
-        leg = trip["legs"][0]
-        coordinates, encoded_polyline = leg_coordinates(leg)
-    except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise ValueError(f"Unexpected Valhalla route response shape: {exc}") from exc
-
-    return RouteGeometry(
-        distance_m=distance_m,
-        duration_s=duration_s,
-        encoded_polyline=encoded_polyline,
-        coordinates=coordinates,
-    )
-
-
 def parse_ptv_route_response(payload: dict) -> RouteGeometry:
     """Parse a PTV Developer Routing API /routes RouteResponse into RouteGeometry.
 
@@ -233,124 +196,72 @@ def parse_ptv_route_response(payload: dict) -> RouteGeometry:
     )
 
 
-def _speed_kph_to_mph(value: float) -> float:
-    return value * KPH_TO_MPH
-
-
-def parse_trace_attributes(payload: dict, *, units: str = "miles") -> list[EdgeSpeed]:
-    """Parse Valhalla /trace_attributes into cumulative edge speed bins."""
-    try:
-        edges = payload["edges"]
-    except (KeyError, TypeError) as exc:
-        raise ValueError(f"Unexpected Valhalla trace_attributes response shape: {exc}") from exc
-
-    if not edges:
-        return []
-
-    try:
-        lengths = payload["shape_attributes"]["length"]
-    except (KeyError, TypeError) as exc:
-        raise ValueError(f"Unexpected Valhalla trace_attributes response shape: {exc}") from exc
-
-    length_scale = US_MILE_M if units == "miles" else 1000.0
-    result: list[EdgeSpeed] = []
-    cumulative_m = 0.0
-
-    for i, edge in enumerate(edges):
-        if i >= len(lengths):
-            break
-        edge_len_m = float(lengths[i]) * length_scale
-        truck_speed = edge.get("truck_speed")
-        speed_limit = edge.get("speed_limit")
-        raw_kph = truck_speed if truck_speed is not None else speed_limit
-        if raw_kph is None or float(raw_kph) <= 0:
-            raise ValueError("Unexpected Valhalla trace_attributes response shape: missing speed")
-        speed_mph = _speed_kph_to_mph(float(raw_kph))
-        result.append(
-            EdgeSpeed(
-                start_m=cumulative_m,
-                edge_length_m=edge_len_m,
-                speed_limit_mph=speed_mph,
-            )
-        )
-        cumulative_m += edge_len_m
-
-    return result
-
-
-def _valhalla_status(client: httpx.Client, base_url: str) -> dict | None:
-    try:
-        response = client.get(f"{base_url}/status", timeout=5.0)
-        response.raise_for_status()
-        return response.json()
-    except httpx.HTTPError:
-        return None
-
-
-def _valhalla_ready(status: dict | None) -> bool:
-    if status is None:
-        return False
-    actions = status.get("available_actions") or []
-    return "route" in actions or status.get("tileset_last_modified") is not None
+_EDGE_SPEED_FALLBACK_LOGGED = False
 
 
 class RouteProvider:
-    """Valhalla truck routing client for simulation orchestrator."""
+    """Class 8 truck routing client backed by the PTV Developer Routing API.
 
-    def __init__(self, base_url: str | None = None) -> None:
-        self.base_url = (base_url or VALHALLA_BASE_URL).rstrip("/")
+    Public method surface is unchanged from the prior Valhalla client so
+    orchestrator.py and routes/routing.py need no changes: get_route,
+    get_route_locations, get_edge_speeds.
+    """
 
-    def _route_body(
-        self,
-        origin_lat: float,
-        origin_lon: float,
-        dest_lat: float,
-        dest_lon: float,
-    ) -> dict:
-        return self._locations_route_body(
-            [
-                {"lat": origin_lat, "lon": origin_lon},
-                {"lat": dest_lat, "lon": dest_lon},
-            ]
-        )
+    def __init__(self, base_url: str | None = None, api_key: str | None = None) -> None:
+        self.base_url = (base_url or PTV_BASE_URL).rstrip("/")
+        self.api_key = api_key if api_key is not None else PTV_API_KEY
 
-    def _locations_route_body(self, locations: list[dict[str, float]]) -> dict:
+    def _vehicle_params(self) -> dict[str, object]:
+        """PTV vehicle[...] bracket params from the Class-8 config."""
         return {
-            "locations": locations,
-            "costing": "truck",
-            "costing_options": {"truck": CLASS8_TRUCK_OPTIONS},
-            "shape_format": "geojson",
+            "vehicle[height]": CLASS8_VEHICLE["height"],
+            "vehicle[totalPermittedWeight]": CLASS8_VEHICLE["totalPermittedWeight"],
+            "vehicle[numberOfAxles]": CLASS8_VEHICLE["numberOfAxles"],
+            "vehicle[length]": CLASS8_VEHICLE["length"],
+            "vehicle[width]": CLASS8_VEHICLE["width"],
         }
 
-    def _post_route(self, route_body: dict) -> RouteGeometry:
-        logger.debug("Valhalla route request costing=truck options=%s", CLASS8_TRUCK_OPTIONS)
+    def _get_ptv_route(self, waypoints: list[str]) -> RouteGeometry:
+        """GET {base_url}/routes for the given "lat,lon" waypoints (Class 8 truck)."""
+        if not self.api_key:
+            raise RuntimeError("PTV_DEVELOPER_API_KEY is not configured")
+
+        params: dict[str, object] = {
+            "waypoints": waypoints,
+            "profile": PTV_TRUCK_PROFILE,
+            "results": "POLYLINE",
+            "options[polylineFormat]": "GEO_JSON",
+        }
+        params.update(self._vehicle_params())
+
+        logger.debug(
+            "PTV route request profile=%s vehicle=%s waypoints=%d",
+            PTV_TRUCK_PROFILE,
+            CLASS8_VEHICLE,
+            len(waypoints),
+        )
 
         with httpx.Client() as client:
-            status_payload = _valhalla_status(client, self.base_url)
-            if not _valhalla_ready(status_payload):
-                raise RuntimeError(
-                    "Valhalla routing service unavailable — tiles may still be building "
-                    "(first build can take 30–90 minutes). Check /status on Valhalla."
-                )
-
             try:
-                response = client.post(
-                    f"{self.base_url}/route",
-                    json=route_body,
+                response = client.get(
+                    f"{self.base_url}/routes",
+                    params=params,
+                    headers={"apiKey": self.api_key},
                     timeout=30.0,
                 )
                 response.raise_for_status()
             except httpx.HTTPError as exc:
-                raise RuntimeError(f"Valhalla route request failed: {exc}") from exc
+                raise RuntimeError(f"PTV route request failed: {exc}") from exc
 
-            return parse_route_response(response.json())
+            return parse_ptv_route_response(response.json())
 
     def get_route_locations(self, locations: list[dict[str, float]]) -> RouteGeometry:
         """Return Class 8 truck route geometry for multi-stop locations."""
         if len(locations) < 2:
             raise ValueError("At least two locations required for routing")
-        route_body = self._locations_route_body(locations)
-        return self._post_route(route_body)
+        # PTV waypoint format is "lat,lon" (the INVERSE of the [lon,lat] output contract).
+        waypoints = [f"{loc['lat']},{loc['lon']}" for loc in locations]
+        return self._get_ptv_route(waypoints)
 
     def get_route(
         self,
@@ -359,43 +270,24 @@ class RouteProvider:
         dest_lat: float,
         dest_lon: float,
     ) -> RouteGeometry:
-        """Return Class 8 truck route geometry via Valhalla /route."""
-        route_body = self._route_body(origin_lat, origin_lon, dest_lat, dest_lon)
-        return self._post_route(route_body)
-
-    def get_trace_attributes(self, coordinates: list[list[float]]) -> dict:
-        """POST /trace_attributes for per-edge posted speeds."""
-        if len(coordinates) < 2:
-            raise ValueError("At least two coordinates required for trace_attributes")
-
-        trace_body = {
-            "shape": [{"lat": lat, "lon": lon} for lon, lat in coordinates],
-            "costing": "truck",
-            "costing_options": {"truck": CLASS8_TRUCK_OPTIONS},
-            "directions_options": {"units": "miles"},
-            "filters": {
-                "attributes": [
-                    "edge.speed_limit",
-                    "edge.truck_speed",
-                    "shape_attributes.length",
-                ],
-                "action": "include",
-            },
-        }
-
-        with httpx.Client() as client:
-            try:
-                response = client.post(
-                    f"{self.base_url}/trace_attributes",
-                    json=trace_body,
-                    timeout=30.0,
-                )
-                response.raise_for_status()
-            except httpx.HTTPError as exc:
-                raise RuntimeError(f"Valhalla trace_attributes request failed: {exc}") from exc
-            return response.json()
+        """Return Class 8 truck route geometry via the PTV Developer Routing API."""
+        # PTV waypoint format is "lat,lon" (inverse of [lon,lat] output).
+        waypoints = [f"{origin_lat},{origin_lon}", f"{dest_lat},{dest_lon}"]
+        return self._get_ptv_route(waypoints)
 
     def get_edge_speeds(self, coordinates: list[list[float]]) -> list[EdgeSpeed]:
-        """Return per-edge posted speed limits aligned to cumulative route distance."""
-        payload = self.get_trace_attributes(coordinates)
-        return parse_trace_attributes(payload, units="miles")
+        """Return per-edge posted speed limits — empty under PTV.
+
+        PTV /routes returns polyline + distance + travelTime but NO per-edge posted
+        speed (verified in the OpenAPI RouteResponse/Leg schema). This adapter therefore
+        returns [] and resolve_speeds falls back to DEFAULT_POSTED_MPH=55, preserving the
+        physics contract (documented fidelity change, P11-04 / 11-RESEARCH §2).
+        """
+        global _EDGE_SPEED_FALLBACK_LOGGED
+        if not _EDGE_SPEED_FALLBACK_LOGGED:
+            logger.info(
+                "PTV routing does not expose per-edge posted speed; physics uses default "
+                "posted-speed fallback (DEFAULT_POSTED_MPH)"
+            )
+            _EDGE_SPEED_FALLBACK_LOGGED = True
+        return []
