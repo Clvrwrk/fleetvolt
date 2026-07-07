@@ -1,29 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Map, {
-  Layer,
-  Popup,
-  Source,
-  type MapMouseEvent,
-  type MapRef,
-} from "react-map-gl/mapbox";
+// RouteMap — Phase-4 route map ported to @vis.gl/react-google-maps on a vector
+// mapId (P11-03, MAP-01/02/03), mirroring pulse-map.tsx.
+//
+// Google has NO per-vertex line-gradient, so the SoC gradient is rendered as N
+// segmented solid-color google.maps.Polylines (buildSocPolylines) + a white
+// active-segment casing Polyline (buildActiveCasingPath) — see @/lib/soc-segments.
+// Chargers are AdvancedMarkers (NEVER google.maps.Marker), sized/colored by
+// power_kw. The popup is an <InfoWindow>. Hover-sync preserves the identical
+// turf nearestPointOnLine -> setActiveDistanceM(location*totalDistM) logic,
+// only the event plumbing changes (Google map listeners instead of the old lib).
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AdvancedMarker,
+  APIProvider,
+  InfoWindow,
+  Map,
+  RenderingType,
+  useMap,
+} from "@vis.gl/react-google-maps";
 import { bbox, lineString, nearestPointOnLine, point } from "@turf/turf";
-import type { ExpressionSpecification } from "mapbox-gl";
 import type { components } from "@fleetvolt/shared-types";
+import { bboxTupleToBounds } from "@/lib/ca-framing";
+import { mergeRouteWithSegments } from "@/lib/route-geometry";
 import {
-  buildRouteGeoJsonSource,
-  buildSocGradientExpression,
-} from "@/lib/segment-geojson";
-import {
-  mergeRouteWithSegments,
-  segmentDistanceBoundsM,
-  sliceRouteByDistanceM,
-} from "@/lib/route-geometry";
+  buildActiveCasingPath,
+  buildSocPolylines,
+} from "@/lib/soc-segments";
 import { findSegmentIndexByDistanceM } from "@/lib/segment-lookup";
+import { createGoogleMapHandle, type FvMapRef } from "@/lib/map-ref";
 import { useScenarioStore } from "@/stores/scenario-store";
 import { MapTokenMissingBanner } from "./map-token-missing-banner";
-import "mapbox-gl/dist/mapbox-gl.css";
 
 type Segment = components["schemas"]["SegmentResult"];
 type ChargingStop = components["schemas"]["ChargingStopResult"];
@@ -33,14 +40,23 @@ export type RouteMapProps = {
   chargingStops: ChargingStop[];
   routeCoords: [number, number][];
   routeDistanceM?: number;
-  mapRef?: React.RefObject<MapRef | null>;
+  mapRef?: FvMapRef;
   selectedStopId?: string | null;
   onSelectStop?: (stopId: string | null) => void;
 };
 
 type SelectedStop = ChargingStop & { id: string };
 
-const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAP_ID;
+
+// SoCal fallback framing (parity with the old longitude -117.5 / lat 34.0 / z8).
+const FALLBACK_BOUNDS = {
+  north: 34.7,
+  south: 33.3,
+  east: -116.8,
+  west: -118.2,
+};
 
 function formatDwellMinutes(dwellS: number): string {
   return `${Math.round(dwellS / 60)} min`;
@@ -48,6 +64,152 @@ function formatDwellMinutes(dwellS: number): string {
 
 function stopKey(stop: ChargingStop, index: number): string {
   return stop.station_id || String(index);
+}
+
+/** power_kw -> marker radius in px, reproducing Mapbox's 50->8..500->20 scale. */
+function chargerRadiusPx(powerKw: number): number {
+  const clamped = Math.min(500, Math.max(50, powerKw));
+  const t = (clamped - 50) / (500 - 50);
+  return 8 + t * (20 - 8);
+}
+
+function chargerColor(powerKw: number): string {
+  return powerKw >= 350 ? "#2D4A6F" : "#8A8A93";
+}
+
+/**
+ * Imperative controller living INSIDE <Map>: resolves the live google.maps.Map
+ * via useMap(), publishes an FvMapHandle to mapRef for consumers (panTo +
+ * captureSnapshot), and wires the turf hover-sync listeners. Never remounts the
+ * <Map> — everything is prop-driven (Pitfall #6).
+ */
+function MapController({
+  mapRef,
+  routeCoords,
+  totalDistM,
+}: {
+  mapRef?: FvMapRef;
+  routeCoords: [number, number][];
+  totalDistM: number;
+}) {
+  const map = useMap();
+  const setActiveDistanceM = useScenarioStore((s) => s.setActiveDistanceM);
+
+  // Publish the shared handle to consumers.
+  useEffect(() => {
+    if (!mapRef) return;
+    mapRef.current = createGoogleMapHandle(map);
+    return () => {
+      mapRef.current = null;
+    };
+  }, [map, mapRef]);
+
+  // Hover-sync: identical turf nearestPointOnLine logic, Google event plumbing.
+  useEffect(() => {
+    if (!map) return;
+    if (routeCoords.length < 2 || totalDistM <= 0) return;
+
+    const line = lineString(routeCoords);
+
+    const moveListener = map.addListener(
+      "mousemove",
+      (event: google.maps.MapMouseEvent) => {
+        const latLng = event.latLng;
+        if (!latLng) return;
+        const nearest = nearestPointOnLine(
+          line,
+          point([latLng.lng(), latLng.lat()]),
+        );
+        const location = nearest.properties?.location;
+        if (typeof location === "number") {
+          setActiveDistanceM(location * totalDistM);
+        }
+      },
+    );
+
+    const outListener = map.addListener("mouseout", () => {
+      setActiveDistanceM(null);
+    });
+
+    return () => {
+      moveListener.remove();
+      outListener.remove();
+    };
+  }, [map, routeCoords, totalDistM, setActiveDistanceM]);
+
+  return null;
+}
+
+/**
+ * Imperatively manages the segmented SoC polylines + white active casing as
+ * google.maps.Polyline objects (no per-vertex gradient in Google). Adds/removes
+ * on prop change, cleans up on unmount.
+ */
+function RoutePolylines({
+  routeCoords,
+  segments,
+  totalDistM,
+  activeSegmentIndex,
+}: {
+  routeCoords: [number, number][];
+  segments: Segment[];
+  totalDistM: number;
+  activeSegmentIndex: number;
+}) {
+  const map = useMap();
+  const socRef = useRef<google.maps.Polyline[]>([]);
+  const casingRef = useRef<google.maps.Polyline | null>(null);
+
+  // Segmented SoC polylines.
+  useEffect(() => {
+    if (!map) return;
+    const descriptors = buildSocPolylines(routeCoords, segments, totalDistM);
+    const lines = descriptors.map(
+      (d) =>
+        new google.maps.Polyline({
+          path: d.path,
+          strokeColor: d.strokeColor,
+          strokeWeight: 5,
+          strokeOpacity: 1,
+          map,
+          zIndex: 2,
+        }),
+    );
+    socRef.current = lines;
+    return () => {
+      for (const line of socRef.current) line.setMap(null);
+      socRef.current = [];
+    };
+  }, [map, routeCoords, segments, totalDistM]);
+
+  // White active-segment casing UNDER the SoC line (lower zIndex).
+  useEffect(() => {
+    if (!map) return;
+    const path = buildActiveCasingPath(
+      routeCoords,
+      segments,
+      activeSegmentIndex,
+      totalDistM,
+    );
+    if (path.length < 2) {
+      return;
+    }
+    const casing = new google.maps.Polyline({
+      path,
+      strokeColor: "#FFFFFF",
+      strokeWeight: 9,
+      strokeOpacity: 1,
+      map,
+      zIndex: 1,
+    });
+    casingRef.current = casing;
+    return () => {
+      casing.setMap(null);
+      casingRef.current = null;
+    };
+  }, [map, routeCoords, segments, activeSegmentIndex, totalDistM]);
+
+  return null;
 }
 
 export function RouteMap({
@@ -59,33 +221,36 @@ export function RouteMap({
   selectedStopId,
   onSelectStop,
 }: RouteMapProps) {
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const [selectedStop, setSelectedStop] = useState<SelectedStop | null>(null);
-  const setActiveDistanceM = useScenarioStore((s) => s.setActiveDistanceM);
+  const [prevSelectedStopId, setPrevSelectedStopId] = useState<
+    string | null | undefined
+  >(selectedStopId);
   const activeDistanceM = useScenarioStore((s) => s.activeDistanceM);
 
-  useEffect(() => {
+  // Sync the controlled selectedStopId prop -> local selectedStop by adjusting
+  // state during render (React's endorsed alternative to a setState effect).
+  if (selectedStopId !== prevSelectedStopId) {
+    setPrevSelectedStopId(selectedStopId);
     if (selectedStopId == null) {
       setSelectedStop(null);
-      return;
+    } else {
+      const index = chargingStops.findIndex(
+        (stop, idx) => stopKey(stop, idx) === selectedStopId,
+      );
+      const stop = chargingStops[index];
+      setSelectedStop(
+        stop
+          ? {
+              ...stop,
+              id: selectedStopId,
+              name: stop.name ?? "Charging stop",
+              station_id: stop.station_id || selectedStopId,
+            }
+          : null,
+      );
     }
+  }
 
-    const index = chargingStops.findIndex(
-      (stop, idx) => stopKey(stop, idx) === selectedStopId,
-    );
-    const stop = chargingStops[index];
-    if (!stop) {
-      setSelectedStop(null);
-      return;
-    }
-
-    setSelectedStop({
-      ...stop,
-      id: selectedStopId,
-      name: stop.name ?? "Charging stop",
-      station_id: stop.station_id || selectedStopId,
-    });
-  }, [chargingStops, selectedStopId]);
   const activeSegmentIndex = useMemo(
     () =>
       activeDistanceM == null
@@ -99,136 +264,29 @@ export function RouteMap({
     [routeCoords, segments, routeDistanceM],
   );
 
-  const routeFeature = useMemo(
-    () => buildRouteGeoJsonSource(merged.routeCoords),
-    [merged.routeCoords],
-  );
-
-  const gradientExpression = useMemo(
-    () =>
-      buildSocGradientExpression(
-        segments,
-        merged.totalDistM,
-      ) as ExpressionSpecification,
-    [segments, merged.totalDistM],
-  );
-
-  const activeSegmentFeature = useMemo(() => {
-    if (activeSegmentIndex < 0) {
-      return null;
-    }
-
-    const { startM, endM } = segmentDistanceBoundsM(segments, activeSegmentIndex);
-    const coords = sliceRouteByDistanceM(
-      merged.routeCoords,
-      startM,
-      endM,
-      merged.totalDistM,
-    );
-
-    if (coords.length < 2) {
-      return null;
-    }
-
-    return buildRouteGeoJsonSource(coords);
-  }, [activeSegmentIndex, merged.routeCoords, merged.totalDistM, segments]);
-
-  const chargerFeatures = useMemo(
-    () => ({
-      type: "FeatureCollection" as const,
-      features: chargingStops.map((stop, index) => ({
-        type: "Feature" as const,
-        id: stop.station_id || String(index),
-        properties: {
-          name: stop.name ?? "Charging stop",
-          power_kw: stop.power_kw,
-          arrival_soc_pct: stop.arrival_soc_pct,
-          departure_soc_pct: stop.departure_soc_pct,
-          dwell_s: stop.dwell_s,
-        },
-        geometry: {
-          type: "Point" as const,
-          coordinates: [stop.lon, stop.lat],
-        },
-      })),
-    }),
-    [chargingStops],
-  );
-
-  const initialViewState = useMemo(() => {
+  const bounds = useMemo(() => {
     if (routeCoords.length < 2) {
-      return {
-        longitude: -117.5,
-        latitude: 34.0,
-        zoom: 8,
-      };
+      return FALLBACK_BOUNDS;
     }
-
     const [west, south, east, north] = bbox(lineString(routeCoords));
-    return {
-      bounds: [
-        [west, south],
-        [east, north],
-      ] as [[number, number], [number, number]],
-      fitBoundsOptions: { padding: 48 },
-    };
+    return bboxTupleToBounds([west, south, east, north]);
   }, [routeCoords]);
 
-  const onMapClick = useCallback(
-    (event: MapMouseEvent) => {
-      const feature = event.features?.[0];
-      if (feature?.layer?.id === "charger-circles" && feature.properties) {
-        event.originalEvent.stopPropagation();
-        const props = feature.properties;
-        const stopId = String(feature.id ?? props.name);
-        const nextStop: SelectedStop = {
-          id: stopId,
-          station_id: stopId,
-          name: String(props.name),
-          lat: (feature.geometry as GeoJSON.Point).coordinates[1]!,
-          lon: (feature.geometry as GeoJSON.Point).coordinates[0]!,
-          power_kw: Number(props.power_kw),
-          arrival_soc_pct: Number(props.arrival_soc_pct),
-          departure_soc_pct: Number(props.departure_soc_pct),
-          dwell_s: Number(props.dwell_s),
-          energy_added_kwh: 0,
-          detour_s: 0,
-        };
-        setSelectedStop(nextStop);
-        onSelectStop?.(stopId);
-        return;
-      }
-
-      setSelectedStop(null);
-      onSelectStop?.(null);
+  const handleSelectStop = useCallback(
+    (stop: ChargingStop, index: number) => {
+      const id = stopKey(stop, index);
+      setSelectedStop({
+        ...stop,
+        id,
+        name: stop.name ?? "Charging stop",
+        station_id: stop.station_id || id,
+      });
+      onSelectStop?.(id);
     },
     [onSelectStop],
   );
 
-  const onMapMouseMove = useCallback(
-    (event: MapMouseEvent) => {
-      if (merged.routeCoords.length < 2 || merged.totalDistM <= 0) {
-        return;
-      }
-
-      const line = lineString(merged.routeCoords);
-      const nearest = nearestPointOnLine(
-        line,
-        point([event.lngLat.lng, event.lngLat.lat]),
-      );
-      const location = nearest.properties?.location;
-      if (typeof location === "number") {
-        setActiveDistanceM(location * merged.totalDistM);
-      }
-    },
-    [merged.routeCoords, merged.totalDistM, setActiveDistanceM],
-  );
-
-  const onMapMouseLeave = useCallback(() => {
-    setActiveDistanceM(null);
-  }, [setActiveDistanceM]);
-
-  if (!token) {
+  if (!API_KEY || !MAP_ID) {
     return <MapTokenMissingBanner />;
   }
 
@@ -242,94 +300,79 @@ export function RouteMap({
 
   return (
     <div className="relative min-h-[360px] overflow-hidden rounded-lg border border-[var(--fv-stroke)]">
-      <Map
-        ref={mapRef}
-        mapboxAccessToken={token}
-        mapStyle={MAP_STYLE}
-        preserveDrawingBuffer
-        initialViewState={initialViewState}
-        style={{ width: "100%", height: "100%", minHeight: 360 }}
-        interactiveLayerIds={["route-soc", "charger-circles"]}
-        onClick={onMapClick}
-        onMouseMove={onMapMouseMove}
-        onMouseLeave={onMapMouseLeave}
-        aria-label={`Route map with ${chargingStops.length} charging stops`}
-      >
-        <Source id="route" type="geojson" data={routeFeature} lineMetrics>
-          <Layer
-            id="route-soc"
-            type="line"
-            paint={{
-              "line-width": 5,
-              "line-gradient": gradientExpression,
-            }}
+      <APIProvider apiKey={API_KEY} version="quarterly">
+        <Map
+          mapId={MAP_ID}
+          renderingType={RenderingType.VECTOR}
+          defaultBounds={bounds}
+          gestureHandling="greedy"
+          disableDefaultUI
+          className="h-full w-full"
+          style={{ width: "100%", height: "100%", minHeight: 360 }}
+          data-testid="route-map-canvas"
+          aria-label={`Route map with ${chargingStops.length} charging stops`}
+        >
+          <MapController
+            mapRef={mapRef}
+            routeCoords={merged.routeCoords}
+            totalDistM={merged.totalDistM}
           />
-        </Source>
+          <RoutePolylines
+            routeCoords={merged.routeCoords}
+            segments={segments}
+            totalDistM={merged.totalDistM}
+            activeSegmentIndex={activeSegmentIndex}
+          />
 
-        {activeSegmentFeature && (
-          <Source id="route-active" type="geojson" data={activeSegmentFeature}>
-            <Layer
-              id="route-active-casing"
-              type="line"
-              paint={{
-                "line-color": "#FFFFFF",
-                "line-width": 9,
-              }}
-            />
-          </Source>
-        )}
+          {chargingStops.map((stop, index) => {
+            const id = stopKey(stop, index);
+            const radius = chargerRadiusPx(stop.power_kw);
+            return (
+              <AdvancedMarker
+                key={id}
+                position={{ lat: stop.lat, lng: stop.lon }}
+                title={stop.name ?? "Charging stop"}
+                onClick={() => handleSelectStop(stop, index)}
+              >
+                <div
+                  data-testid="charger-marker"
+                  data-station-id={id}
+                  aria-label={`${stop.name ?? "Charging stop"} — ${stop.power_kw} kW`}
+                  style={{
+                    width: radius * 2,
+                    height: radius * 2,
+                    borderRadius: "9999px",
+                    backgroundColor: chargerColor(stop.power_kw),
+                    border: "1px solid #FFFFFF",
+                    boxSizing: "border-box",
+                    cursor: "pointer",
+                  }}
+                />
+              </AdvancedMarker>
+            );
+          })}
 
-        {chargingStops.length > 0 && (
-          <Source id="chargers" type="geojson" data={chargerFeatures}>
-            <Layer
-              id="charger-circles"
-              type="circle"
-              paint={{
-                "circle-radius": [
-                  "interpolate",
-                  ["linear"],
-                  ["get", "power_kw"],
-                  50,
-                  8,
-                  500,
-                  20,
-                ],
-                "circle-color": [
-                  "case",
-                  [">=", ["get", "power_kw"], 350],
-                  "#2D4A6F",
-                  "#8A8A93",
-                ],
-                "circle-stroke-width": 1,
-                "circle-stroke-color": "#FFFFFF",
-              }}
-            />
-          </Source>
-        )}
-
-        {selectedStop && (
-          <Popup
-            longitude={selectedStop.lon}
-            latitude={selectedStop.lat}
-            closeButton
-            closeOnClick={false}
-            onClose={() => setSelectedStop(null)}
-          >
-            <div className="space-y-1 text-sm">
-              <p className="font-medium">{selectedStop.name}</p>
-              <p>{selectedStop.power_kw} kW</p>
-              <p>
-                Arrival {selectedStop.arrival_soc_pct}% → Departure{" "}
-                {selectedStop.departure_soc_pct}%
-              </p>
-              <p>Dwell {formatDwellMinutes(selectedStop.dwell_s)}</p>
-            </div>
-          </Popup>
-        )}
-      </Map>
+          {selectedStop && (
+            <InfoWindow
+              position={{ lat: selectedStop.lat, lng: selectedStop.lon }}
+              onCloseClick={() => setSelectedStop(null)}
+            >
+              <div className="space-y-1 text-sm">
+                <p className="font-medium">{selectedStop.name}</p>
+                <p>{selectedStop.power_kw} kW</p>
+                <p>
+                  Arrival {selectedStop.arrival_soc_pct}% → Departure{" "}
+                  {selectedStop.departure_soc_pct}%
+                </p>
+                <p>Dwell {formatDwellMinutes(selectedStop.dwell_s)}</p>
+              </div>
+            </InfoWindow>
+          )}
+        </Map>
+      </APIProvider>
 
       <div
-        className="pointer-events-none absolute bottom-3 left-3 rounded-md border border-[var(--fv-stroke)] bg-white/95 px-3 py-2 text-xs shadow-sm"
+        className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-md border border-[var(--fv-stroke)] bg-white/95 px-3 py-2 text-xs shadow-sm"
         aria-hidden
       >
         <p className="mb-1 font-medium text-foreground">SoC along route</p>
