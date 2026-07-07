@@ -160,16 +160,19 @@ export default defineSchema({
     .index("by_city", ["city"]),
 
   // NATD truck-stop parking (P12-06 / P12-11 proxy). numberOfSpots is the
-  // P12-12 capacity proxy. No extra index needed.
+  // P12-12 capacity proxy. parkingKey (stable NATD hash) backs the idempotent
+  // upsert (12-07).
   parking: defineTable({
+    parkingKey: v.optional(v.string()),
     name: v.optional(v.string()),
     location: v.object({ lat: v.number(), lng: v.number() }),
     numberOfSpots: v.optional(v.number()),
     hgv: v.optional(v.boolean()),
     provenance,
-  }),
+  }).index("by_parkingKey", ["parkingKey"]),
 
-  // OSM POIs (P12-14). tags holds the raw OSM tag bag.
+  // OSM POIs (P12-14). tags holds the raw OSM tag bag. osmKey =
+  // "<elementType>/<osmId>" backs the idempotent upsert (12-07).
   pois: defineTable({
     type: v.union(
       v.literal("truck_parking"),
@@ -178,11 +181,14 @@ export default defineSchema({
       v.literal("convenience"),
       v.literal("fast_food"),
     ),
+    osmKey: v.optional(v.string()),
     name: v.optional(v.string()),
     location: v.object({ lat: v.number(), lng: v.number() }),
     tags: v.optional(v.any()), // raw OSM tags
     provenance,
-  }).index("by_type", ["type"]),
+  })
+    .index("by_type", ["type"])
+    .index("by_osmKey", ["osmKey"]),
 
   // ── Phase 12 converged LINE + reference + rollup tables ────────────────────
 
