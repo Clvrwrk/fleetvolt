@@ -183,6 +183,56 @@ def parse_route_response(payload: dict) -> RouteGeometry:
     )
 
 
+def parse_ptv_route_response(payload: dict) -> RouteGeometry:
+    """Parse a PTV Developer Routing API /routes RouteResponse into RouteGeometry.
+
+    Maps PTV -> RouteGeometry contract (P11-04, preserved byte-for-byte):
+      distance_m  = payload["distance"]    # PTV returns METERS already (no *1000)
+      duration_s  = payload["travelTime"]  # seconds
+      coordinates = [lon, lat] pairs from payload["polyline"]
+
+    Robustness (plan-checker #3): PTV types ``polyline`` as ``string``, so with
+    options[polylineFormat]=GEO_JSON it may arrive either as a parsed dict OR as a raw
+    JSON string. Handle both. A GOOGLE_ENCODED_POLYLINE fallback string (non-JSON) is
+    decoded with the existing precision-6 decode_polyline.
+    """
+    try:
+        distance_m = float(payload["distance"])  # PTV distance is meters — do NOT *1000
+        duration_s = float(payload["travelTime"])
+        pl = payload["polyline"]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"Unexpected PTV route response shape: {exc}") from exc
+
+    encoded_polyline: str | None = None
+    if isinstance(pl, str):
+        encoded_polyline = pl
+        try:
+            pl = json.loads(pl)
+        except json.JSONDecodeError:
+            # GOOGLE_ENCODED_POLYLINE fallback path (a non-JSON string).
+            coordinates = decode_polyline(pl, precision=6)
+            return RouteGeometry(
+                distance_m=distance_m,
+                duration_s=duration_s,
+                encoded_polyline=encoded_polyline,
+                coordinates=coordinates,
+            )
+
+    if isinstance(pl, dict) and isinstance(pl.get("coordinates"), list):
+        coordinates = _geojson_to_lon_lat_pairs(pl["coordinates"])
+    else:
+        raise ValueError(
+            f"Unexpected PTV route response shape: unrecognized polyline {type(pl)!r}"
+        )
+
+    return RouteGeometry(
+        distance_m=distance_m,
+        duration_s=duration_s,
+        encoded_polyline=encoded_polyline,
+        coordinates=coordinates,
+    )
+
+
 def _speed_kph_to_mph(value: float) -> float:
     return value * KPH_TO_MPH
 
