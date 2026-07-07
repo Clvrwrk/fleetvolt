@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Progress
-current_phase_name: Phase 12 SCOPED (Convex data+spatial + hotspot model); ready to plan
-status: planning
-stopped_at: "HANDOFF 2026-07-07 (rest break). Phase 11 DONE. Phase 12 + new Phase 15 SCOPED (CONTEXT+RESEARCH written, committed 7753f00). NEXT ACTION = spawn Phase 12 planner (gsd-planner -> gsd-plan-checker), same flow as Phase 11. Docker stack LEFT RUNNING for parity fixtures."
-last_updated: "2026-07-07T09:30:00.000Z"
+current_phase_name: Phase 12 PLANNED (8 plans, checker PASS-WITH-NITS fixed); ready to execute
+status: planned
+stopped_at: "Phase 12 PLANNED — 8 plans (4 waves) written, plan-checker verdict PASS-WITH-NITS, all fixes applied (req-ID collision->CVX-* + registered in REQUIREMENTS.md; FAF dtype-string note; FAF-zonal-proxy caveat). NEXT ACTION = execute Wave 0 (12-01 converged schema), then Wave 1 (12-02 spatial ∥ 12-03 FAF), Wave 2 (12-04/05/06/07 ingests, 4-way parallel), Wave 3 (12-08 hotspot+flagship). Docker stack UP for PostGIS parity fixtures."
+last_updated: "2026-07-07T09:00:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Scoped Phase 12 (flagship query north-star + hotspot data model) and added Phase 15 (hotspot UI + AI sales brief)
+last_activity_desc: Planned Phase 12 (8 plans) + review-hardened via plan-checker
 progress:
   total_phases: 4
   completed_phases: 1
