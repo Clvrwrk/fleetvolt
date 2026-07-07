@@ -43,6 +43,9 @@ here (those are Phases 12–14).
 
 ### Claude's Discretion
 - Exact Google Routes API request shape, polyline decoding approach, posted-speed derivation from Google response (Google exposes speed differently than Valhalla edges — may require `speedReadingIntervals` or a fallback), and how to structure the routing adapter for testability.
+
+### Requirement-ID traceability note (plan-checker #4)
+- The plans reuse v1 requirement IDs — ROUT-01/ROUT-02 (v1 Phase 2, Valhalla routing) and MAP-01/02/03 + FLOW-01 (v1 Phase 4 map), all marked **Complete** in `.planning/REQUIREMENTS.md`. In v3.0 these IDs are **re-scoped**: ROUT-01 now tags the PTV migration (not the original Valhalla build), MAP-01/02/03 now tag the Google-map port (not the original Mapbox build). This is intentional (the migration re-delivers the same user-facing capability on a new stack), but it means "ROUT-01 Complete" in the v1 ledger and "ROUT-01" in Phase 11 refer to different implementations. Treat Phase 11's requirement tags as **re-scoped-for-v3.0** references, not new requirements. If cleaner traceability is wanted later, mint versioned IDs (e.g. ROUT-01.v3) — deferred as a non-blocking bookkeeping choice.
 </decisions>
 
 <canonical_refs>
