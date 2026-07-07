@@ -44,8 +44,8 @@ function loadEnv() {
   return m[1].trim();
 }
 
-function chunk(arr, size) {
-  const out = [];
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
@@ -54,8 +54,25 @@ async function main() {
   const client = new ConvexHttpClient(loadEnv());
   const fetchedAt = Date.now();
 
-  const lookups = JSON.parse(readFileSync(resolve(OUT, "faf_lookups.json"), "utf8"));
-  const rows = JSON.parse(readFileSync(resolve(OUT, "faf_zone061.json"), "utf8"));
+  const lookups = JSON.parse(
+    readFileSync(resolve(OUT, "faf_lookups.json"), "utf8"),
+  ) as {
+    zones: { zoneId: string; name: string; state?: string | null }[];
+    modes: { modeId: string; label: string }[];
+    commodities: { sctg2: string; label: string }[];
+  };
+  type ODRow = {
+    year: number;
+    dmsOrig: string;
+    dmsDest: string;
+    dmsMode?: string;
+    sctg2?: string;
+    tonsKtons?: number;
+    valueUSD?: number;
+  };
+  const rows = JSON.parse(
+    readFileSync(resolve(OUT, "faf_zone061.json"), "utf8"),
+  ) as ODRow[];
 
   console.log(
     `loader: ${lookups.zones.length} zones, ${lookups.modes.length} modes, ` +
