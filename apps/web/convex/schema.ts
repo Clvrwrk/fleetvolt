@@ -180,4 +180,116 @@ export default defineSchema({
     tags: v.optional(v.any()), // raw OSM tags
     provenance,
   }).index("by_type", ["type"]),
+
+  // ── Phase 12 converged LINE + reference + rollup tables ────────────────────
+
+  // Corridors (from Supabase corridors, drop org/auth). path is
+  // simplify-js-thinned (Convex ~1MB doc guard); bbox for coarse filtering.
+  corridors: defineTable({
+    corridorKey: v.string(),
+    name: v.string(),
+    origin: v.object({ lat: v.number(), lng: v.number() }),
+    dest: v.object({ lat: v.number(), lng: v.number() }),
+    path: v.array(v.object({ lat: v.number(), lng: v.number() })),
+    distanceMiles: v.optional(v.number()),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    nhfnCompliance: v.optional(v.boolean()),
+    provenance,
+  }).index("by_corridorKey", ["corridorKey"]),
+
+  // BTS National Highway Freight Network segments (from nhfn_network).
+  nhfnSegments: defineTable({
+    segmentId: v.string(),
+    path: v.array(v.object({ lat: v.number(), lng: v.number() })),
+    phfsFlag: v.optional(v.boolean()),
+    corridorType: v.optional(v.string()),
+    state: v.optional(v.string()),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    provenance,
+  }).index("by_segmentId", ["segmentId"]),
+
+  // Elevation profiles (from elevation_profiles). routeHash is a SHA256 cache key.
+  elevationProfiles: defineTable({
+    routeHash: v.string(),
+    corridorKey: v.optional(v.string()),
+    profile: v.array(
+      v.object({ distM: v.number(), elevM: v.number() }),
+    ),
+    provenance,
+  }).index("by_routeHash", ["routeHash"]),
+
+  // Truck configs (from truck_configs; eCascadia/T680E presets).
+  truckConfigs: defineTable({
+    name: v.string(),
+    oemModel: v.optional(v.string()),
+    isPreset: v.boolean(),
+    batteryUsableKwh: v.optional(v.number()),
+    curbWeightLbs: v.optional(v.number()),
+    cdA: v.optional(v.number()),
+    rollingResistanceCoeff: v.optional(v.number()),
+    regenEfficiency: v.optional(v.number()),
+    auxKwBase: v.optional(v.number()),
+    maxChargeRateKw: v.optional(v.number()),
+    params: v.optional(v.any()),
+    provenance,
+  }).index("by_name", ["name"]),
+
+  // Simulations — METADATA ONLY (RESEARCH §5). inputsHash is the dedup/cache
+  // key. NO outputs/results field: the physics engine + a results table land
+  // in Phase 13; results stay single-sourced in Postgres until then.
+  simulations: defineTable({
+    inputsHash: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    corridorKey: v.optional(v.string()),
+    truckConfigName: v.optional(v.string()),
+    physicsVersion: v.optional(v.string()),
+    chargerVersion: v.optional(v.string()),
+    inputs: v.optional(v.any()),
+    durationMs: v.optional(v.number()),
+    provenance,
+  })
+    .index("by_inputsHash", ["inputsHash"])
+    .index("by_status", ["status"]),
+
+  // Geo rollup: US -> State -> County (P12-13, Census FIPS/TIGER). SCAFFOLD —
+  // populated in 12-08.
+  geoRegions: defineTable({
+    level: v.union(
+      v.literal("nation"),
+      v.literal("state"),
+      v.literal("county"),
+    ),
+    fips: v.string(),
+    name: v.string(),
+    parentFips: v.optional(v.string()),
+    centroid: v.optional(v.object({ lat: v.number(), lng: v.number() })),
+    bbox: v.optional(
+      v.object({
+        minLat: v.number(),
+        minLng: v.number(),
+        maxLat: v.number(),
+        maxLng: v.number(),
+      }),
+    ),
+    aggregateScore: v.optional(v.number()),
+    provenance,
+  })
+    .index("by_level", ["level"])
+    .index("by_fips", ["fips"])
+    .index("by_parent", ["parentFips"]),
 });
