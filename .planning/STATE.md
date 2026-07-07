@@ -1,19 +1,19 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.0
-milestone_name: Full Platform Migration
-current_phase_name: scoped — awaiting per-phase planning
+milestone_name: Progress
+current_phase_name: defining requirements
 status: planning
-stopped_at: v3.0 scoped (Phases 11-14); MILESTONE-CONTEXT.md written; next = /gsd-plan-phase 11
-last_updated: "2026-07-07T06:30:00.000Z"
+stopped_at: Phase 11 COMPLETE (11-01 PTV routing, 11-03 Google maps, 11-02 Valhalla teardown); awaiting human visual check of MAP-01/02/03 on /planner before phase close
+last_updated: "2026-07-07T07:43:42.508Z"
 last_activity: 2026-07-07
-last_activity_desc: Milestone v3.0 Full Platform Migration scoped
+last_activity_desc: Milestone v2.0 started
 progress:
   total_phases: 4
-  completed_phases: 0
-  total_plans: 5
+  completed_phases: 1
+  total_plans: 3
   completed_plans: 3
-  percent: 0
+  percent: 25
 ---
 
 # Project State
@@ -89,6 +89,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-07T05:47:22.157Z
-Stopped at: Phase 7 Waves 0-2 done (07-01/02/03); paused before Wave 3 migration
-Resume file: .planning/phases/07-foundation-shell-data-contract-map-base/07-04-PLAN.md
+Last session: 2026-07-07T07:43:42.494Z
+Stopped at: Phase 11 COMPLETE (11-01 PTV routing, 11-03 Google maps, 11-02 Valhalla teardown); awaiting human visual check of MAP-01/02/03 on /planner before phase close
+Resume file: .planning/phases/11-google-maps-app-wide-routing-migration/11-03-SUMMARY.md
