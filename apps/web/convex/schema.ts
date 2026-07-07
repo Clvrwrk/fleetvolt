@@ -141,8 +141,10 @@ export default defineSchema({
     .index("by_class8", ["isClass8Capable"]),
 
   // POLB carrier registry (P12-09). location optional — geocode may fail;
-  // 12-05 backfills it. corridorCity is the outreach tag.
+  // 12-05 backfills it. corridorCity is the outreach tag. carrierKey (stable
+  // hash of normalized name+address) is the idempotent-upsert key (P12-09).
   carriers: defineTable({
+    carrierKey: v.optional(v.string()),
     name: v.string(),
     address: v.optional(v.string()),
     city: v.optional(v.string()),
@@ -153,6 +155,7 @@ export default defineSchema({
     geocodeStatus: v.optional(v.string()),
     provenance,
   })
+    .index("by_carrierKey", ["carrierKey"])
     .index("by_corridorCity", ["corridorCity"])
     .index("by_city", ["city"]),
 
