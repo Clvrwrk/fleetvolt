@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Progress
-current_phase_name: defining requirements
+milestone: v3.0
+milestone_name: Full Platform Migration
+current_phase_name: scoped — awaiting per-phase planning
 status: planning
-stopped_at: Phase 7 Waves 0-2 done (07-01/02/03); paused before Wave 3 migration
-last_updated: "2026-07-07T05:47:22.176Z"
+stopped_at: v3.0 scoped (Phases 11-14); MILESTONE-CONTEXT.md written; next = /gsd-plan-phase 11
+last_updated: "2026-07-07T06:30:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Milestone v2.0 started
+last_activity_desc: Milestone v3.0 Full Platform Migration scoped
 progress:
   total_phases: 4
   completed_phases: 0

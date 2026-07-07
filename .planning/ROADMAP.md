@@ -338,3 +338,94 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 10. Time, Live Mode & Demo Polish | 0/TBD | Not started | - |
 
 **Coverage:** 35/35 v2.0 requirements mapped (Phase 7 ×14, Phase 8 ×5, Phase 9 ×9, Phase 10 ×7). Stretch: HOT-05, TIME-02, DINT-07.
+
+---
+
+# Milestone v3.0 — Full Platform Migration
+
+## Overview
+
+Re-platform the **entire** FleetVolt app onto one modern stack: Google Maps +
+Google Directions/Routes API + Convex + Vercel. Retire the Docker Compose stack
+(PostGIS, Redis, Valhalla, Fastify API, Python simulator, Celery) completely.
+This supersedes the v2.0 "parallel stack for /pulse only / sim app untouched"
+decisions. See `.planning/MILESTONE-CONTEXT.md` for full scoping + locked decisions.
+
+## Phases
+
+- [ ] **Phase 11: Google Maps App-Wide + Routing Migration** - Mapbox/react-map-gl → Google Maps (all 8 web files); Valhalla → Google Directions/Routes API; retire valhalla service
+- [ ] **Phase 12: Convex Data + Spatial Layer** - PostGIS tables → Convex schema; ST_DWithin/ST_Distance → bbox+haversine (or Convex geo component); seed/ingest migration
+- [ ] **Phase 13: Physics Engine → Convex Actions** - port 3,454 LOC Python physics/SoC/charging/feasibility → Convex TS actions; retire Celery/sim-worker/Redis; exports into Convex/Vercel
+- [ ] **Phase 14: Vercel Deploy + Decommission Docker** - deploy web+Convex to Vercel; prod env/secrets; wire fleetvolt.network; tear down docker-compose; final smoke
+
+## Phase Details
+
+### Phase 11: Google Maps App-Wide + Routing Migration
+
+**Goal**: The whole app renders on Google Maps and routes via Google Directions/Routes API; Valhalla is gone.
+**Mode:** mvp
+**Depends on**: Nothing (first phase of v3.0)
+**Success Criteria** (what must be TRUE):
+
+  1. All 8 web files using Mapbox/react-map-gl render on Google Maps with no visual regression
+  2. `route_provider` returns Class-8 truck route geometry from Google Directions/Routes API (POLB→San Bernardino parity)
+  3. The `valhalla` Docker service is removed and the stack still boots
+  4. Phase-4 `scenario-run` Playwright UAT stays green
+
+**Plans**: TBD
+
+### Phase 12: Convex Data + Spatial Layer
+
+**Goal**: All persistent data (corridors, chargers, trucks, elevation, simulations) lives in Convex with spatial parity.
+**Mode:** mvp
+**Depends on**: Phase 11
+**Success Criteria** (what must be TRUE):
+
+  1. PostGIS tables are represented as Convex schema with equivalent seed/ingest
+  2. Nearest-charger and corridor-region queries return parity results vs current PostGIS (`ST_DWithin`/`ST_Distance`)
+  3. Elevation profiles available from Convex for POLB/Cajon corridors
+  4. Parity tests pass against captured Postgres output
+
+**Plans**: TBD
+
+### Phase 13: Physics Engine → Convex Actions
+
+**Goal**: The physics simulation runs entirely as Convex actions with numeric parity to the Python engine; Celery/sim-worker retired.
+**Mode:** mvp
+**Depends on**: Phase 12
+**Success Criteria** (what must be TRUE):
+
+  1. Physics/SoC/charging/feasibility logic runs as Convex TS actions within the 10-min action budget
+  2. POLB drayage + Cajon Pass validation cases match Python output within agreed tolerance (energy/SoC ±0.5%, exact on tier/stop count)
+  3. Celery worker, sim-worker, and Redis are removed from the stack
+  4. CSV/JSON/PDF exports produced via Convex/Vercel path
+
+**Plans**: TBD
+
+### Phase 14: Vercel Deploy + Decommission Docker
+
+**Goal**: The full app is live on Vercel + Convex at fleetvolt.network with the Docker stack decommissioned.
+**Mode:** mvp
+**Depends on**: Phases 11–13
+**Success Criteria** (what must be TRUE):
+
+  1. Web + Convex deploy to Vercel with production env/secrets; `fleetvolt.network` serves the app
+  2. All 8 routes load and function on the production stack
+  3. End-to-end scenario run + export works on Vercel/Convex (no Docker)
+  4. docker-compose.yml and self-hosted services are decommissioned; README/AGENTS/Makefile updated
+
+**Plans**: TBD
+
+## v3.0 Progress
+
+**Execution Order:**
+Phases execute in numeric order: 11 → 12 → 13 → 14
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 11. Google Maps App-Wide + Routing | 0/TBD | Not started | - |
+| 12. Convex Data + Spatial Layer | 0/TBD | Not started | - |
+| 13. Physics Engine → Convex Actions | 0/TBD | Not started | - |
+| 14. Vercel Deploy + Decommission Docker | 0/TBD | Not started | - |
+
+**Note:** Requirements (REQ-IDs) to be defined at `/gsd-plan-phase` time per phase. This roadmap is the scoping output of the 2026-07-07 migration discussion.

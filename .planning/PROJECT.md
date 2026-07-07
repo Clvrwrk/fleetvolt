@@ -124,4 +124,23 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-06 — started milestone v2.0 Freight Pulse Network Visualizer*
+## Milestone v3.0: Full Platform Migration (started 2026-07-07)
+
+**Goal:** Re-platform the ENTIRE app onto Google Maps + Google Directions/Routes API + Convex + Vercel; retire the Docker Compose stack (PostGIS/Redis/Valhalla/Fastify/Python simulator/Celery) completely. Phases 11–14. Full scope + locked decisions in `.planning/MILESTONE-CONTEXT.md`.
+
+**⚠️ Supersedes these v2.0 decisions:**
+- ~~[v2.0] Freight Pulse uses parallel stack for `/pulse` only~~ → v3.0: whole app moves to the modern stack
+- ~~[v2.0] Freight Pulse is a new parallel surface, not a rewrite~~ → v3.0: physics engine IS rewritten (Python → Convex TS actions)
+- ~~[v2.0] Existing sim app stays on Docker/PostGIS/Valhalla untouched~~ → v3.0: Docker stack fully decommissioned
+
+**v3.0 locked decisions:**
+
+| Decision | Rationale | Date |
+|----------|-----------|------|
+| **Routing = Google Directions/Routes API** (Valhalla retired) | Removes a self-hosted Docker service; paid Google console available | 2026-07-07 |
+| **Physics engine = full rewrite** to Convex TS actions (3,454 LOC Python) | True single-platform; Convex actions allow 10-min execution (fits batch sim) | 2026-07-07 |
+| **Convex = full backend** (data + spatial + compute) | Chris chose full rewrite over Convex-as-data-layer-only | 2026-07-07 |
+| **Hosting = Vercel**; Docker Compose decommissioned | Web + Convex native to Vercel; no VPS | 2026-07-07 |
+
+*Last updated: 2026-07-07 — started milestone v3.0 Full Platform Migration (supersedes v2.0 parallel-stack decisions)*
+*Prior: 2026-07-06 — started milestone v2.0 Freight Pulse Network Visualizer*
