@@ -37,7 +37,12 @@ import {
 
 const AFDC_URL = "https://developer.nlr.gov/api/alt-fuel-stations/v1.json";
 const USEFULNESS_SCORE = 8;
-const BATCH_SIZE = 500;
+// 50 rows/mutation keeps the geospatial-component index reads well under the
+// 4096-reads-per-mutation limit on RE-INDEX (component insert internally does a
+// removePointByKey tree walk for existing keys). ~2,867 rows / 50 ≈ 58 mutation
+// calls — comfortably inside the 10-min action budget; each batch stays under
+// the 1s mutation cap + 5MiB arg limit (~290KB per 50-row batch).
+const BATCH_SIZE = 50;
 
 // Minimal shape of an AFDC fuel_station we consume (the feed has ~80 fields).
 interface AfdcStation {

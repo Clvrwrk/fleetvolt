@@ -2,9 +2,10 @@
 // that upsert AFDC chargers by stationId AND spatial-index each row at write
 // time (12-02 spatial.insertPoint) so nearestChargers()/class8Gap() are
 // immediately queryable. Called from chargers/ingest.ts (the fetch action),
-// which chunks the classified rows to ≤500/call (stays under the 1s mutation
-// cap + 5MiB arg limit — the full CA dc_fast set is ~2,867 rows / ~12MB
-// mapped, ~2.9MB per 500-row batch).
+// which chunks the classified rows to ≤50/call (stays under the 1s mutation
+// cap + 5MiB arg limit AND the 4096-reads/mutation limit — the geospatial
+// component's re-index walks the tree, so batches stay small; the full CA
+// dc_fast set is ~2,867 rows / ~12MB mapped).
 //
 // Idempotency: upsert keyed by stationId (by_stationId index) — re-running the
 // ingest patches existing rows, never duplicates. One fetchedAt is stamped by
