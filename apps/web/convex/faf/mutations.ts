@@ -51,20 +51,20 @@ export const upsertFreightODBatch = internalMutation({
         valueUSD: r.valueUSD,
         provenance,
       };
-      // Match on the composite key via by_orig_year index (dmsOrig,year), then
-      // narrow in-handler on dest/mode/sctg2.
-      const candidates = await ctx.db
+      // Fully-selective upsert lookup on the composite key index — reads at
+      // most ONE matching row (never collects the whole same-origin partition,
+      // which would trip the 32k-doc read limit).
+      const existing = await ctx.db
         .query("freightOD")
-        .withIndex("by_orig_year", (q) =>
-          q.eq("dmsOrig", r.dmsOrig).eq("year", r.year),
+        .withIndex("by_key", (q) =>
+          q
+            .eq("dmsOrig", r.dmsOrig)
+            .eq("year", r.year)
+            .eq("dmsDest", r.dmsDest)
+            .eq("dmsMode", r.dmsMode)
+            .eq("sctg2", r.sctg2),
         )
-        .collect();
-      const existing = candidates.find(
-        (c) =>
-          c.dmsDest === r.dmsDest &&
-          c.dmsMode === r.dmsMode &&
-          c.sctg2 === r.sctg2,
-      );
+        .unique();
       if (existing) {
         await ctx.db.patch(existing._id, doc);
         patched += 1;

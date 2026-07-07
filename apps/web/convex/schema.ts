@@ -291,7 +291,12 @@ export default defineSchema({
   })
     .index("by_year", ["year"])
     .index("by_orig_year", ["dmsOrig", "year"])
-    .index("by_dest", ["dmsDest"]),
+    .index("by_dest", ["dmsDest"])
+    // Fully-selective composite for idempotent upsert: the ingest key is
+    // (dmsOrig, year, dmsDest, dmsMode, sctg2). Without dest/mode/sctg2 in the
+    // index, an upsert lookup on by_orig_year collects tens of thousands of
+    // same-origin rows and trips Convex's 32k-doc read limit at scale.
+    .index("by_key", ["dmsOrig", "year", "dmsDest", "dmsMode", "sctg2"]),
 
   // FAF zone reference (metadata + CFS↔FAF crosswalk). "061" = LA-Long Beach.
   fafZones: defineTable({
