@@ -15,6 +15,22 @@ A planner or analyst can configure a realistic POLB drayage + inland corridor sc
 - **Success metric**: Used in ≥3 client deliverables or internal strategy docs within 90 days of v1; 80%+ of test users rate output as credible/actionable
 - **Strategy notes**: Tied to POLB ecosystem work and zero-emission freight advisory; serves as EV baseline for future hydrogen counter-scenario analysis (v2)
 
+## Current Milestone: v2.0 Freight Pulse Network Visualizer
+
+**Goal:** Ship a new `/pulse` tab that visualizes West-Coast freight movement (ports → highways → warehouses → last-mile) with pulsing R/Y/G volume flows, clickable hotspots, TAM/SAM/SOM overlays, and solar-charger site recommendations — a BD/sales demo surface that proves market opportunity and identifies mobile-charger deployment sites.
+
+**Target features:**
+- West Coast port selector (POLA, POLB, Hueneme, Oakland, SF, San Diego), CA-first and expandable
+- Pulsing volume-flow engine on real highway geometry with a leading Class-8 SVG truck marker
+- Clickable hotspots: queue/parking, congestion, trucking-HQ proximity, solar site recs (dimension-callout popups)
+- TAM/SAM/SOM overlay toggles with dimension-style number callouts
+- Date filter: 5yr / 1yr historical / "Live" simulation mode
+- Last-mile street-level routes via Google Directions (targeted nice-to-have)
+- Strict Technical Brand Geometry aesthetic (framed CAD container, blueprint grid, JetBrains Mono, GSAP motion)
+- Public/paid data (BTS/FAF, Caltrans AADT/GIS, PeMS, FHWA, FMCSA, Google Traffic) with sources surfaced in a technical footer
+
+**Key context:** This milestone introduces a NEW parallel tech stack for the `/pulse` surface only — Next.js 15 (App Router) on Vercel, Convex (state/DB), Google Maps JS API, WorkOS auth, Sentry, GSAP. This intentionally overrides v1's Docker/PostGIS/Valhalla/"no-Google-API" constraints for this visualization surface. The existing FleetVolt Route simulation app (Phases 1–4 shipped) is unaffected. Demo target: Friday July 11, 2026. Phases continue numbering from Phase 7 (v1 Phases 5–6 remain deferred, not built).
+
 ## Requirements
 
 ### Validated
@@ -83,6 +99,9 @@ A planner or analyst can configure a realistic POLB drayage + inland corridor sc
 | Business model: Internal + client-facing | Consulting deliverable now, productizable later | — Pending |
 | Physics: Segment-based (not 1-second loop) | Computationally efficient for optimization; validation-gated accuracy | — Pending |
 | Mobile driver interface: Deferred | Desktop-first for analysts; PWA viewer only in Phase 3 | — Pending |
+| **[v2.0] Freight Pulse uses parallel stack (Convex/Google Maps/WorkOS/Vercel/GSAP)** | Stakeholder has paid Google console + explicit request for accurate street-level routing; BD demo surface, not the sim engine — overrides v1 no-Google/Docker constraint for `/pulse` only | — Decided 2026-07-06 |
+| **[v2.0] Freight Pulse is a new parallel surface, not a rewrite** | Existing FleetVolt Route sim app (Phases 1–4) stays on its Docker/PostGIS/Valhalla stack, untouched | — Decided 2026-07-06 |
+| **[v2.0] Phases continue at Phase 7; v1 Phases 5–6 deferred** | Preserve 67% of shipped v1 work; Freight Pulse is the Friday demo priority | — Decided 2026-07-06 |
 
 ## Evolution
 
@@ -102,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-01 after initialization*
+*Last updated: 2026-07-06 — started milestone v2.0 Freight Pulse Network Visualizer*

@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-current_phase: 4
-current_phase_name: Analyst Dashboard & Export
-status: verifying
-stopped_at: Phase 3 executed — human verification needed
-last_updated: "2026-07-01T20:44:44.115Z"
-last_activity: 2026-07-01
-last_activity_desc: Phase 4 execution started
+milestone: v2.0
+milestone_name: Freight Pulse Network Visualizer
+status: planning
+last_updated: "2026-07-07T02:59:41.826Z"
+last_activity: 2026-07-07
 progress:
-  total_phases: 6
-  completed_phases: 4
-  total_plans: 27
-  completed_plans: 27
-  percent: 67
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,16 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
-**Current focus:** Phase 4 — Analyst Dashboard & Export
+**Current focus:** v2.0 Freight Pulse Network Visualizer — defining requirements (Phase 7+)
 
 ## Current Position
 
-Phase: 4 (Analyst Dashboard & Export) — EXECUTING
-Plan: 8 of 8
-Status: Phase complete — ready for verification
-Last activity: 2026-07-01 — Phase 4 execution started
-
-Progress: [██████████] Phase 1 complete; Phase 2 planning started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-07 — Milestone v2.0 started
 
 ## Performance Metrics
 
@@ -79,16 +73,19 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+- Parallel Supabase database project — production corridors/chargers/persistence; re-validate UAT tests 7–10 when integrated.
 
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| Data layer | Supabase production database | parallel project | 2026-07-01 |
+| UI shells | Load / Unit / Driver / Network configurators | future phase | 2026-07-01 |
+| v1 Phase 5 | Corridor Intelligence & Emissions (ROUT-03, SCEN-03, EMIS-01/02/03) | deferred for v2.0 | 2026-07-06 |
+| v1 Phase 6 | TCO Analysis & Production Deploy (EMIS-04/05, PLAT-04) | deferred for v2.0 | 2026-07-06 |
 
 ## Session Continuity
 
-Last session: 2026-07-01T20:44:44.110Z
-Stopped at: Phase 3 executed — human verification needed
-Resume file: .planning/phases/03-charging-job-pipeline/03-UAT.md
+Last session: 2026-07-01T25:45:00Z
+Stopped at: Phase 4 UAT complete — ready for Phase 5 or Supabase integration
+Resume file: .planning/phases/04-analyst-dashboard-export/04-UAT.md
