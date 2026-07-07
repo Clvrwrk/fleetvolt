@@ -97,6 +97,6 @@ so parity failures surface cleanly, not tangled with infra. 14 last, once nothin
 
 ## Open Questions for Planning (Phase 13)
 
-- **Numeric parity tolerance** for the physics rewrite (exact float match unrealistic — propose ±0.5% on energy/SoC, exact on tier/stop count). Confirm at plan time.
+- **Numeric parity tolerance** for the physics rewrite — **LOCKED 2026-07-07 (Chris):** ±0.5% on energy (kWh) and SoC curve; **exact match** on feasibility tier + charging-stop count.
 - Convex geospatial component vs hand-rolled haversine — decide in Phase 12 research.
 - Elevation data: keep cached profiles as Convex documents vs re-fetch — decide in Phase 12.
