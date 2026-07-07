@@ -1,0 +1,1 @@
+{"content":"Open-Elevation POST /api/v1/lookup accepts JSON locations array of latitude/longitude objects; returns results in same order; batch <=100 per request; rate limit ~1 req/s on public API per Phase 1 ingest pattern.","source":"web","provider":"websearch","confidence":"HIGH","fetched_at":"2026-07-01T17:24:12.280Z","ttl":86400000,"kind":"web"}
