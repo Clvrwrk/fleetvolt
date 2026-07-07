@@ -312,3 +312,33 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ---
 *v2.0 requirements defined: 2026-07-06*
+
+---
+
+## v3.0 Full Platform Migration — Phase 12 Requirements
+
+Net-new requirements for the Convex Data + Spatial Layer. **Prefix `CVX-*` is deliberately distinct** from the completed Phase-1 `DATA-01..05` (Data Foundation) and Phase-9 `HOT-01..05` (/pulse hotspots) families to avoid traceability collisions. `SPATIAL-*`, `INGEST-*`, `REPORT-*`, `FLAGSHIP-*` are new families introduced this milestone.
+
+| ID | Requirement | Phase | Plan | Status |
+|----|-------------|-------|------|--------|
+| CVX-SCHEMA-01 | Converged Convex schema unifying Phase-7 /pulse tables + PostGIS simulator tables; provenance on all data tables; simulations metadata-only (results deferred to Phase 13) | 12 | 12-01 | Pending |
+| SPATIAL-00 | Swappable spatial module abstraction (component vs hand-rolled) | 12 | 12-01/02 | Pending |
+| SPATIAL-01 | `@convex-dev/geospatial` nearest() for point data (chargers/carriers/parking/ports) | 12 | 12-02 | Pending |
+| SPATIAL-02 | Hand-rolled bbox+haversine for line/segment data; PostGIS parity gate (set membership + 0.1mi) | 12 | 12-02 | Pending |
+| SPATIAL-03 | Live end-to-end nearest-charger parity on ingested data | 12 | 12-04 | Pending |
+| SPATIAL-04 | Corridor-region query (bbox) for CalTrans segments | 12 | 12-06 | Pending |
+| INGEST-01 | FAF5 metadata + CFS↔FAF crosswalk lookup tables | 12 | 12-03 | Pending |
+| INGEST-02 | FAF5 2018-2024 actuals filtered to zone 061 outbound (explicit ktons units) | 12 | 12-03 | Pending |
+| INGEST-03 | Live AFDC charger ingest via developer.nlr.gov | 12 | 12-04 | Pending |
+| INGEST-04 | POLB carrier registry ingest + geocode + corridor-city tag | 12 | 12-05 | Pending |
+| INGEST-05 | CalTrans Truck AADT (5-axle truckAADT DISTINCT from aadt) → highwaySegments | 12 | 12-06 | Pending |
+| INGEST-06 | NATD truck-stop parking (capacity) ingest | 12 | 12-07 | Pending |
+| INGEST-07 | OSM POI extraction (convenience/fuel/rest-area/hgv-parking) → pois | 12 | 12-07 | Pending |
+| CVX-CHARGER-01 | Class-8 charger tag (max power_kw ≥350 AND max_vehicle_class MD/HD); re-satisfies DATA-02/DATA-05 on Convex + nrel→nlr dead-domain fix | 12 | 12-04 | Pending |
+| CVX-CARRIER-01 | Geocoded carrier density queryable by corridor city | 12 | 12-05 | Pending |
+| CVX-HOTSPOT-01 | Modeled hotspot score from proxies; labeled "modeled" (never "observed"); provenance{method:"modeled",inputs} | 12 | 12-08 | Pending |
+| CVX-HOTSPOT-02 | US→State→County geo aggregation (Census FIPS) | 12 | 12-08 | Pending |
+| REPORT-01 | Per-hotspot report query (carriers/parking/pois/chargers+class8gap/score+inputs/freightContext) — backs flagship + Phase-15 | 12 | 12-08 | Pending |
+| FLAGSHIP-01 | North-star flagship query answerable from Convex (charger gap, 5 closest+config, carrier targeting, congested-route ranking, FAF context); detour/CO₂ deferred to Phase 13 | 12 | 12-08 | Pending |
+
+*v3.0 Phase-12 requirements registered: 2026-07-07*
