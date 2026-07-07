@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { MapRef } from "react-map-gl/mapbox";
+import type { FvMapHandle } from "@/lib/map-ref";
 import type { components } from "@fleetvolt/shared-types";
 import { KpiCardRow } from "@/components/kpi/kpi-card-row";
 import { SocProfileChart } from "@/components/charts/soc-profile-chart";
@@ -10,6 +10,7 @@ import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner
 import { AssumptionsPanel } from "@/components/results/assumptions-panel";
 import { ComparisonDiffTable } from "@/components/comparison/comparison-diff-table";
 import { ChargingPlanTable } from "@/components/tables/charging-plan-table";
+import { FramedPanel } from "@/components/ui/framed-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useScenarioStore } from "@/stores/scenario-store";
 
@@ -28,7 +29,7 @@ function stopKey(stop: ChargingStop, index: number): string {
 export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
   const outputs = pollResult.outputs;
   const jobId = pollResult.job_id;
-  const mapRef = useRef<MapRef | null>(null);
+  const mapRef = useRef<FvMapHandle | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const registerMapSnapshotCapture = useScenarioStore(
     (s) => s.registerMapSnapshotCapture,
@@ -37,7 +38,10 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
     (s) => (jobId ? s.routeCoordinatesByJobId[jobId] : undefined),
   );
   const isRouteLoading = useScenarioStore((s) => s.isRouteLoading);
-  const hasMapToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
+  const hasMapToken = Boolean(
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY &&
+      process.env.NEXT_PUBLIC_GOOGLE_MAP_ID,
+  );
 
   useEffect(() => {
     if (!hasMapToken || !routeGeometry) {
@@ -45,19 +49,7 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
       return;
     }
 
-    registerMapSnapshotCapture(async () => {
-      const map = mapRef.current?.getMap();
-      if (!map) {
-        return null;
-      }
-
-      return new Promise((resolve) => {
-        map.once("idle", () => {
-          resolve(map.getCanvas().toDataURL("image/png"));
-        });
-        map.triggerRepaint();
-      });
-    });
+    registerMapSnapshotCapture(async () => await mapRef.current?.captureSnapshot() ?? null);
 
     return () => {
       registerMapSnapshotCapture(null);
@@ -80,8 +72,8 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
     <div className="space-y-6">
       <KpiCardRow outputs={outputs} />
 
-      <div
-        className="flex min-h-[360px] flex-col gap-4 lg:flex-row"
+      <FramedPanel
+        className="flex min-h-[360px] flex-col gap-4 p-4 lg:flex-row"
         data-testid="results-primary-panel"
       >
         <div className="min-h-[360px] flex-[3]" data-testid="results-map-panel">
@@ -112,7 +104,7 @@ export function BasicResultsPanel({ pollResult }: BasicResultsPanelProps) {
             routeCoords={routeGeometry?.coordinates}
           />
         </div>
-      </div>
+      </FramedPanel>
 
       <Tabs defaultValue="charging-plan" data-testid="results-tabs">
         <TabsList>

@@ -1,7 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
-import type { MapRef } from "react-map-gl/mapbox";
+import type { FvMapHandle } from "@/lib/map-ref";
 import type { components } from "@fleetvolt/shared-types";
 import {
   Table,
@@ -18,7 +18,7 @@ export type ChargingPlanTableProps = {
   chargingStops: ChargingStop[];
   selectedStopId?: string | null;
   onStopSelect?: (stop: ChargingStop) => void;
-  mapRef?: RefObject<MapRef | null>;
+  mapRef?: RefObject<FvMapHandle | null>;
 };
 
 function stopKey(stop: ChargingStop, index: number): string {
@@ -51,11 +51,7 @@ export function ChargingPlanTable({
     onStopSelect?.(stop);
 
     if (mapRef?.current) {
-      mapRef.current.flyTo({
-        center: [stop.lon, stop.lat],
-        zoom: 12,
-        essential: true,
-      });
+      mapRef.current.panTo(stop.lat, stop.lon, 12);
     }
   };
 
