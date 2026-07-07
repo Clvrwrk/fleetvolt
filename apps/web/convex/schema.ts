@@ -266,6 +266,55 @@ export default defineSchema({
     .index("by_inputsHash", ["inputsHash"])
     .index("by_status", ["status"]),
 
+  // ── Phase 12 FAF freight-out-of-port tables (P12-03, freightOD spine) ──────
+  //
+  // FAF5 zone-to-zone OUTBOUND OD flows. STRUCTURALLY DISTINCT from the
+  // segment-keyed `freightFlows` above: freightOD is keyed by origin/dest FAF
+  // ZONES (not highway segments) — never conflate FAF OD with PeMS/segment
+  // flows (Phase-7 PITFALLS #7). This ingest is dms_orig="061" (LA-Long Beach
+  // port zone) → dmsDest, aggregated by (year, dmsDest, dmsMode, sctg2).
+  freightOD: defineTable({
+    year: v.number(), // actual-year column vintage (2018..2024)
+    dmsOrig: v.string(), // FAF origin zone id; "061" = LA-Long Beach (this ingest)
+    dmsDest: v.string(), // FAF destination zone id
+    dmsMode: v.optional(v.string()), // "1"=truck, "2"=rail, "3"=water, ...
+    sctg2: v.optional(v.string()), // 2-digit SCTG commodity code
+    // FAF annual tonnage in THOUSAND tons (ktons) — explicit unit, never
+    // conflate with PeMS/segment tonnage (PITFALLS #7). Summed across matching
+    // raw FAF rows for the (year,dest,mode,sctg2) key.
+    tonsKtons: v.optional(v.number()),
+    // FAF annual value in MILLIONS of USD, as loaded from the value_<year>
+    // columns (constant-dollar series; current_value_* left unloaded) — summed
+    // across matching raw rows for the key.
+    valueUSD: v.optional(v.number()),
+    provenance,
+  })
+    .index("by_year", ["year"])
+    .index("by_orig_year", ["dmsOrig", "year"])
+    .index("by_dest", ["dmsDest"]),
+
+  // FAF zone reference (metadata + CFS↔FAF crosswalk). "061" = LA-Long Beach.
+  fafZones: defineTable({
+    zoneId: v.string(),
+    name: v.string(),
+    state: v.optional(v.string()),
+    provenance,
+  }).index("by_zoneId", ["zoneId"]),
+
+  // FAF mode reference (dms_mode label: 1=Truck, 2=Rail, 3=Water, ...).
+  fafModes: defineTable({
+    modeId: v.string(),
+    label: v.string(),
+    provenance,
+  }).index("by_modeId", ["modeId"]),
+
+  // FAF SCTG2 commodity reference (2-digit code → label).
+  fafCommodities: defineTable({
+    sctg2: v.string(),
+    label: v.string(),
+    provenance,
+  }).index("by_sctg2", ["sctg2"]),
+
   // Geo rollup: US -> State -> County (P12-13, Census FIPS/TIGER). SCAFFOLD —
   // populated in 12-08.
   geoRegions: defineTable({
