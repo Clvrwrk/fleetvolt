@@ -178,4 +178,95 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 after initial definition*
+*Last updated: 2026-07-06 — added v2.0 Freight Pulse milestone requirements below*
+
+---
+
+# Milestone v2.0 — Freight Pulse Network Visualizer
+
+**Defined:** 2026-07-06
+**Milestone Core Value:** A business-development user can open the `/pulse` tab, watch West-Coast freight movement pulse across real highway corridors, toggle market-sizing overlays, click hotspots to see solar-charger deployment recommendations, and — within 30 seconds — believe the opportunity is real and sellable. Built on a parallel stack (Next.js 15 / Vercel / Convex / Google Maps / WorkOS / GSAP) sharing only the existing app shell.
+
+**Scope decision:** FULL scope — all 6 categories including differentiators. Research-flagged cuttable items (Live simulation mode, last-mile street reveal, extended hotspot taxonomy) are included but tagged **[stretch]** = demo-optional; the demo core must survive any slip.
+
+**Demo-core (non-negotiable):** framed map + pulsing R/Y/G flows on real corridors + Class-8 truck marker + clickable solar-charger-rec hotspots + TAM/SAM/SOM readout + sources footer.
+
+## v2.0 Requirements
+
+### Map & Flow Engine
+
+- [ ] **FLOW-01**: User sees an interactive Google Map (vector `mapId`, pan/zoom) framed on the West Coast with California ports in view on load
+- [ ] **FLOW-02**: User sees named port anchors (POLA, POLB, Port Hueneme, Oakland, SF, San Diego) with a selector to focus/filter by port
+- [ ] **FLOW-03**: User sees freight volume-flow lines drawn on real highway geometry (e.g. I-5, I-710, I-110, US-101) rather than straight arcs
+- [ ] **FLOW-04**: Flow lines are color-encoded R/Y/G by congestion/utilization state and width-encoded by volume, with a visible legend/key
+- [ ] **FLOW-05**: Flow lines animate with a pulsing/marching motion conveying direction and intensity
+- [ ] **FLOW-06**: A leading Class-8 truck SVG marker rides along a selected flow path with correct heading
+- [ ] **FLOW-07**: The map renders in the Technical Brand Geometry aesthetic (vector cloud styling so default Google styling does not leak through)
+
+### Hotspots & Recommendations
+
+- [ ] **HOT-01**: User sees clickable hotspot markers on the map (AdvancedMarkerElement)
+- [ ] **HOT-02**: Clicking a hotspot opens a dimension-callout popup (engineering-drawing style with leader lines) showing labeled metrics
+- [ ] **HOT-03**: User sees solar-charger site-recommendation hotspots with a rationale (queue/HQ/congestion proximity) and key figures
+- [ ] **HOT-04**: Hotspots are typed and visually distinct across queue/parking, congestion, trucking-HQ proximity, and solar-charger recs
+- [ ] **HOT-05 [stretch]**: Zooming in or clicking a hotspot reveals last-mile street-level routes (precomputed Google Directions, cached in Convex)
+
+### Market Sizing
+
+- [ ] **MKT-01**: User sees a TAM/SAM/SOM readout with real dollar figures in dimension-callout styling
+- [ ] **MKT-02**: User can toggle TAM/SAM/SOM overlay layers on/off over the live map
+- [ ] **MKT-03**: Market-sizing figures update/display visually when overlays are toggled (numbers appear in dimension style)
+
+### Time Controls
+
+- [ ] **TIME-01**: User can switch between 5-year and 1-year historical time framings, re-querying the displayed flow data
+- [ ] **TIME-02 [stretch]**: User can enable a "Live Simulation" mode (clearly labeled as simulated) that animates a realistic ticker of flows driven by historical + traffic data
+- [ ] **TIME-03**: Changing the time filter updates the animation/flow display via reactive Convex query state
+
+### Data & Sourcing
+
+- [ ] **SRC-01**: Every rendered quantity carries provenance metadata (`source` enum + `year`); simulated values are marked distinctly from measured ones
+- [ ] **SRC-02**: A persistent, always-visible sources footer cites the datasets (FAF5/BTS, Caltrans AADT/GIS, PeMS, FHWA, FMCSA, port stats) and states that flow animation is illustrative
+- [ ] **SRC-03**: Curated freight datasets (ports, highway segments, flows by period, hotspots, market sizing) are ingested into Convex with no live external pipeline required for the demo
+- [ ] **SRC-04**: "Live" mode and simulated flows are labeled so no viewer mistakes them for real-time GPS tracking
+
+### Shell / Chrome
+
+- [ ] **SHELL-01**: A new `/pulse` route exists in the app shell with a navigation tab, inside the existing WorkOS auth boundary
+- [ ] **SHELL-02**: The surface uses a TechnicalFrame/SkeuomorphicCard container and an animated blueprint-grid background (rendered off the GL canvas)
+- [ ] **SHELL-03**: All labels/metrics use JetBrains Mono with the CAD/blueprint treatment per the design MD
+- [ ] **SHELL-04**: The layout is responsive for a laptop/large-display demo
+- [ ] **SHELL-05**: Accessibility basics are met (keyboard-focusable controls, ≥4.5:1 contrast on callouts, alt/aria labels on legend and controls)
+- [ ] **SHELL-06**: A control panel hosts the port selector, time filter, and overlay toggles in the Technical Brand Geometry style
+
+## v2.0 Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Live external freight-data ingestion (AIS, BTS live, carrier TMS) | Days of fragile integration; use curated/precomputed data for the demo |
+| Editable assumption sliders / what-if market modeling | State/validation rabbit hole; BD only needs to show numbers Friday |
+| Nationwide / global coverage | Scope is CA-first West Coast; more geography = more curation, no demo payoff |
+| User accounts, saved scenarios, PDF/PPT export | No persistence needed for a live demo; fast-follow if the deal advances |
+| Full WCAG AA conformance / screen-reader parity | Keep basics only; formal audit out of scope for a 5-day internal demo |
+| Mobile-phone-optimized layout | Demo runs on laptop/large display |
+| Deep multi-level nested drill-down overlays | Single TAM/SAM/SOM level is enough; recursion is scope creep |
+| Standalone backend service/DB for /pulse | Convex + precomputed data covers the demo; no PostGIS/Valhalla dependency |
+| Audited historical-accuracy guarantees | Data is representative/illustrative and labeled; precision claims add liability with no demo benefit |
+| Live per-render Directions API calls | Paid legacy SKU + quota risk mid-demo; precompute and cache instead |
+
+## v2.0 Traceability
+
+*(Filled by roadmapper — phases continue from Phase 7)*
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FLOW-01 → SHELL-06 | Phase 7+ | Pending |
+
+**Coverage:**
+
+- v2.0 requirements: 27 total (FLOW ×7, HOT ×5, MKT ×3, TIME ×3, SRC ×4, SHELL ×6)
+- Mapped to phases: TBD by roadmapper
+- Stretch/demo-optional: HOT-05, TIME-02
+
+---
+*v2.0 requirements defined: 2026-07-06*
