@@ -33,18 +33,55 @@ function calls `ctx.auth`.
 
 ## Schema (`schema.ts`)
 
-Six tables: `ports`, `highwaySegments`, `freightFlows`, `hotspots`, `marketSizing`, `userFilters`.
+**16 tables (Phase 12 converged data + spatial layer).** The six Phase-7 `/pulse`
+tables are preserved byte-compatibly; Phase 12 added ten converged tables.
+
+Phase-7 (`/pulse`): `ports`, `highwaySegments`, `freightFlows`, `hotspots`,
+`marketSizing`, `userFilters`.
+
+Phase-12 POINT tables (geo-anchored, `location:{lat,lng}` — back the 12-02
+geospatial `nearest()` + haversine fallback): `chargers`, `carriers`, `parking`,
+`pois`.
+
+Phase-12 LINE / reference / rollup tables (line data keeps `bbox` +
+simplify-js `path`, Convex ~1MB doc guard): `corridors`, `nhfnSegments`,
+`elevationProfiles`, `truckConfigs`, `simulations`, `geoRegions`.
+
+### Phase 12 convergence (P12-01)
+
+The two FleetVolt data models were **converged into this ONE Convex schema**
+(additively — no Phase-7 table shape changed). The PostGIS simulator tables
+(`chargers`, `elevation_profiles`, `nhfn_network`, `simulation_runs`,
+`truck_configs`) and the aspirational Supabase field shapes
+(`is_mcs_capable`/`isClass8Capable`, `corridors.path`+`distance_miles`,
+`simulations.inputs_hash`) were merged in. **Supabase-only constructs
+(`organization_id`, `created_by`/`auth.users` FKs, RLS) are DROPPED** —
+auth/multi-tenancy is deferred to WorkOS (Phase 7 D-06/D-07, P12-03).
+
+The shared `provenance` validator was extended once to **13 sources** (added
+`AFDC`, `OSM`, `Census`, `NATD`) plus two OPTIONAL fields — `method`
+(`measured|modeled|geocoded|extracted|estimate`) and `inputs:string[]` — so a
+modeled hotspot score can honestly record `method:"modeled"` + its proxy inputs
+(P12-12) without weakening the required-field rules.
+
+**`simulations` is metadata-only (RESEARCH §5):** it carries `inputsHash`,
+`status`, physics/charger versions, and corridor/truck refs, but has **NO
+outputs/results field**. Simulation RESULTS stay single-sourced in Postgres
+until the physics engine ports to Convex in **Phase 13**.
 
 Every ingested/data record carries a shared **`provenance`** object
-`{ source, fetchedAt, usefulnessScore, matchMethod }` (validator in `lib/provenance.ts`,
-DINT-01 / SRC-01). `usefulnessScore` is a rubric OUTPUT computed at ingest (DINT-03,
-`data-review-gate` skill) — never a hardcoded catalog assumption. Simulated/estimated values
-carry `source: "SIMULATED" | "ESTIMATE"` and must render distinctly from measured data (SRC-04).
+`{ source, fetchedAt, usefulnessScore, matchMethod }` (validator in
+`lib/provenance.ts`, DINT-01 / SRC-01, P12-02). `usefulnessScore` is a rubric
+OUTPUT computed at ingest (DINT-03, `data-review-gate` skill) — never a
+hardcoded catalog assumption. Simulated/estimated values carry
+`source: "SIMULATED" | "ESTIMATE"` and must render distinctly from measured data
+(SRC-04). `userFilters` is the only provenance-exempt table (view state).
 
 ## Files
 
-- `lib/provenance.ts` — shared provenance validator (reused across all data tables)
-- `schema.ts` — 6-table schema + indexes
+- `lib/provenance.ts` — shared provenance validator (reused across all data tables); 13 sources + optional method/inputs
+- `lib/provenance.test.ts` — provenance-contract unit test (`node --test`)
+- `schema.ts` — 16-table converged schema + indexes
 - `ports.ts` — `list`, `getByCode` queries (no auth)
 - `userFilters.ts` — `get` (by anonymous filterKey), `upsert` (no auth)
 - `_generated/` — Convex codegen output (do not edit by hand)
