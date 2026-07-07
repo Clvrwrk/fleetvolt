@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Progress
-current_phase_name: Phase 12 PLANNED (8 plans, checker PASS-WITH-NITS fixed); ready to execute
-status: planned
-stopped_at: "Phase 12 PLANNED — 8 plans (4 waves) written, plan-checker verdict PASS-WITH-NITS, all fixes applied (req-ID collision->CVX-* + registered in REQUIREMENTS.md; FAF dtype-string note; FAF-zonal-proxy caveat). NEXT ACTION = execute Wave 0 (12-01 converged schema), then Wave 1 (12-02 spatial ∥ 12-03 FAF), Wave 2 (12-04/05/06/07 ingests, 4-way parallel), Wave 3 (12-08 hotspot+flagship). Docker stack UP for PostGIS parity fixtures."
-last_updated: "2026-07-07T09:00:00.000Z"
+current_phase_name: Phase 12 EXECUTING — Wave 0 (12-01) DONE; Wave 1 next
+status: executing
+stopped_at: "Phase 12 Wave 0 COMPLETE: 12-01 converged Convex schema DONE + verified (16 tables = 6 Phase-7 preserved byte-compat + 10 new; provenance 13 sources + optional method/inputs; simulations metadata-only; LIVE push to sensible-oriole-832 succeeded; provenance.test 7/7; tsc clean except pre-existing scenario-form.tsx). NEXT ACTION = execute Wave 1 IN PARALLEL: 12-02 (spatial layer + PostGIS parity harness) ∥ 12-03 (FAF zone-061 ingest). Docker stack UP for parity fixtures."
+last_updated: "2026-07-07T09:10:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Planned Phase 12 (8 plans) + review-hardened via plan-checker
+last_activity_desc: Executed + verified Phase 12 Wave 0 (12-01 converged schema)
 progress:
   total_phases: 4
   completed_phases: 1
