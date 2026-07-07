@@ -1,8 +1,8 @@
 ---
 phase: 7
 slug: foundation-shell-data-contract-map-base
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-06
 ---
@@ -36,20 +36,24 @@ created: 2026-07-06
 
 ## Per-Task Verification Map
 
-*Populated by the planner from PLAN.md tasks. Seeded below with the research validation signals (07-RESEARCH.md § Validation Architecture) that every task map must ultimately cover.*
+*Populated by the planner from the 5 PLAN.md files (waves 0–3). Each signal maps to the plan/task whose `<automated>` line covers it. Every task in every plan carries an `<automated>` verify (tsc/eslint/node --test/playwright) — no MISSING references remain because Wave 0 (07-01) creates the Convex schema, provenance validator, and all six Playwright /pulse spec stubs before any dependent wave runs.*
 
-| Signal (Nyquist) | Requirement | Test Type | Automated Command | Status |
-|------------------|-------------|-----------|-------------------|--------|
-| Vector map renders with mapId, CAD cloud style, CA framing | FLOW-01, FLOW-07 | e2e | `playwright test pulse-map` | ⬜ pending |
-| Port anchors present & selectable (6 AdvancedMarkers) | FLOW-02, SHELL-06 | e2e | `playwright test pulse-ports` | ⬜ pending |
-| Convex query round-trips; userFilters re-fires | SRC-03, D-07 | unit+e2e | `pnpm --filter web test` | ⬜ pending |
-| Provenance populated on every ingested record | DINT-01, SRC-01 | unit (ingest assert) | `pnpm --filter web test` | ⬜ pending |
-| usefulnessScore = rubric output, not catalog value | DINT-03 | unit + notebook artifact | `pnpm --filter web test` | ⬜ pending |
-| Simulated ≠ measured (distinct badge) | SRC-04 | e2e | `playwright test pulse-provenance` | ⬜ pending |
-| Sources footer always-visible with citations | SRC-02 | e2e | `playwright test pulse-footer` | ⬜ pending |
-| CAD shell fidelity (frame/shadow/L-brackets/grid/JBM) | SHELL-02, SHELL-03 | e2e (visual) | `playwright test pulse-shell` | ⬜ pending |
-| Responsive: desktop frame; tablet accordion | SHELL-04 | e2e | `playwright test pulse-responsive` | ⬜ pending |
-| **Phase 4 map still works post-migration** | D-01 regression | e2e | `playwright test scenario-run` | ⬜ pending |
+| Signal (Nyquist) | Requirement | Plan / Wave | Test Type | Automated Command | Status |
+|------------------|-------------|-------------|-----------|-------------------|--------|
+| Provenance validator + contract test exist | DINT-01, SRC-01 | 07-01 / W0 | unit | `pnpm --filter web test` (provenance-contract.test.ts) | ⬜ pending |
+| Convex schema + unauthenticated provider round-trip | SRC-03, D-06, D-07 | 07-01 / W0 | unit + codegen | `npx convex codegen && pnpm --filter web test` | ⬜ pending |
+| CAD shell fidelity (frame/shadow/L-brackets/grid/JBM) | SHELL-02, SHELL-03 | 07-02 / W1 | e2e | `playwright test tests/pulse-shell.spec.ts` | ⬜ pending |
+| /pulse route + nav tab (open, no auth per D-06) | SHELL-01 | 07-02 / W1 | e2e | `playwright test tests/pulse-shell.spec.ts` | ⬜ pending |
+| Responsive: desktop frame; tablet accordion | SHELL-04 | 07-02 / W1 | e2e | `playwright test tests/pulse-responsive.spec.ts` | ⬜ pending |
+| Vector map renders with mapId, CAD cloud style, CA framing | FLOW-01, FLOW-07 | 07-03 / W2 | e2e | `playwright test tests/pulse-map.spec.ts` | ⬜ pending |
+| Port anchors present & selectable (6 AdvancedMarkers) | FLOW-02, SHELL-06 | 07-03 / W2 | e2e | `playwright test tests/pulse-ports.spec.ts` | ⬜ pending |
+| CA framing helper correctness | FLOW-01 | 07-03 / W2 | unit | `pnpm --filter web test` (ca-framing.test.ts) | ⬜ pending |
+| SoC gradient → segmented polylines fidelity | FLOW-01 (D-01) | 07-04 / W2 | unit | `pnpm --filter web test` (soc-segments.test.ts) | ⬜ pending |
+| **Phase 4 map still works post-migration** | D-01 regression | 07-04 / W2 | e2e | `playwright test tests/scenario-run.spec.ts` | ⬜ pending |
+| Provenance populated on every ingested record | DINT-01, SRC-01 | 07-05 / W3 | unit (ingest assert) | `pnpm --filter web test` (ingest-provenance.test.ts) | ⬜ pending |
+| usefulnessScore = rubric output, not catalog value | DINT-03 | 07-05 / W3 | unit + notebook artifact | `pnpm --filter web test` + `.planning/data-review/*.md` | ⬜ pending |
+| Sources footer always-visible with citations | SRC-02 | 07-05 / W3 | e2e | `playwright test tests/pulse-footer.spec.ts` | ⬜ pending |
+| Simulated ≠ measured (distinct orange badge) | SRC-04 | 07-05 / W3 | e2e | `playwright test tests/pulse-provenance.spec.ts` | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
