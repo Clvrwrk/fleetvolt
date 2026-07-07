@@ -1,4 +1,4 @@
-"""Unit and integration tests for NREL charger ingest filters."""
+"""Unit and integration tests for AFDC charger ingest filters."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from data.ingest.chargers import (
     filter_unit_rows,
     hd_capable,
     ingest_from_rows,
-    parse_nrel_csv,
+    parse_afdc_csv,
     within_socal_radius,
 )
 
@@ -80,7 +80,7 @@ class TestSocalRadius:
 class TestProvenance:
     def test_provenance_fields_on_fixture_ingest(self, db_session):
         csv_text = open(FIXTURE_PATH, encoding="utf-8").read()
-        rows = parse_nrel_csv(csv_text)
+        rows = parse_afdc_csv(csv_text)
         unit_rows = filter_unit_rows(rows)
         assert len(unit_rows) >= 1
 
@@ -95,6 +95,6 @@ class TestProvenance:
             ),
             {"floor": POWER_FLOOR_KW},
         ).one()
-        assert result.source == "NREL AFDC"
+        assert result.source == "AFDC"
         assert result.ingested_at is not None
         assert result.ingested_at <= datetime.now(tz=UTC)

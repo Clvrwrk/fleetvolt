@@ -1,4 +1,4 @@
-"""NREL AFDC high-power charger ingest for SoCal corridor coverage."""
+"""AFDC high-power charger ingest for SoCal corridor coverage."""
 
 from __future__ import annotations
 
@@ -14,14 +14,14 @@ import httpx
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-NREL_API_URL = "https://developer.nrel.gov/api/alt-fuel-stations/v1/ev-charging-units.csv"
+AFDC_API_URL = "https://developer.nlr.gov/api/alt-fuel-stations/v1.json"
 DEFAULT_FIXTURE = Path(__file__).resolve().parents[1] / "raw" / "nrel" / "chargers_sample.csv"
 
 POLB_LAT = 33.754
 POLB_LON = -118.216
 SOCAL_RADIUS_MI = 200
 POWER_FLOOR_KW = 350
-SOURCE_LABEL = "NREL AFDC"
+SOURCE_LABEL = "AFDC"
 
 HD_CONNECTORS = frozenset({"J1772COMBO", "J3271", "CCS", "MCS"})
 
@@ -88,8 +88,8 @@ def _row_get(row: dict[str, str], *keys: str) -> str | None:
     return None
 
 
-def parse_nrel_csv(csv_text: str) -> list[dict[str, Any]]:
-    """Parse NREL ev-charging-units CSV into normalized unit dicts."""
+def parse_afdc_csv(csv_text: str) -> list[dict[str, Any]]:
+    """Parse AFDC ev-charging-units CSV into normalized unit dicts."""
     reader = csv.DictReader(io.StringIO(csv_text))
     units: list[dict[str, Any]] = []
     for row in reader:
@@ -166,23 +166,24 @@ def _aggregate_by_station(unit_rows: list[dict[str, Any]]) -> list[dict[str, Any
     return stations
 
 
-def fetch_nrel_csv(api_key: str | None = None) -> str:
-    """Fetch live NREL ev-charging-units CSV."""
-    key = api_key or os.environ.get("NREL_API_KEY")
+def fetch_afdc_stations(api_key: str | None = None) -> str:
+    """Fetch live AFDC ev stations (via developer.nlr.gov v1.json)."""
+    key = api_key or os.environ.get("NLR_API_KEY") or os.environ.get("NREL_API_KEY")
     if not key:
-        raise RuntimeError("NREL_API_KEY is required for live NREL ingest")
+        raise RuntimeError("NLR_API_KEY is required for live AFDC ingest")
     params = {
         "api_key": key,
         "fuel_type": "ELEC",
+        "state": "CA",
         "ev_charging_level": "dc_fast",
     }
-    response = httpx.get(NREL_API_URL, params=params, timeout=120.0)
+    response = httpx.get(AFDC_API_URL, params=params, timeout=120.0)
     response.raise_for_status()
     return response.text
 
 
 def load_fixture(path: Path | str | None = None) -> str:
-    """Load offline fixture CSV for CI when NREL_API_KEY is absent."""
+    """Load offline fixture CSV for CI when NLR_API_KEY is absent."""
     fixture = Path(path) if path else DEFAULT_FIXTURE
     return fixture.read_text(encoding="utf-8")
 
@@ -259,11 +260,13 @@ def ingest(
     use_fixture: bool = False,
 ) -> int:
     """Run full ingest pipeline from live API or fixture CSV."""
-    if use_fixture or not (api_key or os.environ.get("NREL_API_KEY")):
+    if use_fixture or not (
+        api_key or os.environ.get("NLR_API_KEY") or os.environ.get("NREL_API_KEY")
+    ):
         csv_text = load_fixture(fixture_path)
     else:
-        csv_text = fetch_nrel_csv(api_key)
-    rows = parse_nrel_csv(csv_text)
+        csv_text = fetch_afdc_stations(api_key)
+    rows = parse_afdc_csv(csv_text)
     unit_rows = filter_unit_rows(rows)
     return ingest_from_rows(session, unit_rows)
 
@@ -274,11 +277,11 @@ def main() -> None:
 
     from app.db import SessionLocal
 
-    parser = argparse.ArgumentParser(description="Ingest NREL AFDC HD chargers")
+    parser = argparse.ArgumentParser(description="Ingest AFDC HD chargers")
     parser.add_argument(
         "--fixture",
         action="store_true",
-        help="Use offline fixture CSV instead of live NREL API",
+        help="Use offline fixture CSV instead of live AFDC (NLR) API",
     )
     parser.add_argument(
         "--fixture-path",

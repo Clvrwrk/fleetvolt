@@ -1,4 +1,4 @@
-"""Weekly idempotent NREL AFDC charger refresh with freshness metadata."""
+"""Weekly idempotent AFDC charger refresh with freshness metadata."""
 
 from __future__ import annotations
 
@@ -10,15 +10,15 @@ from sqlalchemy.orm import Session
 
 from data.ingest.chargers import ingest
 
-FRESHNESS_DATASET = "nrel_afdc_chargers"
-FRESHNESS_SOURCE = "NREL AFDC weekly upsert"
+FRESHNESS_DATASET = "afdc_chargers"
+FRESHNESS_SOURCE = "AFDC weekly upsert"
 
 # VPS cron example (weekly Monday 03:00 UTC):
 # 0 3 * * 1 cd /opt/fleetvolt && docker compose exec -T simulator python -m data.ingest.refresh_chargers
 
 
 def update_freshness(session: Session, row_count: int) -> None:
-    """Upsert data_freshness row for nrel_afdc_chargers per D-17."""
+    """Upsert data_freshness row for afdc_chargers per D-17."""
     now = datetime.now(tz=UTC)
     session.execute(
         text(
@@ -48,7 +48,9 @@ def refresh_chargers(
 ) -> int:
     """Run charger ingest and update freshness metadata."""
     if use_fixture is None:
-        use_fixture = not bool(os.environ.get("NREL_API_KEY"))
+        use_fixture = not bool(
+            os.environ.get("NLR_API_KEY") or os.environ.get("NREL_API_KEY")
+        )
 
     ingested = ingest(session, use_fixture=use_fixture)
     total = session.execute(text("SELECT COUNT(*) FROM chargers")).scalar_one()
@@ -62,17 +64,17 @@ def main() -> None:
 
     from app.db import SessionLocal
 
-    parser = argparse.ArgumentParser(description="Refresh NREL AFDC charger dataset")
+    parser = argparse.ArgumentParser(description="Refresh AFDC charger dataset")
     parser.add_argument(
         "--fixture",
         action="store_true",
-        help="Use offline fixture CSV instead of live NREL API",
+        help="Use offline fixture CSV instead of live AFDC (NLR) API",
     )
     args = parser.parse_args()
 
     session = SessionLocal()
     try:
-        count = refresh_chargers(session, use_fixture=args.fixture or not os.environ.get("NREL_API_KEY"))
+        count = refresh_chargers(session, use_fixture=args.fixture or not (os.environ.get("NLR_API_KEY") or os.environ.get("NREL_API_KEY")))
         total = session.execute(text("SELECT COUNT(*) FROM chargers")).scalar_one()
         print(f"Refresh complete: {count} station(s) upserted, {total} total row(s)")
     finally:
