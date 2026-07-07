@@ -25,28 +25,12 @@ services:
       timeout: 3s
       retries: 5
 
-  valhalla:
-    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
-    environment:
-      tile_urls: ""
-    volumes:
-      - ./data/valhalla/custom_files:/custom_files
-    ports:
-      - "8002:8002"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/status"]
-      interval: 60s
-      timeout: 10s
-      retries: 10
-      start_period: 3600s
-
   simulator:
     build: ./services/simulator
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
-      VALHALLA_URL: http://valhalla:8002
       NREL_API_KEY: ${NREL_API_KEY:-}
       PORT: "8000"
       PYTHONPATH: /app:/data
@@ -65,7 +49,6 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
       CELERY_BROKER_URL: redis://redis:6379/0
-      VALHALLA_URL: http://valhalla:8002
       PYTHONPATH: /app:/data
     volumes:
       - ./data:/data
