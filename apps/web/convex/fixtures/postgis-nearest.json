@@ -1,0 +1,52 @@
+[
+  {
+    "probe": {
+      "name": "POLB_ORIGIN",
+      "lat": 33.754,
+      "lon": -118.216
+    },
+    "radiusM": 8047,
+    "rows": [
+      {
+        "station_id": "900001",
+        "name": "POLB Depot MCS Hub",
+        "power_kw": 400.0,
+        "hd_capable": true,
+        "distance_m": 0.0
+      }
+    ],
+    "hdStationIds": [
+      "900001"
+    ]
+  },
+  {
+    "probe": {
+      "name": "SAN_BERNARDINO_DEST",
+      "lat": 34.108,
+      "lon": -117.29
+    },
+    "radiusM": 8047,
+    "rows": [
+      {
+        "station_id": "900003",
+        "name": "Inland Empire HD CCS",
+        "power_kw": 350.0,
+        "hd_capable": true,
+        "distance_m": 1280.18802424
+      }
+    ],
+    "hdStationIds": [
+      "900003"
+    ]
+  },
+  {
+    "probe": {
+      "name": "CAJON_PASS_DEST",
+      "lat": 34.28,
+      "lon": -117.47
+    },
+    "radiusM": 8047,
+    "rows": [],
+    "hdStationIds": []
+  }
+]
