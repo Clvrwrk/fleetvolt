@@ -1,10 +1,23 @@
-// Convex schema for the /pulse Freight Pulse surface (Phase 7).
+// Convex schema — FleetVolt converged data + spatial layer.
 //
-// Six tables. The five DATA tables (ports, highwaySegments, freightFlows,
-// hotspots, marketSizing) each embed the SHARED `provenance` validator from
-// ./lib/provenance, so no data record can exist without
-// {source, fetchedAt, usefulnessScore, matchMethod} (DINT-01 / SRC-01).
-// userFilters is the only table exempt — it holds anonymous view state, not data.
+// Phase 7 shipped the six /pulse tables (ports, highwaySegments, freightFlows,
+// hotspots, marketSizing, userFilters). Phase 12 (P12-01) CONVERGES the PostGIS
+// simulator tables + the aspirational Supabase field shapes INTO this ONE
+// schema — additively. The six Phase-7 tables + their indexes are preserved
+// byte-compatibly so /pulse (ports.ts, userFilters.ts) keeps compiling.
+//
+// Every DATA table embeds the SHARED `provenance` validator from ./lib/provenance,
+// so no data record can exist without {source, fetchedAt, usefulnessScore,
+// matchMethod} (DINT-01 / SRC-01, P12-02). userFilters is the only exempt
+// table — it holds anonymous view state, not data.
+//
+// P12-03: field names are borrowed from the Supabase design, but Supabase-only
+// constructs (organization_id, created_by / auth.users FKs, RLS) are DROPPED —
+// auth/multi-tenancy is deferred to WorkOS.
+// POINT tables (chargers, carriers, parking, pois) carry location{lat,lng} for
+// the geospatial nearest() layer (12-02) + haversine fallback. LINE tables
+// (highwaySegments, corridors, nhfnSegments) keep bbox + simplify-js path
+// (Convex ~1MB doc guard, PITFALLS #11).
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { provenance } from "./lib/provenance";
@@ -99,4 +112,72 @@ export default defineSchema({
     selectedPort: v.optional(v.string()), // P7 port selector state
     selectedFlowPath: v.optional(v.string()),
   }).index("by_key", ["filterKey"]),
+
+  // ── Phase 12 converged POINT tables (geo-anchored, location{lat,lng}) ──────
+
+  // AFDC chargers (P12-07). location backs BOTH the geospatial-component
+  // nearest() (12-02) and the hand-rolled haversine fallback.
+  chargers: defineTable({
+    stationId: v.string(), // AFDC id, stable key
+    name: v.optional(v.string()),
+    location: v.object({ lat: v.number(), lng: v.number() }),
+    powerKw: v.number(),
+    connectorTypes: v.array(v.string()),
+    operator: v.optional(v.string()),
+    accessCode: v.optional(v.string()),
+    statusCode: v.optional(v.string()),
+    maxVehicleClass: v.optional(
+      v.union(v.literal("LD"), v.literal("MD"), v.literal("HD")),
+    ),
+    evDcFastNum: v.optional(v.number()),
+    // P12-07: max power_kw>=350 AND maxVehicleClass in MD/HD
+    isClass8Capable: v.boolean(),
+    isMcsCapable: v.optional(v.boolean()),
+    dateLastConfirmed: v.optional(v.string()),
+    connectors: v.optional(v.any()), // full per-connector detail
+    provenance,
+  })
+    .index("by_stationId", ["stationId"])
+    .index("by_class8", ["isClass8Capable"]),
+
+  // POLB carrier registry (P12-09). location optional — geocode may fail;
+  // 12-05 backfills it. corridorCity is the outreach tag.
+  carriers: defineTable({
+    name: v.string(),
+    address: v.optional(v.string()),
+    city: v.optional(v.string()),
+    state: v.optional(v.string()),
+    zip: v.optional(v.string()),
+    location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
+    corridorCity: v.optional(v.string()),
+    geocodeStatus: v.optional(v.string()),
+    provenance,
+  })
+    .index("by_corridorCity", ["corridorCity"])
+    .index("by_city", ["city"]),
+
+  // NATD truck-stop parking (P12-06 / P12-11 proxy). numberOfSpots is the
+  // P12-12 capacity proxy. No extra index needed.
+  parking: defineTable({
+    name: v.optional(v.string()),
+    location: v.object({ lat: v.number(), lng: v.number() }),
+    numberOfSpots: v.optional(v.number()),
+    hgv: v.optional(v.boolean()),
+    provenance,
+  }),
+
+  // OSM POIs (P12-14). tags holds the raw OSM tag bag.
+  pois: defineTable({
+    type: v.union(
+      v.literal("truck_parking"),
+      v.literal("rest_area"),
+      v.literal("fuel"),
+      v.literal("convenience"),
+      v.literal("fast_food"),
+    ),
+    name: v.optional(v.string()),
+    location: v.object({ lat: v.number(), lng: v.number() }),
+    tags: v.optional(v.any()), // raw OSM tags
+    provenance,
+  }).index("by_type", ["type"]),
 });
