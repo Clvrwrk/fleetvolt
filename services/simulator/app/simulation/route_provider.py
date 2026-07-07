@@ -1,7 +1,18 @@
-"""Valhalla Class 8 route geometry and posted-speed adapter (ROUT-01, D-08)."""
+"""Class 8 truck route geometry adapter — PTV Developer Routing API (ROUT-01, P11-04).
+
+This adapter now targets the PTV Developer Routing API for truck route geometry
+(base ``https://api.myptv.com/routing/v1``, GET ``/routes``, auth via the ``apiKey``
+HTTP header). It replaces the prior self-hosted Valhalla client (P11-04/P11-05/P11-08).
+
+Scope note (P11-NOTE, Phase-13 decision): this adapter uses PTV for **routing geometry
+only**. PTV's EV energy-consumption and emissions APIs deliberately overlap FleetVolt's
+own physics engine and are NOT used here — whether to lean on them is a Phase-13 strategic
+decision, out of Phase-11 scope.
+"""
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from dataclasses import dataclass
@@ -12,6 +23,17 @@ from pydantic import BaseModel, Field
 from app.simulation.constants import US_MILE_M
 
 logger = logging.getLogger(__name__)
+
+# --- PTV Developer Routing API configuration (P11-04/P11-05) ---
+# Base URL + endpoint GET /routes; auth via the `apiKey` HTTP header (confirmed from the
+# PTV OpenAPI spec at api.myptv.com/meta/services/routing/v1/openapi.json, 2026-07-07).
+PTV_BASE_URL = os.environ.get(
+    "PTV_ROUTING_URL", "https://api.myptv.com/routing/v1"
+).rstrip("/")
+PTV_API_KEY = os.environ.get("PTV_DEVELOPER_API_KEY")
+# PTV's predefined Americas Class-8 semitrailer profile (OpenAPI `profile` query param);
+# also PTV's default when the first waypoint is in the Americas.
+PTV_TRUCK_PROFILE = "USA_8_SEMITRAILER_5AXLE"
 
 VALHALLA_BASE_URL = os.environ.get("VALHALLA_URL", "http://valhalla:8002").rstrip("/")
 
@@ -25,6 +47,20 @@ CLASS8_TRUCK_OPTIONS = {
     "weight": 36287,
     "axle_count": 5,
     "hazmat": False,
+}
+
+# eCascadia/T680E Class-8 config expressed in PTV `vehicle` units (P11-05).
+# Mapping from CLASS8_TRUCK_OPTIONS (Valhalla units) -> PTV vehicle[...] params:
+#   Valhalla height[m]   4.11   -> PTV height[cm]              = round(4.11 * 100) = 411
+#   Valhalla weight[kg]  36287  -> PTV totalPermittedWeight[kg] = 36287 (same unit)
+#   Valhalla axle_count  5      -> PTV numberOfAxles            = 5
+# length/width have no Valhalla equivalent — set to reasonable Class-8 semitrailer values.
+CLASS8_VEHICLE = {
+    "height": round(CLASS8_TRUCK_OPTIONS["height"] * 100),  # cm  (4.11 m -> 411 cm)
+    "totalPermittedWeight": CLASS8_TRUCK_OPTIONS["weight"],  # kg  (36287)
+    "numberOfAxles": CLASS8_TRUCK_OPTIONS["axle_count"],     # 5
+    "length": 2200,  # cm — typical Class-8 tractor + 53 ft trailer (~22 m)
+    "width": 259,    # cm — max legal US trailer width (102 in)
 }
 
 KPH_TO_MPH = 1.0 / 1.609344
