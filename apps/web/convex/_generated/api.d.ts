@@ -9,6 +9,8 @@
  */
 
 import type * as lib_provenance from "../lib/provenance.js";
+import type * as ports from "../ports.js";
+import type * as userFilters from "../userFilters.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +20,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "lib/provenance": typeof lib_provenance;
+  ports: typeof ports;
+  userFilters: typeof userFilters;
 }>;
 
 /**
