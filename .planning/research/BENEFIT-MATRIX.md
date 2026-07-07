@@ -35,7 +35,7 @@ feasibility of electrifying those moves.**
 | 16 | elevation/sample_profile.json | 1 | 0 | 3 | 1 | 5 | **REFERENCE** | Fixture; real elevation via API/PTV. |
 | 17 | Open Data Gov URL lists | 0 | 0 | 3 | 0 | 3 | **REFERENCE** | Portal directory, not data. |
 | 18 | FAF4.5.1 db + GIS (~2.2 GB) | 2 | 1 | 2 | 1 | 6 | **ARCHIVE** | Superseded by FAF5.7.1. Keep only for historical trend. |
-| 19 | osm/california-latest.osm.pbf (1.2 GB) | 1 | 1 | 1 | 0 | 3 | **ARCHIVE** | Superseded by PTV routing (Phase 11). |
+| 19 | osm/california-latest.osm.pbf (1.2 GB) | 2 | 2 | 1 | 3 | **KEEP** | **POI SOURCE** (P12-14): reversed from ARCHIVE — extract convenience/fuel/rest-area/hgv-parking POIs for the hotspot report. Superseded for *routing* (PTV) but now the "what's there" amenities source. |
 | 20 | Assignment Flow Tables /2 /3 (6.3 GB) | 2 | 1 | 1 | 2 | 6 | **DEDUPE** | Triplicated — keep one copy. |
 
 ## Priority ingest order for Phase 12 (freight-out-of-port first)

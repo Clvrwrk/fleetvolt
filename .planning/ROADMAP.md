@@ -385,6 +385,8 @@ decisions. See `.planning/MILESTONE-CONTEXT.md` for full scoping + locked decisi
   2. Nearest-charger and corridor-region queries return parity results vs current PostGIS (`ST_DWithin`/`ST_Distance`)
   3. Elevation profiles available from Convex for POLB/Cajon corridors
   4. Parity tests pass against captured Postgres output
+  5. **North-star acceptance test:** the flagship query is answerable from Convex data + spatial queries (charger gap, 5 closest + config, carrier targeting, congested-route ranking, FAF freight context). See `.planning/research/FLAGSHIP-QUERY-VERIFIED.md`.
+  6. **Hotspot data + spatial model:** modeled truck parking/dwelling hotspot score (proxies: NATD parking capacity + CalTrans 5-axle AADT + FAF flow density + carrier concentration), US→State→County aggregation, OSM POI extraction (convenience/fuel/amenities), and a per-hotspot report query returning carriers/parking/POIs/chargers/score+inputs/freight-context. (UI + LLM brief = Phase 15.)
 
 **Plans**: TBD
 
@@ -420,16 +422,32 @@ decisions. See `.planning/MILESTONE-CONTEXT.md` for full scoping + locked decisi
 
 **Plans**: TBD
 
+### Phase 15: Hotspot Explorer — Drill-Down UI + Executive Sales Brief
+
+**Goal**: A US→State→County map explorer that pinpoints modeled truck parking/dwelling hotspots; clicking one opens a report (what's there / what's missing / carriers / parking / POIs / chargers) plus an LLM-generated executive sales brief on why the hotspot exists and how favorable it is for the mobile-energy product.
+**Mode:** mvp
+**Depends on**: Phase 12 (hotspot data+spatial model, report query), Phase 14 (deployed), AI-SPEC (this phase is AI-integration — generate `15-AI-SPEC.md`)
+**Success Criteria** (what must be TRUE):
+
+  1. Map view drills US → State → County; modeled hotspots render as clickable pins sized/colored by score (labeled "modeled", not observed)
+  2. Clicking a hotspot opens a report populated from the Phase-12 report query: trucking companies, parking areas + capacity, POIs (convenience/fuel/amenities), chargers + Class-8 gap, score + proxy inputs, freight context
+  3. "What's missing" surfaces derived gaps (e.g. high score + zero Class-8 charging = mobile-energy opportunity)
+  4. An **executive sales brief** is generated per hotspot — why it exists + how friendly to pursue with the mobile-energy product — GROUNDED in the real report data (no fabricated numbers; every claim traces to a data field)
+  5. AI-SPEC governs the brief: prompt, grounding contract, guardrails against hallucinated figures, and a "modeled/estimated vs measured" disclosure
+
+**Plans**: TBD
+
 ## v3.0 Progress
 
 **Execution Order:**
-Phases execute in numeric order: 11 → 12 → 13 → 14
+Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 11. Google Maps App-Wide + Routing | 0/TBD | Not started | - |
-| 12. Convex Data + Spatial Layer | 0/TBD | Not started | - |
+| 11. Google Maps App-Wide + Routing | DONE | ✅ code verified (visual check deferred to 14) | 2026-07-07 |
+| 12. Convex Data + Spatial Layer | 0/TBD | Scoped | - |
 | 13. Physics Engine → Convex Actions | 0/TBD | Not started | - |
 | 14. Vercel Deploy + Decommission Docker | 0/TBD | Not started | - |
+| 15. Hotspot Explorer (UI + AI sales brief) | 0/TBD | Scoped (new, 2026-07-07) | - |
 
-**Note:** Requirements (REQ-IDs) to be defined at `/gsd-plan-phase` time per phase. This roadmap is the scoping output of the 2026-07-07 migration discussion.
+**Note:** Requirements (REQ-IDs) to be defined at `/gsd-plan-phase` time per phase. This roadmap is the scoping output of the 2026-07-07 migration discussion + the 2026-07-07 hotspot-feature addition (Phase 15).

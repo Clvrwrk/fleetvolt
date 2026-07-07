@@ -48,3 +48,23 @@ touching callers.
 - Confirm component-vs-handrolled split (§1) or go all hand-rolled if Beta is unacceptable for the parity gate.
 - Geocoding provider + rate-limit handling for 3,151 carriers.
 - Whether `simulations`/`simulation_results` fully move now or stay in Postgres until Phase 13 (physics still writes there). Recommend: metadata table in Convex now, results follow the engine in Phase 13.
+
+## 6. Hotspot model + POI extraction (P12-11..P12-15)
+
+**Modeled hotspot score (P12-12) — NOT real dwell events.** We have no telematics (INRIX/StreetLight paid). Compute a composite 0-1 score per candidate location from proxies we hold:
+- NATD truck-stop parking capacity (`number_of_spots`) — supply/demand pressure signal
+- CalTrans 5-axle truck AADT on nearby segments — through-volume
+- FAF zone-061 outbound flow density on nearby segments — freight intensity
+- geocoded POLB carrier concentration within radius — operator density
+Weighted sum (weights are a config input, tunable); persist `score` + the raw proxy inputs + `provenance{method:"modeled", inputs:[...]}`. Label "modeled" everywhere. This is defensible for a sales-targeting tool; overclaiming "observed dwell" would not be.
+
+**Geo aggregation US→State→County (P12-13).** Census county FIPS + TIGER county boundaries (Census key provisioned). Roll hotspots up to county/state/national for the 3 zoom levels. Store region rollups so the map doesn't recompute per pan.
+
+**POI extraction from OSM (P12-14) — decided, in-hand, free.** `data/raw/osm/california-latest.osm.pbf` (1.2 GB) already contains the POIs "what's there" needs. Extract with a pbf reader (osmium/pyosmium or a Node .pbf parser in an ingest action) filtering tags:
+- `amenity=parking` + `hgv=yes` / `access=hgv` → truck parking
+- `highway=services` / `highway=rest_area` → rest areas
+- `amenity=fuel` (+ `hgv:yes`) → fuel/truck stops
+- `shop=convenience`, `amenity=fast_food` → amenities
+Store as a `pois` point table with type + tags + provenance{source:"OSM"}. **This reverses the BENEFIT-MATRIX "ARCHIVE osm.pbf" verdict — the pbf is now a POI source; keep it.** (Google Places API = richer paid enrichment for brand-level detail, note only — not this phase.)
+
+**Report query (P12-15).** One Convex query takes a hotspot (or lat/lon+radius) and returns the structured payload: carriers[], parking[], pois[], chargers[] (+class8 gap flag), score+inputs, freightContext. This is BOTH the flagship-query building block AND the exact grounding payload the Phase-15 LLM sales brief consumes — build it once, honestly, here.
