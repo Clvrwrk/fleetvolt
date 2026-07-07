@@ -256,16 +256,41 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ## v2.0 Traceability
 
-*(Filled by roadmapper — phases continue from Phase 7)*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FLOW-01 → SHELL-06 | Phase 7+ | Pending |
+| FLOW-01 | Phase 7 | Pending |
+| FLOW-02 | Phase 7 | Pending |
+| FLOW-07 | Phase 7 | Pending |
+| SRC-01 | Phase 7 | Pending |
+| SRC-02 | Phase 7 | Pending |
+| SRC-03 | Phase 7 | Pending |
+| SRC-04 | Phase 7 | Pending |
+| SHELL-01 | Phase 7 | Pending |
+| SHELL-02 | Phase 7 | Pending |
+| SHELL-03 | Phase 7 | Pending |
+| SHELL-04 | Phase 7 | Pending |
+| SHELL-06 | Phase 7 | Pending |
+| FLOW-03 | Phase 8 | Pending |
+| FLOW-04 | Phase 8 | Pending |
+| FLOW-05 | Phase 8 | Pending |
+| FLOW-06 | Phase 8 | Pending |
+| HOT-01 | Phase 9 | Pending |
+| HOT-02 | Phase 9 | Pending |
+| HOT-03 | Phase 9 | Pending |
+| HOT-04 | Phase 9 | Pending |
+| MKT-01 | Phase 9 | Pending |
+| MKT-02 | Phase 9 | Pending |
+| MKT-03 | Phase 9 | Pending |
+| TIME-01 | Phase 10 | Pending |
+| TIME-02 [stretch] | Phase 10 | Pending |
+| TIME-03 | Phase 10 | Pending |
+| HOT-05 [stretch] | Phase 10 | Pending |
+| SHELL-05 | Phase 10 | Pending |
 
 **Coverage:**
 
-- v2.0 requirements: 27 total (FLOW ×7, HOT ×5, MKT ×3, TIME ×3, SRC ×4, SHELL ×6)
-- Mapped to phases: TBD by roadmapper
+- v2.0 requirements: 28 total (FLOW ×7, HOT ×5, MKT ×3, TIME ×3, SRC ×4, SHELL ×6)
+- Mapped to phases: 28 (Phase 7 ×12, Phase 8 ×4, Phase 9 ×7, Phase 10 ×5) ✓
 - Stretch/demo-optional: HOT-05, TIME-02
 
 ---

@@ -237,5 +237,104 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Physics Simulation Core | 5/5 | Complete   | 2026-07-01 |
 | 3. Charging & Job Pipeline | 5/5 | Complete    | 2026-07-01 |
 | 4. Analyst Dashboard & Export | 8/8 | Complete   | 2026-07-01 |
-| 5. Corridor Intelligence & Emissions | 0/TBD | Not started | - |
-| 6. TCO Analysis & Production | 0/TBD | Not started | - |
+| 5. Corridor Intelligence & Emissions | 0/TBD | Deferred (v2.0 in progress) | - |
+| 6. TCO Analysis & Production | 0/TBD | Deferred (v2.0 in progress) | - |
+
+---
+
+# Roadmap: Milestone v2.0 — Freight Pulse Network Visualizer
+
+## Overview
+
+Freight Pulse ships as four vertical phases (7–10) delivering a new `/pulse` visualization tab on a parallel stack (Next.js 15 / Vercel / Convex / Google Maps / WorkOS / GSAP) that shares only the existing FleetVolt app shell. Order is demo-protective: foundation + provenance data contract + map (Phase 7) → the pulsing flow engine that is the demo's heartbeat (Phase 8) → clickable hotspots + market sizing (Phase 9) → time controls, Live-mode, and polish (Phase 10). Phases continue numbering from the v1 roadmap; v1 Phases 5–6 remain deferred. Demo target: Friday July 11, 2026. The non-negotiable demo core (framed map + pulsing R/Y/G flows on real corridors + truck marker + clickable solar-charger-rec hotspots + TAM/SAM/SOM readout + sources footer) is front-loaded across Phases 7–9 so a schedule slip drops only the `[stretch]` items (Live mode, last-mile reveal), not the core.
+
+## Phases
+
+- [ ] **Phase 7: Foundation — Shell, Data Contract & Map Base** - `/pulse` route + CAD shell, Convex schema + provenance-first ingestion, sources footer, vector Google Map with West-Coast framing and port anchors
+- [ ] **Phase 8: Flow Engine — Pulsing Volume Flows + Truck** - flows on real highway geometry, R/Y/G + width encoding + legend, pulsing animation, leading Class-8 truck marker
+- [ ] **Phase 9: Interaction — Hotspots, Callouts & Market Sizing** - clickable typed hotspots, dimension-callout popups, solar-charger site recs, TAM/SAM/SOM overlay toggles + figures
+- [ ] **Phase 10: Time, Live Mode & Demo Polish** - 5yr/1yr filter + reactive re-query, [stretch] Live Simulation mode, [stretch] last-mile street routes, accessibility basics, demo hardening
+
+## Phase Details
+
+### Phase 7: Foundation — Shell, Data Contract & Map Base
+
+**Goal**: A BD user can open an authenticated `/pulse` tab and see a West-Coast-framed vector Google Map with port anchors, the Technical Brand Geometry shell, and a persistent sources footer — with all data provenance-tagged in Convex.
+**Mode:** mvp
+**Depends on**: Nothing new (shares existing app shell; parallel to v1 backend)
+**Requirements**: SHELL-01, SHELL-02, SHELL-03, SHELL-04, SHELL-06, SRC-01, SRC-02, SRC-03, SRC-04, FLOW-01, FLOW-02, FLOW-07
+**Success Criteria** (what must be TRUE):
+
+  1. `/pulse` route exists with a nav tab inside the existing WorkOS auth boundary, wrapped in TechnicalFrame/SkeuomorphicCard + animated blueprint grid, JetBrains Mono typography, responsive on a laptop
+  2. Convex schema (ports, highwaySegments, freightFlows, hotspots, marketSizing, userFilters) is defined and seeded for ≥1 corridor, every quantity carrying `source` + `year` provenance and simulated-vs-measured labeling
+  3. A vector Google Map (mapId, cloud CAD styling so default styling does not leak) loads framed on the West Coast with named port anchors and a port selector
+  4. A persistent sources footer cites datasets and states the flow animation is illustrative
+  5. No live external data pipeline is required — data is precomputed/curated in Convex
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 8: Flow Engine — Pulsing Volume Flows + Truck
+
+**Goal**: A BD user watches freight pulse across real West-Coast highway corridors with a Class-8 truck riding the flow — the demo's "wow" moment.
+**Mode:** mvp
+**Depends on**: Phase 7
+**Requirements**: FLOW-03, FLOW-04, FLOW-05, FLOW-06
+**Success Criteria** (what must be TRUE):
+
+  1. Volume-flow lines follow real highway geometry (I-5, I-710, I-110, US-101, etc.), not straight arcs
+  2. Flows are color-encoded R/Y/G by congestion state and width-encoded by volume, with a visible legend/key
+  3. Flows animate with a pulsing/marching motion conveying direction and intensity, performant on a demo laptop (no React in the frame loop)
+  4. A leading Class-8 truck SVG marker rides a selected flow path with correct heading
+  5. Flow-rendering approach (native Polyline+GSAP vs deck.gl) resolved via a short spike at plan time
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9: Interaction — Hotspots, Callouts & Market Sizing
+
+**Goal**: A BD user clicks hotspots to see solar-charger deployment recommendations and toggles TAM/SAM/SOM overlays to prove market size — the sales narrative.
+**Mode:** mvp
+**Depends on**: Phase 8
+**Requirements**: HOT-01, HOT-02, HOT-03, HOT-04, MKT-01, MKT-02, MKT-03
+**Success Criteria** (what must be TRUE):
+
+  1. Clickable AdvancedMarkerElement hotspots render, typed and visually distinct across queue/parking, congestion, trucking-HQ proximity, and solar-charger recs
+  2. Clicking a hotspot opens a dimension-callout popup (engineering-drawing leader lines) with labeled metrics
+  3. Solar-charger site-recommendation hotspots show a rationale (proximity scoring) and key figures
+  4. A TAM/SAM/SOM readout displays real dollar figures in dimension-callout styling
+  5. User can toggle TAM/SAM/SOM overlay layers on/off over the map, with figures appearing in dimension style
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 10: Time, Live Mode & Demo Polish
+
+**Goal**: A BD user can reframe the data across time, optionally watch a labeled Live Simulation, and experience a hardened, accessible demo.
+**Mode:** mvp
+**Depends on**: Phase 9
+**Requirements**: TIME-01, TIME-02, TIME-03, HOT-05, SHELL-05
+**Success Criteria** (what must be TRUE):
+
+  1. User can switch 5yr/1yr time framings; changing the filter re-queries flow data via reactive Convex state
+  2. [stretch] A clearly-labeled "Live Simulation" mode animates a realistic flow ticker (never implying real-time GPS)
+  3. [stretch] Zoom/hotspot-click reveals last-mile street-level routes from precomputed, Convex-cached Directions (zero live Directions calls)
+  4. Accessibility basics met (keyboard-focusable controls, ≥4.5:1 callout contrast, alt/aria on legend + controls)
+  5. Demo hardened: Sentry WebGL context-loss handling, brand-fidelity check vs the design MD, responsive on the demo display
+
+**Plans**: TBD
+**UI hint**: yes
+
+## v2.0 Progress
+
+**Execution Order:**
+Phases execute in numeric order: 7 → 8 → 9 → 10
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 7. Foundation — Shell, Data Contract & Map Base | 0/TBD | Not started | - |
+| 8. Flow Engine — Pulsing Volume Flows + Truck | 0/TBD | Not started | - |
+| 9. Interaction — Hotspots, Callouts & Market Sizing | 0/TBD | Not started | - |
+| 10. Time, Live Mode & Demo Polish | 0/TBD | Not started | - |
+
+**Coverage:** 28/28 v2.0 requirements mapped (Phase 7 ×12, Phase 8 ×4, Phase 9 ×7, Phase 10 ×5). Stretch: HOT-05, TIME-02.
