@@ -414,6 +414,10 @@ decisions. See `.planning/MILESTONE-CONTEXT.md` for full scoping + locked decisi
   3. End-to-end scenario run + export works on Vercel/Convex (no Docker)
   4. docker-compose.yml and self-hosted services are decommissioned; README/AGENTS/Makefile updated
 
+**Carried-over obligations from Phase 11 (deferred here):**
+  5. **Verify MAP-01/02/03 visually on the deployed app** — SoC-gradient polyline, power-scaled charger markers + popups, hover→chart sync (deferred from Phase 11 because the docker-compose web container can't render end-to-end).
+  6. **Fix the web build/proxy** — the current `apps/web/Dockerfile` rewrite is half-finished (omits copying `apps/web/convex/`) and `API_URL` bakes to `localhost:4000` at build time instead of resolving to the API host. Vercel deploy must resolve the API base correctly (no ECONNREFUSED).
+
 **Plans**: TBD
 
 ## v3.0 Progress

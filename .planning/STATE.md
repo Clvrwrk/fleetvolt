@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Progress
-current_phase_name: defining requirements
-status: planning
-stopped_at: Phase 11 COMPLETE (11-01 PTV routing, 11-03 Google maps, 11-02 Valhalla teardown); awaiting human visual check of MAP-01/02/03 on /planner before phase close
-last_updated: "2026-07-07T07:43:42.508Z"
+current_phase_name: Phase 11 complete (routing+maps migrated)
+status: executed
+stopped_at: Phase 11 DONE (PTV routing verified 231.86kWh sim; Google maps ported; Valhalla retired). MAP-01/02/03 browser check DEFERRED to Phase 14 (pre-existing docker web-build infra blocks it). Next = /gsd-plan-phase 12
+last_updated: "2026-07-07T08:50:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Milestone v2.0 started
+last_activity_desc: Phase 11 executed + verified; visual check deferred to Phase 14
 progress:
   total_phases: 4
   completed_phases: 1

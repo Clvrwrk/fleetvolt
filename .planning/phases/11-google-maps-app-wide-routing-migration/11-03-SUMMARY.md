@@ -90,9 +90,32 @@ Completed the app-wide migration off Mapbox that Phase 7 began for `/pulse`. Eve
 - **PNG export degrades to null** — Google's WebGL vector map has no `getCanvas().toDataURL()`; `registerMapSnapshotCapture(null)` is a valid store state, so export degrades gracefully rather than crashing. Flag for a follow-up if PNG export becomes a requirement (not a Phase-11 requirement).
 - **scenario-run result-text timeout:** the docker `web` container's API proxy is misconfigured (baked `localhost:4000` instead of `api:4000` → ECONNREFUSED) — PRE-EXISTING infra dirt, will be addressed in Phase 14 (Vercel/Docker decommission). On a host dev server the form/run/status/canvas all render; the final sim-result text didn't complete in 120s (Convex/env difference on the host server). This does not indicate a migration regression — the map mounts and renders.
 
-## ⚠️ Manual visual check needed (human, on /planner)
+## ⚠️ Manual visual check needed (human, on /planner) — DEFERRED to Phase 14
 
-The smoke gate proves no-crash + results render; it does NOT assert map visuals. Please eyeball on `/planner` (live Google tiles render — referrer allowlist configured):
+The smoke gate proves no-crash + results render; it does NOT assert map visuals. The browser
+visual check of MAP-01/02/03 was **deferred to Phase 14 (Vercel deploy)** by Chris on 2026-07-07.
+
+**Why deferred:** the docker-compose `web` container cannot currently render the app end-to-end
+due to TWO pre-existing infra issues (NOT Phase 11 regressions):
+1. The running web image baked `API_URL=localhost:4000` at build time (should be `api:4000`) →
+   `ECONNREFUSED` inside Docker → the `API 500` seen in the browser.
+2. A half-finished, uncommitted rewrite of `apps/web/Dockerfile` (monorepo-aware build) omits
+   copying `apps/web/convex/`, so the web image **won't rebuild** (`Can't resolve
+   '../../../convex/_generated/api'`).
+
+Both are Docker-deployment concerns that Phase 14 (Vercel + decommission Docker) replaces wholesale.
+Fixing them in docker-compose now would be throwaway work.
+
+**Phase 11 code IS verified** at the level that matters:
+- PTV routing proven end-to-end from the container: POLB→San Bernardino = 117,432 m, 1,296 [lon,lat] coords, edge_speeds=[] (fallback as designed).
+- Full physics simulation COMPLETES via the API: 231.86 kWh real output.
+- route-map.tsx Google port committed, tsc-clean, SoC unit test 6/6.
+
+**Phase 14 must include:** verify MAP-01 (SoC gradient), MAP-02 (charger markers+popups),
+MAP-03 (hover→chart sync) on the deployed Vercel app; fix/replace the web build so API_URL
+resolves correctly.
+
+When you're ready (MAP-01/02/03):
 - **MAP-01** — SoC-gradient segmented polyline: green (>40%) / amber (20–40%) / red (<20%) at the right stretches
 - **MAP-02** — power-scaled charger markers + InfoWindow popups on click
 - **MAP-03** — hovering the map moves the SoC/energy chart cursor
