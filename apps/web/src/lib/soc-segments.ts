@@ -12,12 +12,12 @@
 // hover) is derived the same way the Mapbox casing was: slice the route by the
 // active segment's cumulative-distance bounds.
 import type { components } from "@fleetvolt/shared-types";
-import { socColor } from "./segment-geojson.js";
+import { socColor } from "@/lib/segment-geojson";
 import {
   segmentDistanceBoundsM,
   sliceRouteByDistanceM,
   type RouteCoordinates,
-} from "./route-geometry.js";
+} from "@/lib/route-geometry";
 
 type Segment = components["schemas"]["SegmentResult"];
 

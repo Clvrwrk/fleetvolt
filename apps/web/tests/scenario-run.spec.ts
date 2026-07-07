@@ -26,7 +26,7 @@ test.describe("@smoke analyst scenario run", () => {
   });
 
   test("test_analyst_runs_polb_scenario", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/planner");
 
     const form = page.getByTestId("scenario-form");
     await expect(form).toBeVisible({ timeout: 10_000 });
