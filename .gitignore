@@ -6,6 +6,9 @@ data/raw/nrel/*
 data/raw/elevation/*
 !data/raw/elevation/sample_profile.json
 .env
+.env.local
+.env.*.local
+*.local.env
 node_modules/
 __pycache__/
 *.py[cod]
