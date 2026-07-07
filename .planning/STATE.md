@@ -72,7 +72,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- **[DIRECTION — 2026-07-07] Full-stack re-platform requested by Chris:** move the ENTIRE app (not just /pulse) to Google Maps + Vercel + Convex. Retire Mapbox/react-map-gl app-wide, VPS/Docker Compose → Vercel, PostGIS/Fastify/Celery → Convex. This supersedes the narrow 07-04 (/pulse-only migration) scope and needs its own planning pass before execution. PAUSED at Chris's request pending scoping.
 
 ### Blockers/Concerns
 
