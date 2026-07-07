@@ -1,8 +1,7 @@
-"""Unit and integration tests for RouteProvider (Valhalla route + trace_attributes)."""
+"""Unit tests for RouteProvider against the PTV Developer Routing API (P11-04/P11-08)."""
 
 from __future__ import annotations
 
-import os
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -11,42 +10,26 @@ import pytest
 from app.routes.routing import POLB_ORIGIN, SAN_BERNARDINO_DEST
 from app.simulation.route_provider import (
     CLASS8_TRUCK_OPTIONS,
+    CLASS8_VEHICLE,
+    PTV_TRUCK_PROFILE,
     EdgeSpeed,
     RouteGeometry,
     RouteProvider,
-    parse_trace_attributes,
+    parse_ptv_route_response,
 )
 
-VALHALLA_URL = os.environ.get("VALHALLA_URL", "http://localhost:8002")
-
-
-MOCK_ROUTE_RESPONSE = {
-    "trip": {
-        "summary": {"length": 95.5, "time": 4200.0},
-        "legs": [
-            {
-                "shape": {
-                    "type": "LineString",
-                    "coordinates": [
-                        [-118.216, 33.754],
-                        [-117.5, 34.0],
-                        [-117.290, 34.108],
-                    ],
-                },
-                "encoded_polyline": None,
-            }
+# A realistic POLB -> San Bernardino PTV /routes payload (~95 mi ≈ 153 km).
+MOCK_PTV_RESPONSE = {
+    "distance": 153200,  # meters (PTV returns meters — no *1000)
+    "travelTime": 6300,  # seconds
+    "polyline": {
+        "type": "LineString",
+        "coordinates": [
+            [-118.216, 33.754],  # POLB origin ([lon, lat])
+            [-117.9, 33.9],
+            [-117.5, 34.0],
+            [-117.290, 34.108],  # San Bernardino dest
         ],
-    }
-}
-
-MOCK_TRACE_RESPONSE = {
-    "edges": [
-        {"speed_limit": 88.5, "truck_speed": 88.5},
-        {"speed_limit": 72.4, "truck_speed": 72.4},
-        {"speed_limit": 104.6, "truck_speed": 88.5},
-    ],
-    "shape_attributes": {
-        "length": [30.0, 40.0, 25.5],
     },
 }
 
@@ -57,112 +40,147 @@ def test_class8_truck_options_defined():
     assert CLASS8_TRUCK_OPTIONS["axle_count"] == 5
 
 
-def test_parse_trace_attributes_returns_edge_speeds():
-    edges = parse_trace_attributes(MOCK_TRACE_RESPONSE, units="miles")
-    assert len(edges) == 3
-    assert edges[0].edge_length_m == pytest.approx(30.0 * 1609.344, rel=1e-3)
-    assert edges[0].speed_limit_mph == pytest.approx(55.0, rel=0.05)
-    assert edges[0].start_m == pytest.approx(0.0)
-    assert edges[1].start_m == pytest.approx(edges[0].edge_length_m, rel=1e-3)
-    assert all(e.speed_limit_mph > 0 for e in edges)
+def test_class8_vehicle_derived_from_truck_options():
+    # PTV units derived from CLASS8_TRUCK_OPTIONS (P11-05).
+    assert CLASS8_VEHICLE["height"] == 411  # 4.11 m -> cm
+    assert CLASS8_VEHICLE["totalPermittedWeight"] == 36287
+    assert CLASS8_VEHICLE["numberOfAxles"] == 5
 
 
-def test_parse_trace_attributes_empty_edges():
-    assert parse_trace_attributes({"edges": []}, units="miles") == []
+def test_parse_ptv_route_response_geojson():
+    geo = parse_ptv_route_response(MOCK_PTV_RESPONSE)
+    assert isinstance(geo, RouteGeometry)
+    # distance is meters, NOT *1000
+    assert geo.distance_m == pytest.approx(153200.0)
+    assert geo.duration_s == pytest.approx(6300.0)
+    assert len(geo.coordinates) == 4
+    # coordinates parsed as [lon, lat] pairs
+    assert geo.coordinates[0] == [-118.216, 33.754]
+    assert geo.coordinates[-1] == [-117.290, 34.108]
 
 
-def test_parse_trace_attributes_malformed_raises():
-    with pytest.raises(ValueError, match="Unexpected Valhalla trace_attributes"):
-        parse_trace_attributes({"edges": [{}]}, units="miles")
+def test_parse_ptv_route_response_json_string_polyline():
+    import json
+
+    payload = {
+        "distance": 153200,
+        "travelTime": 6300,
+        "polyline": json.dumps(
+            {"type": "LineString", "coordinates": [[-118.216, 33.754], [-117.290, 34.108]]}
+        ),
+    }
+    geo = parse_ptv_route_response(payload)
+    assert geo.coordinates[-1] == [-117.290, 34.108]
+    assert geo.encoded_polyline is not None  # raw string retained
+
+
+def test_parse_ptv_route_response_malformed_raises():
+    with pytest.raises(ValueError, match="Unexpected PTV route response shape"):
+        parse_ptv_route_response({"travelTime": 100, "polyline": {}})
 
 
 @patch("app.simulation.route_provider.httpx.Client")
-def test_get_route_returns_geometry(mock_client_cls: MagicMock):
+def test_get_route_calls_ptv_with_class8_profile(mock_client_cls: MagicMock):
     mock_client = MagicMock()
     mock_client_cls.return_value.__enter__.return_value = mock_client
     mock_client.get.return_value = MagicMock(
         status_code=200,
-        json=lambda: {"available_actions": ["route"], "tileset_last_modified": 1},
-    )
-    mock_client.post.return_value = MagicMock(
-        status_code=200,
-        json=lambda: MOCK_ROUTE_RESPONSE,
+        json=lambda: MOCK_PTV_RESPONSE,
         raise_for_status=MagicMock(),
     )
 
-    provider = RouteProvider(base_url="http://valhalla:8002")
-    result = provider.get_route(33.754, -118.216, 34.108, -117.290)
+    provider = RouteProvider(api_key="TEST_KEY")
+    origin_lat, origin_lon = POLB_ORIGIN
+    dest_lat, dest_lon = SAN_BERNARDINO_DEST
+    result = provider.get_route(origin_lat, origin_lon, dest_lat, dest_lon)
 
     assert isinstance(result, RouteGeometry)
-    assert result.distance_m == pytest.approx(95500.0, rel=1e-3)
-    assert result.duration_s == pytest.approx(4200.0)
-    assert len(result.coordinates) == 3
+    assert result.distance_m == pytest.approx(153200.0)
     assert result.coordinates[0] == [-118.216, 33.754]
-    mock_client.post.assert_called_once()
-    call_json = mock_client.post.call_args.kwargs["json"]
-    assert call_json["costing"] == "truck"
-    assert call_json["costing_options"]["truck"] == CLASS8_TRUCK_OPTIONS
+
+    mock_client.get.assert_called_once()
+    call = mock_client.get.call_args
+    # endpoint hit /routes
+    assert call.args[0].endswith("/routes")
+    # apiKey header
+    assert call.kwargs["headers"] == {"apiKey": "TEST_KEY"}
+    params = call.kwargs["params"]
+    assert params["profile"] == PTV_TRUCK_PROFILE == "USA_8_SEMITRAILER_5AXLE"
+    assert params["options[polylineFormat]"] == "GEO_JSON"
+    # Class-8 vehicle overrides passed through
+    assert params["vehicle[totalPermittedWeight]"] == 36287
+    assert params["vehicle[numberOfAxles]"] == 5
+    # waypoints formatted "lat,lon" (inverse of the [lon,lat] output)
+    assert params["waypoints"] == [
+        f"{origin_lat},{origin_lon}",
+        f"{dest_lat},{dest_lon}",
+    ]
 
 
-@patch("app.simulation.route_provider.httpx.Client")
-def test_get_edge_speeds_calls_trace_attributes(mock_client_cls: MagicMock):
-    mock_client = MagicMock()
-    mock_client_cls.return_value.__enter__.return_value = mock_client
-    mock_client.post.return_value = MagicMock(
-        status_code=200,
-        json=lambda: MOCK_TRACE_RESPONSE,
-        raise_for_status=MagicMock(),
-    )
-
+def test_get_edge_speeds_returns_empty_under_ptv():
+    provider = RouteProvider(api_key="TEST_KEY")
     coordinates = [[-118.216, 33.754], [-117.290, 34.108]]
-    provider = RouteProvider(base_url="http://valhalla:8002")
-    edges = provider.get_edge_speeds(coordinates)
+    assert provider.get_edge_speeds(coordinates) == []
 
-    assert len(edges) == 3
-    assert all(isinstance(e, EdgeSpeed) for e in edges)
-    call_json = mock_client.post.call_args.kwargs["json"]
-    assert call_json["costing"] == "truck"
-    filters = call_json["filters"]["attributes"]
-    assert "edge.speed_limit" in filters
-    assert "edge.truck_speed" in filters
-    assert "shape_attributes.length" in filters
+
+def test_get_route_raises_without_api_key():
+    provider = RouteProvider(api_key="")
+    with pytest.raises(RuntimeError, match="PTV_DEVELOPER_API_KEY is not configured"):
+        provider.get_route(33.754, -118.216, 34.108, -117.290)
 
 
 @patch("app.simulation.route_provider.httpx.Client")
-def test_get_route_raises_when_valhalla_unavailable(mock_client_cls: MagicMock):
+def test_get_route_http_error_raises_runtimeerror(mock_client_cls: MagicMock):
     mock_client = MagicMock()
     mock_client_cls.return_value.__enter__.return_value = mock_client
     mock_client.get.side_effect = httpx.ConnectError("connection refused")
 
-    provider = RouteProvider(base_url="http://valhalla:8002")
-    with pytest.raises(RuntimeError, match="Valhalla routing service unavailable"):
+    provider = RouteProvider(api_key="TEST_KEY")
+    with pytest.raises(RuntimeError, match="PTV route request failed"):
         provider.get_route(33.754, -118.216, 34.108, -117.290)
 
 
-def _valhalla_ready() -> bool:
-    try:
-        response = httpx.get(f"{VALHALLA_URL}/status", timeout=5.0)
-        if response.status_code != 200:
-            return False
-        payload = response.json()
-        actions = payload.get("available_actions") or []
-        return "route" in actions or payload.get("tileset_last_modified") is not None
-    except httpx.HTTPError:
-        return False
+@patch("app.simulation.route_provider.httpx.Client")
+def test_polb_to_san_bernardino_parity(mock_client_cls: MagicMock):
+    """P11-08 geometry-parity spot check against a realistic PTV payload."""
+    mock_client = MagicMock()
+    mock_client_cls.return_value.__enter__.return_value = mock_client
+    mock_client.get.return_value = MagicMock(
+        status_code=200,
+        json=lambda: MOCK_PTV_RESPONSE,
+        raise_for_status=MagicMock(),
+    )
+
+    provider = RouteProvider(api_key="TEST_KEY")
+    origin_lat, origin_lon = POLB_ORIGIN
+    dest_lat, dest_lon = SAN_BERNARDINO_DEST
+    geometry = provider.get_route(origin_lat, origin_lon, dest_lat, dest_lon)
+
+    # Plausible Class-8 distance band for the POLB -> San Bernardino corridor.
+    assert 120_000 <= geometry.distance_m <= 200_000
+    assert len(geometry.coordinates) >= 2
+    # First/last coordinates near the corridor endpoints (within ~0.2°).
+    first_lon, first_lat = geometry.coordinates[0]
+    last_lon, last_lat = geometry.coordinates[-1]
+    assert abs(first_lat - origin_lat) <= 0.2 and abs(first_lon - origin_lon) <= 0.2
+    assert abs(last_lat - dest_lat) <= 0.2 and abs(last_lon - dest_lon) <= 0.2
+    # Edge speeds empty under PTV (55 mph physics fallback documented).
+    assert provider.get_edge_speeds(geometry.coordinates) == []
 
 
 @pytest.mark.integration
 def test_integration_polb_to_san_bernardino_route():
-    if not _valhalla_ready():
-        pytest.skip(f"Valhalla not ready at {VALHALLA_URL}")
+    """Live PTV route (requires PTV_DEVELOPER_API_KEY)."""
+    import os
 
-    provider = RouteProvider(base_url=VALHALLA_URL)
+    if not os.environ.get("PTV_DEVELOPER_API_KEY"):
+        pytest.skip("PTV_DEVELOPER_API_KEY not configured")
+
+    provider = RouteProvider()
     origin_lat, origin_lon = POLB_ORIGIN
     dest_lat, dest_lon = SAN_BERNARDINO_DEST
     geometry = provider.get_route(origin_lat, origin_lon, dest_lat, dest_lon)
 
     assert geometry.distance_m > 50_000
     assert len(geometry.coordinates) > 10
-    edges = provider.get_edge_speeds(geometry.coordinates)
-    assert len(edges) > 0
-    assert all(e.speed_limit_mph > 0 for e in edges)
+    assert isinstance(provider.get_edge_speeds(geometry.coordinates), list)
