@@ -239,6 +239,16 @@ Deferred to future release. Tracked but not in current roadmap.
 - [ ] **SHELL-05**: Accessibility basics are met (keyboard-focusable controls, ≥4.5:1 contrast on callouts, alt/aria labels on legend and controls)
 - [ ] **SHELL-06**: A control panel hosts the port selector, time filter, and overlay toggles in the Technical Brand Geometry style
 
+### Data Intelligence
+
+- [ ] **DINT-01**: Every ingested/fetched record carries a `provenance` object `{source, fetchedAt, usefulnessScore, matchMethod}` persisted in Convex
+- [ ] **DINT-02**: The flow engine computes pulse intensity/color/truck-speed from a static-base × dynamic-congestion blend (`pulse_intensity = static_volume × (1 + congestion_factor)`), with the formula and its inputs recorded per segment
+- [ ] **DINT-03**: A 0–10 usefulness rubric (volume relevance, geospatial joinability, freshness, truck-specific granularity) is applied to each dataset at ingest and stored, replacing any hardcoded assumed score
+- [ ] **DINT-04**: A "Data Quality Inspector" drawer (collapsed by default, skeuomorphic technical style) shows a raw sample, column audit (coverage %/nulls/date range), usefulness score, and provenance for the active layers
+- [ ] **DINT-05**: User can switch matching mode: "Static Only" / "Hybrid" / "Live Priority"
+- [ ] **DINT-06**: On API/fetch failure the surface falls back to the last cached static data and displays an orange "Simulated" badge (never a silent stale render)
+- [ ] **DINT-07 [stretch]**: Live signals (Google Traffic, Caltrans PeMS, 511.org events) feed the dynamic congestion tint when credentials/approvals are available
+
 ## v2.0 Out of Scope
 
 | Feature | Reason |
@@ -286,12 +296,19 @@ Deferred to future release. Tracked but not in current roadmap.
 | TIME-03 | Phase 10 | Pending |
 | HOT-05 [stretch] | Phase 10 | Pending |
 | SHELL-05 | Phase 10 | Pending |
+| DINT-01 | Phase 7 | Pending |
+| DINT-03 | Phase 7 | Pending |
+| DINT-02 | Phase 8 | Pending |
+| DINT-04 | Phase 9 | Pending |
+| DINT-05 | Phase 9 | Pending |
+| DINT-06 | Phase 10 | Pending |
+| DINT-07 [stretch] | Phase 10 | Pending |
 
 **Coverage:**
 
-- v2.0 requirements: 28 total (FLOW ×7, HOT ×5, MKT ×3, TIME ×3, SRC ×4, SHELL ×6)
-- Mapped to phases: 28 (Phase 7 ×12, Phase 8 ×4, Phase 9 ×7, Phase 10 ×5) ✓
-- Stretch/demo-optional: HOT-05, TIME-02
+- v2.0 requirements: 35 total (FLOW ×7, HOT ×5, MKT ×3, TIME ×3, SRC ×4, SHELL ×6, DINT ×7)
+- Mapped to phases: 35 (Phase 7 ×14, Phase 8 ×5, Phase 9 ×9, Phase 10 ×7) ✓
+- Stretch/demo-optional: HOT-05, TIME-02, DINT-07
 
 ---
 *v2.0 requirements defined: 2026-07-06*

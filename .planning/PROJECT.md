@@ -102,6 +102,7 @@ A planner or analyst can configure a realistic POLB drayage + inland corridor sc
 | **[v2.0] Freight Pulse uses parallel stack (Convex/Google Maps/WorkOS/Vercel/GSAP)** | Stakeholder has paid Google console + explicit request for accurate street-level routing; BD demo surface, not the sim engine — overrides v1 no-Google/Docker constraint for `/pulse` only | — Decided 2026-07-06 |
 | **[v2.0] Freight Pulse is a new parallel surface, not a rewrite** | Existing FleetVolt Route sim app (Phases 1–4) stays on its Docker/PostGIS/Valhalla stack, untouched | — Decided 2026-07-06 |
 | **[v2.0] Phases continue at Phase 7; v1 Phases 5–6 deferred** | Preserve 67% of shipped v1 work; Freight Pulse is the Friday demo priority | — Decided 2026-07-06 |
+| **[v2.0] Data Intelligence Layer: provenance + usefulness rubric + static×dynamic blend** | Accuracy-first requirement from stakeholder; pulse = `static_volume × (1 + congestion_factor)`; every layer carries `{source, fetchedAt, usefulnessScore, matchMethod}`; live signals are stretch-only | — Decided 2026-07-06 |
 
 ## Evolution
 

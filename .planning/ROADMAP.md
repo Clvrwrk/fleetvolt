@@ -262,7 +262,7 @@ Freight Pulse ships as four vertical phases (7–10) delivering a new `/pulse` v
 **Goal**: A BD user can open an authenticated `/pulse` tab and see a West-Coast-framed vector Google Map with port anchors, the Technical Brand Geometry shell, and a persistent sources footer — with all data provenance-tagged in Convex.
 **Mode:** mvp
 **Depends on**: Nothing new (shares existing app shell; parallel to v1 backend)
-**Requirements**: SHELL-01, SHELL-02, SHELL-03, SHELL-04, SHELL-06, SRC-01, SRC-02, SRC-03, SRC-04, FLOW-01, FLOW-02, FLOW-07
+**Requirements**: SHELL-01, SHELL-02, SHELL-03, SHELL-04, SHELL-06, SRC-01, SRC-02, SRC-03, SRC-04, FLOW-01, FLOW-02, FLOW-07, DINT-01, DINT-03
 **Success Criteria** (what must be TRUE):
 
   1. `/pulse` route exists with a nav tab inside the existing WorkOS auth boundary, wrapped in TechnicalFrame/SkeuomorphicCard + animated blueprint grid, JetBrains Mono typography, responsive on a laptop
@@ -279,7 +279,7 @@ Freight Pulse ships as four vertical phases (7–10) delivering a new `/pulse` v
 **Goal**: A BD user watches freight pulse across real West-Coast highway corridors with a Class-8 truck riding the flow — the demo's "wow" moment.
 **Mode:** mvp
 **Depends on**: Phase 7
-**Requirements**: FLOW-03, FLOW-04, FLOW-05, FLOW-06
+**Requirements**: FLOW-03, FLOW-04, FLOW-05, FLOW-06, DINT-02
 **Success Criteria** (what must be TRUE):
 
   1. Volume-flow lines follow real highway geometry (I-5, I-710, I-110, US-101, etc.), not straight arcs
@@ -296,7 +296,7 @@ Freight Pulse ships as four vertical phases (7–10) delivering a new `/pulse` v
 **Goal**: A BD user clicks hotspots to see solar-charger deployment recommendations and toggles TAM/SAM/SOM overlays to prove market size — the sales narrative.
 **Mode:** mvp
 **Depends on**: Phase 8
-**Requirements**: HOT-01, HOT-02, HOT-03, HOT-04, MKT-01, MKT-02, MKT-03
+**Requirements**: HOT-01, HOT-02, HOT-03, HOT-04, MKT-01, MKT-02, MKT-03, DINT-04, DINT-05
 **Success Criteria** (what must be TRUE):
 
   1. Clickable AdvancedMarkerElement hotspots render, typed and visually distinct across queue/parking, congestion, trucking-HQ proximity, and solar-charger recs
@@ -313,7 +313,7 @@ Freight Pulse ships as four vertical phases (7–10) delivering a new `/pulse` v
 **Goal**: A BD user can reframe the data across time, optionally watch a labeled Live Simulation, and experience a hardened, accessible demo.
 **Mode:** mvp
 **Depends on**: Phase 9
-**Requirements**: TIME-01, TIME-02, TIME-03, HOT-05, SHELL-05
+**Requirements**: TIME-01, TIME-02, TIME-03, HOT-05, SHELL-05, DINT-06, DINT-07
 **Success Criteria** (what must be TRUE):
 
   1. User can switch 5yr/1yr time framings; changing the filter re-queries flow data via reactive Convex state
@@ -337,4 +337,4 @@ Phases execute in numeric order: 7 → 8 → 9 → 10
 | 9. Interaction — Hotspots, Callouts & Market Sizing | 0/TBD | Not started | - |
 | 10. Time, Live Mode & Demo Polish | 0/TBD | Not started | - |
 
-**Coverage:** 28/28 v2.0 requirements mapped (Phase 7 ×12, Phase 8 ×4, Phase 9 ×7, Phase 10 ×5). Stretch: HOT-05, TIME-02.
+**Coverage:** 35/35 v2.0 requirements mapped (Phase 7 ×14, Phase 8 ×5, Phase 9 ×9, Phase 10 ×7). Stretch: HOT-05, TIME-02, DINT-07.
