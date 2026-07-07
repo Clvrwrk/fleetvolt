@@ -32,6 +32,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
       NREL_API_KEY: ${NREL_API_KEY:-}
+      PTV_DEVELOPER_API_KEY: ${PTV_DEVELOPER_API_KEY:-}
       PORT: "8000"
       PYTHONPATH: /app:/data
     volumes:
@@ -49,6 +50,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
       CELERY_BROKER_URL: redis://redis:6379/0
+      PTV_DEVELOPER_API_KEY: ${PTV_DEVELOPER_API_KEY:-}
       PYTHONPATH: /app:/data
     volumes:
       - ./data:/data
