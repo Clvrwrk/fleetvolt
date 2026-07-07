@@ -52,3 +52,23 @@ key-decisions:
 ## Output
 
 Plan 11-02 complete. **Phase 11 (all 3 plans) done** — routing on PTV, maps on Google, Valhalla retired. Remaining before phase close: human manual visual check of MAP-01/02/03 on /planner (see 11-03-SUMMARY).
+
+## Post-execution fix (deployment gap, 2026-07-07)
+
+**Symptom:** `/planner` showed `API 500: Internal Server Error` on every simulation run after Phase 11.
+
+**Root cause (two compounding gaps the plans missed):**
+1. The deployed `simulator`/`sim-worker` docker images still contained the OLD Valhalla code — 11-01 changed the source + ran host-side pytest (green) but never rebuilt the images. After 11-02 removed the Valhalla service, the stale container tried to reach a service that no longer existed.
+2. Even after rebuilding, `PTV_DEVELOPER_API_KEY` was never plumbed into the docker env — the compose file passed `VALHALLA_URL` (now removed) but nothing wired in PTV's key.
+
+**Fix:**
+- `docker compose build simulator sim-worker` → rebuilt images with the PTV code (verified: 11 PTV refs in the running container, 0 Valhalla).
+- Added `PTV_DEVELOPER_API_KEY: ${PTV_DEVELOPER_API_KEY:-}` to the simulator + sim-worker env blocks (commit `db28787`); created a root `.env` (gitignored) carrying the key.
+- Recreated containers → key present in both.
+
+**Verified end-to-end (real):**
+- Direct PTV call from the container: POLB→San Bernardino returns **distance_m=117,432 (~73 mi)**, **1,296 [lon,lat] coords** (POLB→SB endpoints correct), **edge_speeds=[]** (posted-speed fallback as designed).
+- Full API simulation (`polb_cajon_pass`, `ecascadia_438`, ideal, 40k lb, drayage): job **COMPLETE**, **total 231.86 kWh** real physics output.
+- `API 500` resolved.
+
+**Lesson:** GSD executors that verify via host-side unit tests must ALSO rebuild+redeploy the container images when the change affects a containerized service — host green ≠ deployed green. Captured for future migration phases (and Phase 14's Vercel/Convex deploy).
