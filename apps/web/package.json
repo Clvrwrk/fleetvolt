@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@convex-dev/geospatial": "0.2.1",
     "@fleetvolt/shared-types": "workspace:*",
     "@gsap/react": "2.1.2",
     "@hookform/resolvers": "5.4.0",

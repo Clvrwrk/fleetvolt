@@ -10,6 +10,7 @@
 
 import type * as lib_provenance from "../lib/provenance.js";
 import type * as ports from "../ports.js";
+import type * as seed_ports from "../seed/ports.js";
 import type * as userFilters from "../userFilters.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   "lib/provenance": typeof lib_provenance;
   ports: typeof ports;
+  "seed/ports": typeof seed_ports;
   userFilters: typeof userFilters;
 }>;
 
@@ -50,4 +52,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  geospatial: import("@convex-dev/geospatial/_generated/component.js").ComponentApi<"geospatial">;
+};
