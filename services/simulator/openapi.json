@@ -186,7 +186,7 @@
           "routing"
         ],
         "summary": "Get Route",
-        "description": "Return a Class 8 truck route via Valhalla truck costing.",
+        "description": "Return a Class 8 truck route via the PTV Developer Routing API.",
         "operationId": "get_route_v1_routing_route_get",
         "parameters": [
           {
@@ -596,24 +596,21 @@
         "description": "Render consulting PDF report with KPIs, map snapshot, and audit footer \u2014 implemented on API gateway (:4000). Returns application/pdf.",
         "operationId": "export_simulation_pdf_v1_exports_pdf_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PdfExportRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "PDF report",
+            "description": "Successful Response",
             "content": {
-              "application/pdf": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -1446,7 +1443,7 @@
               }
             ],
             "title": "Encoded Polyline",
-            "description": "Valhalla encoded polyline when shape_format is not geojson"
+            "description": "Encoded polyline when the provider returns a string polyline"
           },
           "coordinates": {
             "items": {
@@ -1462,7 +1459,7 @@
           "valhalla_status": {
             "type": "string",
             "title": "Valhalla Status",
-            "description": "Valhalla service status at request time"
+            "description": "Routing provider readiness marker"
           }
         },
         "type": "object",
@@ -1943,6 +1940,33 @@
         ],
         "title": "WeatherPreset"
       },
+      "PdfExportRequest": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id",
+            "description": "Simulation run UUID"
+          },
+          "map_snapshot_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Snapshot Base64",
+            "description": "Optional PNG map snapshot as base64 (no data: prefix)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "PdfExportRequest",
+        "description": "POST /v1/exports/pdf request body (EXPR-02, D-23) \u2014 implemented on API gateway."
+      },
       "SimulationJobPollResponse": {
         "properties": {
           "job_id": {
@@ -2125,34 +2149,6 @@
         ],
         "title": "SimulationJobSubmitResponse",
         "description": "POST /v1/simulations response (PLAT-02, D-01) \u2014 implemented on API gateway."
-      },
-      "PdfExportRequest": {
-        "properties": {
-          "job_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Job Id",
-            "description": "Simulation run UUID"
-          },
-          "map_snapshot_base64": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Map Snapshot Base64",
-            "description": "Optional PNG map snapshot as base64 (no data: prefix)"
-          }
-        },
-        "type": "object",
-        "required": [
-          "job_id"
-        ],
-        "title": "PdfExportRequest",
-        "description": "POST /v1/exports/pdf request body (EXPR-02, D-23) \u2014 implemented on API gateway."
       }
     }
   }
