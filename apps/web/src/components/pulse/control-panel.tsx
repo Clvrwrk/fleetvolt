@@ -76,6 +76,7 @@ export function ControlPanel({
                     key={port.code}
                     value={port.code}
                     data-testid="port-select-item"
+                    data-value={port.code}
                     className="flex cursor-pointer items-center justify-between gap-3 rounded px-2 py-1.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] text-[var(--color-text-primary)] outline-none data-[highlighted]:bg-[var(--color-bg)] data-[state=checked]:text-[var(--color-accent)]"
                   >
                     <Select.ItemText>
