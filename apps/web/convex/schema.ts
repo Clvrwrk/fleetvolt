@@ -609,6 +609,101 @@ export default defineSchema({
     .index("by_level", ["level"])
     .index("by_priority", ["caasId", "priority"]),
 
+  // ── FleetVolt-owned user activity + observability (P16-AUTH-DATA) ──────────
+  // WorkOS authenticates people. FleetVolt owns product data: role/profile,
+  // site errors, user query history, query response errors, user fleets, and
+  // user-built routes. These tables are intentionally app-scoped and indexed by
+  // WorkOS userId so any authenticated person can use the product without an
+  // invite gate.
+
+  siteErrors: defineTable({
+    errorId: v.string(),
+    userId: v.optional(v.string()),
+    route: v.optional(v.string()),
+    url: v.optional(v.string()),
+    component: v.optional(v.string()),
+    severity: v.union(v.literal("info"), v.literal("warn"), v.literal("error"), v.literal("fatal")),
+    message: v.string(),
+    stack: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index("by_errorId", ["errorId"])
+    .index("by_userId_createdAt", ["userId", "createdAt"])
+    .index("by_route_createdAt", ["route", "createdAt"])
+    .index("by_severity_createdAt", ["severity", "createdAt"]),
+
+  userQueryHistory: defineTable({
+    queryId: v.string(),
+    userId: v.string(),
+    role: v.optional(v.union(v.literal("driver"), v.literal("fleet_manager"), v.literal("caas"))),
+    message: v.string(),
+    response: v.optional(v.string()),
+    visualizationType: v.optional(v.string()),
+    status: v.union(v.literal("success"), v.literal("error")),
+    errorMessage: v.optional(v.string()),
+    queriesRun: v.optional(v.array(v.any())),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_queryId", ["queryId"])
+    .index("by_userId_createdAt", ["userId", "createdAt"])
+    .index("by_status_createdAt", ["status", "createdAt"]),
+
+  queryResponseErrors: defineTable({
+    errorId: v.string(),
+    queryId: v.optional(v.string()),
+    userId: v.optional(v.string()),
+    functionName: v.optional(v.string()),
+    args: v.optional(v.any()),
+    errorMessage: v.string(),
+    errorKind: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_errorId", ["errorId"])
+    .index("by_queryId", ["queryId"])
+    .index("by_userId_createdAt", ["userId", "createdAt"]),
+
+  userFleets: defineTable({
+    userId: v.string(),
+    fleetId: v.string(),
+    name: v.string(),
+    companyName: v.optional(v.string()),
+    dotNumber: v.optional(v.string()),
+    homeBase: v.optional(v.object({ lat: v.number(), lng: v.number(), label: v.optional(v.string()) })),
+    vehicleCount: v.optional(v.number()),
+    driverCount: v.optional(v.number()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_fleetId", ["fleetId"])
+    .index("by_userId_updatedAt", ["userId", "updatedAt"]),
+
+  userRoutes: defineTable({
+    userId: v.string(),
+    routeId: v.string(),
+    fleetId: v.optional(v.string()),
+    name: v.string(),
+    origin: v.object({ label: v.string(), lat: v.optional(v.number()), lng: v.optional(v.number()) }),
+    destination: v.object({ label: v.string(), lat: v.optional(v.number()), lng: v.optional(v.number()) }),
+    waypoints: v.array(v.object({ lat: v.number(), lng: v.number(), label: v.optional(v.string()) })),
+    assignedDriverIds: v.optional(v.array(v.string())),
+    assignedTruckSlugs: v.optional(v.array(v.string())),
+    status: v.union(v.literal("draft"), v.literal("planned"), v.literal("active"), v.literal("completed"), v.literal("archived")),
+    schedule: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_routeId", ["routeId"])
+    .index("by_userId_updatedAt", ["userId", "updatedAt"])
+    .index("by_fleetId", ["fleetId"]),
+
   // ── Geo enrichment: air districts + zip codes on geoRegions (P-ROLES) ──────
   // geoRegions gains optional airDistrict + zipCodes fields so CaaS deployment
   // zones can reference finer-grained geographic context than nation/state/county.

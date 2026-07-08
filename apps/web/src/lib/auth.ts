@@ -107,6 +107,9 @@ export function useWorkOSAuth() {
     authUrl.searchParams.set("redirect_uri", getRedirectUri());
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("provider", "authkit");
+    // Force AuthKit to show open account creation/onboarding for first-time users.
+    // Existing users can still switch to sign-in inside AuthKit.
+    authUrl.searchParams.set("screen_hint", "sign-up");
     // Pass selected role in state param for the callback to read
     if (selectedRole) {
       authUrl.searchParams.set("state", selectedRole);

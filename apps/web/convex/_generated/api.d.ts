@@ -50,6 +50,8 @@ import type * as lib_csvChunk from "../lib/csvChunk.js";
 import type * as lib_haversine from "../lib/haversine.js";
 import type * as lib_provenance from "../lib/provenance.js";
 import type * as lib_spatial from "../lib/spatial.js";
+import type * as observability_mutations from "../observability/mutations.js";
+import type * as observability_queries from "../observability/queries.js";
 import type * as parking_ingest from "../parking/ingest.js";
 import type * as parking_mutations from "../parking/mutations.js";
 import type * as physics_chargeCurve from "../physics/chargeCurve.js";
@@ -81,6 +83,8 @@ import type * as spatial from "../spatial.js";
 import type * as trucks_ingest from "../trucks/ingest.js";
 import type * as trucks_mutations from "../trucks/mutations.js";
 import type * as trucks_queries from "../trucks/queries.js";
+import type * as userData_mutations from "../userData/mutations.js";
+import type * as userData_queries from "../userData/queries.js";
 import type * as userFilters from "../userFilters.js";
 import type * as users_queries from "../users/queries.js";
 
@@ -133,6 +137,8 @@ declare const fullApi: ApiFromModules<{
   "lib/haversine": typeof lib_haversine;
   "lib/provenance": typeof lib_provenance;
   "lib/spatial": typeof lib_spatial;
+  "observability/mutations": typeof observability_mutations;
+  "observability/queries": typeof observability_queries;
   "parking/ingest": typeof parking_ingest;
   "parking/mutations": typeof parking_mutations;
   "physics/chargeCurve": typeof physics_chargeCurve;
@@ -164,6 +170,8 @@ declare const fullApi: ApiFromModules<{
   "trucks/ingest": typeof trucks_ingest;
   "trucks/mutations": typeof trucks_mutations;
   "trucks/queries": typeof trucks_queries;
+  "userData/mutations": typeof userData_mutations;
+  "userData/queries": typeof userData_queries;
   userFilters: typeof userFilters;
   "users/queries": typeof users_queries;
 }>;
