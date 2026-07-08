@@ -119,15 +119,15 @@ export function ChatPanel({ defaultRole = "caas" }: { defaultRole?: Role }) {
         {results.map((r, i) => (
           <div key={i} className="space-y-3">
             {/* Visualization */}
-            {r.visualization.type === "route_map" && r.visualization.data && (
+            {r.visualization.type === "route_map" ? (
               <RouteMap data={r.visualization.data as Record<string, unknown>} />
-            )}
-            {r.visualization.type === "heatmap" && r.visualization.data && (
+            ) : null}
+            {r.visualization.type === "heatmap" ? (
               <Heatmap data={r.visualization.data as Record<string, unknown>} />
-            )}
-            {r.visualization.type === "table" && r.visualization.data && (
+            ) : null}
+            {r.visualization.type === "table" ? (
               <ResultTable data={r.visualization.data as Record<string, unknown>} />
-            )}
+            ) : null}
 
             {/* Answer */}
             <div className="rounded-lg bg-[var(--fv-surface,#1a1a2e)] border border-[var(--fv-stroke,#2a2a3e)] p-4">
