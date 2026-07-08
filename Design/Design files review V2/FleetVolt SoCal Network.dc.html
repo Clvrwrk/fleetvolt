@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<style>
+  body { margin:0; background:#DEDEE6; font-family:'Inter',sans-serif; }
+  @keyframes fv-flow { to { stroke-dashoffset:-1000; } }
+  @keyframes fv-ping { 0%{ transform:scale(1); opacity:0.5; } 70%,100%{ transform:scale(2.4); opacity:0; } }
+</style>
+</helmet>
+<div style="min-height:100vh;box-sizing:border-box;background:radial-gradient(120% 90% at 50% 0%,#E7E7EE 0%,#D8D8E0 100%);display:flex;justify-content:center;align-items:flex-start;padding:40px;">
+
+  <div style="width:100%;max-width:1280px;position:relative;background:#EFEFF5;border-radius:24px;border:1px solid rgba(0,0,0,0.06);background-image:linear-gradient(180deg,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0) 30%),linear-gradient(45deg,rgba(0,0,0,0.02) 25%,transparent 25%,transparent 75%,rgba(0,0,0,0.02) 75%),linear-gradient(45deg,rgba(0,0,0,0.02) 25%,transparent 25%,transparent 75%,rgba(0,0,0,0.02) 75%);background-size:100% 100%,22px 22px,22px 22px;background-position:0 0,0 0,11px 11px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 2px rgba(0,0,0,0.1),0 2.8px 2.2px rgba(0,0,0,.034),0 12.5px 10px rgba(0,0,0,.06),0 41.8px 33.4px rgba(0,0,0,.086),0 100px 80px rgba(0,0,0,.12);padding:26px;overflow:hidden;">
+
+    <canvas ref="{{ canvasRef }}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.3;pointer-events:none;z-index:0;"></canvas>
+    <div style="position:absolute;top:18px;left:18px;width:14px;height:14px;border-top:1px solid rgba(0,0,0,0.25);border-left:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;top:18px;right:18px;width:14px;height:14px;border-top:1px solid rgba(0,0,0,0.25);border-right:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;bottom:18px;left:18px;width:14px;height:14px;border-bottom:1px solid rgba(0,0,0,0.25);border-left:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;bottom:18px;right:18px;width:14px;height:14px;border-bottom:1px solid rgba(0,0,0,0.25);border-right:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+
+    <div style="position:relative;z-index:5;">
+      <!-- header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,0.08);">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <a href="FleetVolt Home.dc.html" style="text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:11px;color:#4a4a52;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid rgba(0,0,0,0.1);border-radius:9999px;padding:6px 13px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.06);">← HOME</a>
+          <div style="display:flex;align-items:baseline;gap:12px;">
+            <span style="font-size:18px;font-weight:700;color:#111116;letter-spacing:-0.3px;">SoCal Charger Network</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8a92;letter-spacing:1px;">INFRASTRUCTURE OVERVIEW — POLB FOCUS</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4a4a52;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid rgba(0,0,0,0.07);border-radius:9999px;padding:5px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);">
+          <span style="width:6px;height:6px;border-radius:50%;background:#b8874c;box-shadow:0 0 6px rgba(184,135,76,0.7);"></span>SCHEMATIC PREVIEW — Google Maps in production
+        </div>
+      </div>
+
+      <!-- filter bar -->
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:16px;font-family:'JetBrains Mono',monospace;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9.5px;color:#9a9aa2;letter-spacing:1px;">MIN POWER</span>
+          <div style="display:flex;background:#E4E4EA;border:1px solid rgba(0,0,0,0.08);border-radius:9px;padding:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);">
+            <sc-for list="{{ thresholds }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.onSelect }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9.5px;color:#9a9aa2;letter-spacing:1px;">OPERATOR</span>
+          <div style="display:flex;gap:5px;">
+            <sc-for list="{{ operators }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.onSelect }}" style="{{ o.style }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <button onClick="{{ toggleGaps }}" style="{{ gapBtnStyle }}">◇ HIGHLIGHT GAPS</button>
+        <div style="flex:1;"></div>
+        <button onClick="{{ toggleView }}" style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:#F5F5F7;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:9999px;padding:7px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 6px rgba(0,0,0,0.2);">{{ viewBtnLabel }}</button>
+      </div>
+
+      <!-- body: map + rail -->
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;margin-top:16px;">
+
+        <!-- MAP -->
+        <div style="position:relative;background:#ECECF2;border:1px solid rgba(0,0,0,0.06);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),inset 0 0 40px rgba(0,0,0,0.03),0 2px 8px rgba(0,0,0,0.05);overflow:hidden;">
+
+          <!-- US OVERVIEW -->
+          <sc-if value="{{ isUs }}" hint-placeholder-val="{{ true }}">
+            <div style="position:relative;">
+              <svg viewBox="0 0 960 600" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <pattern id="grat" width="60" height="60" patternUnits="userSpaceOnUse">
+                    <path d="M60 0 L0 0 0 60" fill="none" stroke="#8A8A93" stroke-width="0.4" opacity="0.25" />
+                  </pattern>
+                </defs>
+                <rect x="0" y="0" width="960" height="600" fill="url(#grat)" />
+                <path d="{{ usPath }}" fill="#DEDEE6" stroke="#8A8A93" stroke-width="1" stroke-linejoin="round" />
+                <path d="{{ usPath }}" fill="none" stroke="#5c5c64" stroke-width="0.75" stroke-linejoin="round" opacity="0.6" />
+                <!-- national density dots -->
+                <sc-for list="{{ usDots }}" as="d" hint-placeholder-count="6">
+                  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="#8A8A93" opacity="0.35" />
+                </sc-for>
+                <!-- SoCal focus highlight -->
+                <g style="cursor:pointer;" onClick="{{ goSocal }}">
+                  <rect x="150" y="392" width="92" height="74" rx="4" fill="rgba(76,143,184,0.10)" stroke="{{ accent }}" stroke-width="1.2" />
+                  <rect x="150" y="392" width="92" height="74" rx="4" fill="none" stroke="{{ accent }}" stroke-width="1.2" style="animation:fv-ping 2.6s ease-out infinite;transform-origin:196px 429px;" />
+                  <circle cx="172" cy="440" r="4" fill="{{ accent }}" />
+                  <text x="196" y="384" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" font-weight="600" fill="#1a1a1e">SoCal FREIGHT NETWORK</text>
+                  <line x1="242" y1="429" x2="330" y2="429" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="3 3" />
+                  <text x="336" y="426" font-family="'JetBrains Mono',monospace" font-size="10" fill="#4a4a52">12 sites · 4,850 kW</text>
+                  <text x="336" y="440" font-family="'JetBrains Mono',monospace" font-size="10" fill="#4a4a52">POLB → I-15 → Las Vegas</text>
+                </g>
+                <text x="30" y="580" font-family="'JetBrains Mono',monospace" font-size="10" fill="#9a9aa2">NATIONAL HIGH-POWER FREIGHT CHARGING — MODELED DENSITY</text>
+              </svg>
+              <div style="position:absolute;bottom:14px;right:14px;">
+                <button onClick="{{ goSocal }}" style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:#F5F5F7;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:10px;padding:9px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 3px 10px rgba(0,0,0,0.25);">Zoom to Route ▸</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- SOCAL DETAIL -->
+          <sc-if value="{{ isSocal }}" hint-placeholder-val="{{ false }}">
+            <div style="position:relative;">
+              <svg viewBox="0 0 640 400" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <pattern id="grat2" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M40 0 L0 0 0 40" fill="none" stroke="#8A8A93" stroke-width="0.4" opacity="0.2" />
+                  </pattern>
+                </defs>
+                <rect x="0" y="0" width="640" height="400" fill="url(#grat2)" />
+                <!-- pacific coast -->
+                <path d="M8,220 Q40,250 62,300 T96,392 L0,392 L0,220 Z" fill="rgba(76,143,184,0.06)" stroke="{{ accent }}" stroke-width="0.6" opacity="0.5" />
+                <text x="20" y="360" font-family="'JetBrains Mono',monospace" font-size="9" fill="#7fa6bd" transform="rotate(-90,20,360)" letter-spacing="2">PACIFIC</text>
+                <!-- state border hints -->
+                <line x1="470" y1="0" x2="470" y2="260" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="5 5" opacity="0.4" />
+                <text x="500" y="30" font-family="'JetBrains Mono',monospace" font-size="9" fill="#9a9aa2" letter-spacing="1">NEVADA</text>
+                <line x1="470" y1="260" x2="640" y2="360" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="5 5" opacity="0.4" />
+                <text x="540" y="330" font-family="'JetBrains Mono',monospace" font-size="9" fill="#9a9aa2" letter-spacing="1">ARIZONA</text>
+                <text x="130" y="150" font-family="'JetBrains Mono',monospace" font-size="9" fill="#c0c0c8" letter-spacing="1">CALIFORNIA</text>
+
+                <!-- roads -->
+                <sc-for list="{{ roads }}" as="r" hint-placeholder-count="5">
+                  <polyline points="{{ r.points }}" fill="none" stroke="#a8a8b0" stroke-width="{{ r.w }}" stroke-linejoin="round" stroke-linecap="round" />
+                </sc-for>
+                <!-- active corridor highlight -->
+                <polyline points="{{ routePoints }}" fill="none" stroke="{{ accent }}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" opacity="0.9" />
+                <polyline points="{{ routePoints }}" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 994" opacity="0.9" style="animation:fv-flow 8s linear infinite;" />
+
+                <!-- road shields -->
+                {{ shieldEls }}
+                <!-- gap callouts -->
+                {{ gapEls }}
+                <!-- charger nodes -->
+                {{ nodeEls }}
+              </svg>
+            </div>
+          </sc-if>
+
+          <!-- legend -->
+          <div style="position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:5px;background:rgba(251,251,253,0.85);border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#4a4a52;backdrop-filter:blur(2px);">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#3f9b6b;"></span>Operational</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#b8874c;"></span>Planned</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#c0392b;"></span>Constrained</div>
+          </div>
+        </div>
+
+        <!-- RIGHT RAIL -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <!-- stats -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;">NETWORK STATS</div>
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+              <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:11px 14px;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#9a9aa2;letter-spacing:0.5px;">{{ s.label }}</div>
+                <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;"><span style="font-size:23px;font-weight:700;color:#111116;letter-spacing:-0.5px;">{{ s.value }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a8a92;">{{ s.unit }}</span></div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#8a8a92;margin-top:2px;">{{ s.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- detail panel -->
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-top:4px;">SITE DETAIL</div>
+          <sc-if value="{{ selected }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#EFEFF5;border:1px solid rgba(0,0,0,0.08);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 2px 8px rgba(0,0,0,0.06);padding:14px;position:relative;">
+              <div style="position:absolute;top:12px;left:12px;width:10px;height:10px;border-top:1px solid rgba(0,0,0,0.3);border-left:1px solid rgba(0,0,0,0.3);"></div>
+              <div style="position:absolute;top:12px;right:12px;width:10px;height:10px;border-top:1px solid rgba(0,0,0,0.3);border-right:1px solid rgba(0,0,0,0.3);"></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <span style="width:11px;height:11px;border-radius:50%;background:{{ selected.color }};"></span>
+                <span style="font-size:14px;font-weight:700;color:#111116;">{{ selected.name }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#3a3a3e;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,0.1);"><span style="color:#8a8a92;">Peak Power</span><span>{{ selected.kwLabel }}</span></div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#3a3a3e;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,0.1);"><span style="color:#8a8a92;">Connectors</span><span>{{ selected.conn }}</span></div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#3a3a3e;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,0.1);"><span style="color:#8a8a92;">Operator</span><span>{{ selected.op }}</span></div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#3a3a3e;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,0.1);"><span style="color:#8a8a92;">Status</span><span>{{ selected.statusLabel }}</span></div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#3a3a3e;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,0.1);"><span style="color:#8a8a92;">Corridor</span><span>{{ selected.corridor }}</span></div>
+              <div style="margin-top:9px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#9a9aa2;letter-spacing:0.5px;">MODELED UTILIZATION</div>
+              <div style="height:8px;background:#E0E0E6;border-radius:4px;margin-top:5px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.08);">
+                <div style="height:100%;width:{{ selected.utilPct }};background:linear-gradient(90deg,{{ accent }},#3f9b6b);border-radius:4px;"></div>
+              </div>
+              <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a3a3e;margin-top:3px;">{{ selected.util }}%</div>
+              <button onClick="{{ useInSim }}" style="width:100%;cursor:pointer;margin-top:11px;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:10px;padding:10px;color:#F5F5F7;font-size:12px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 3px 10px rgba(0,0,0,0.2);">Use in Current Simulation</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ true }}">
+            <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px dashed rgba(0,0,0,0.14);border-radius:12px;padding:22px 14px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#9a9aa2;line-height:1.6;">Select a charger node on the map to inspect power, connectors, and modeled utilization.</div>
+          </sc-if>
+
+          <button onClick="{{ exportReport }}" style="cursor:pointer;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:10px;font-size:12px;font-weight:600;color:#1a1a1e;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.06);text-shadow:0 1px 1px rgba(255,255,255,0.8);">⤓ Export Gap Report</button>
+        </div>
+      </div>
+
+      <div style="text-align:right;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#9a9aa2;letter-spacing:1px;">DATA: NREL AFDC + INTERNAL MODEL · POWERED BY CLEVERWORK</div>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:20;background:linear-gradient(180deg,#2A2A2E,#141416);color:#F5F5F7;font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 18px;border-radius:9999px;box-shadow:0 8px 24px rgba(0,0,0,0.3);">{{ toast }}</div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4c8fb8&quot;,&quot;options&quot;:[&quot;#4c8fb8&quot;,&quot;#3f9b6b&quot;,&quot;#b8874c&quot;,&quot;#7a6bb8&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Effects&quot;}}">
+class Component extends DCLogic {
+  state = { view: 'socal', threshold: 150, operator: 'All', showGaps: true, selectedId: null, toast: '' };
+  canvasRef = React.createRef();
+
+  usPathStr = "M150,175 L250,168 L560,150 L580,120 L600,150 L648,150 L700,190 L735,212 L720,236 L758,232 L775,205 L812,210 L820,178 L852,166 L892,120 L905,150 L868,190 L840,225 L858,255 L840,266 L862,290 L845,330 L858,360 L840,392 L862,410 L878,500 L852,470 L838,440 L820,440 L792,455 L720,470 L700,458 L690,492 L665,470 L655,452 L600,478 L558,510 L540,470 L505,462 L470,480 L455,455 L360,455 L260,455 L232,470 L215,458 L195,476 L150,430 L112,352 L142,315 L120,300 L128,235 L140,195 Z";
+
+  get NODES() {
+    return [
+      { id:'polb', name:'POLB Terminal', x:60, y:330, kw:350, op:'WattEV', status:'live', conn:'CCS1 · MCS', util:82, corridor:'I-710 / Port' },
+      { id:'carson', name:'Carson Hub', x:118, y:306, kw:500, op:'Electrify America', status:'live', conn:'CCS1 · MCS', util:74, corridor:'I-405 / I-710' },
+      { id:'ontario', name:'Ontario IE', x:185, y:290, kw:350, op:'WattEV', status:'live', conn:'CCS1 · MCS', util:69, corridor:'I-10 Inland' },
+      { id:'sbd', name:'San Bernardino', x:243, y:270, kw:500, op:'bp pulse', status:'live', conn:'CCS1 · MCS', util:61, corridor:'I-215 / I-15' },
+      { id:'cajon', name:'Cajon Summit', x:290, y:232, kw:350, op:'Electrify America', status:'planned', conn:'MCS', util:0, corridor:'I-15 Cajon' },
+      { id:'barstow', name:'Barstow Depot', x:360, y:188, kw:500, op:'WattEV', status:'live', conn:'CCS1 · MCS', util:58, corridor:'I-15 / I-40' },
+      { id:'baker', name:'Baker', x:458, y:132, kw:350, op:'bp pulse', status:'limited', conn:'CCS1', util:44, corridor:'I-15 Mojave' },
+      { id:'primm', name:'Primm', x:522, y:98, kw:350, op:'Electrify America', status:'planned', conn:'MCS', util:0, corridor:'I-15 Stateline' },
+      { id:'lv', name:'Las Vegas', x:582, y:66, kw:500, op:'WattEV', status:'live', conn:'CCS1 · MCS', util:66, corridor:'I-15 / I-515' },
+      { id:'indio', name:'Indio', x:322, y:358, kw:350, op:'bp pulse', status:'live', conn:'CCS1', util:52, corridor:'I-10 Coachella' },
+      { id:'palm', name:'Palm Springs', x:245, y:342, kw:350, op:'Electrify America', status:'planned', conn:'MCS', util:0, corridor:'I-10' },
+      { id:'needles', name:'Needles', x:562, y:222, kw:150, op:'bp pulse', status:'limited', conn:'CCS1', util:38, corridor:'I-40 AZ line' }
+    ];
+  }
+
+  colorFor(s) { return s === 'live' ? '#3f9b6b' : (s === 'planned' ? '#b8874c' : '#c0392b'); }
+  statusLabel(s) { return s === 'live' ? 'Operational' : (s === 'planned' ? 'Planned 2026' : 'Constrained'); }
+
+  flash(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: '' }), 1800);
+  }
+
+  componentDidMount() {
+    const start = () => {
+      if (!window.THREE) { setTimeout(start, 120); return; }
+      this.initGrid(this.canvasRef.current);
+    };
+    start();
+  }
+
+  initGrid(canvas) {
+    if (!canvas || canvas.__init || !window.THREE) return;
+    canvas.__init = true;
+    const THREE = window.THREE;
+    const w = canvas.clientWidth || 1000, h = canvas.clientHeight || 700;
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xEFEFF5, 0.0016);
+    const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+    camera.position.set(0, 50, 200); camera.lookAt(0, 0, 0);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const mat = new THREE.LineBasicMaterial({ color: 0x8A8A93, transparent: true, opacity: 0.15 });
+    const pts = []; const size = 1000, step = 40;
+    for (let i = -size; i <= size; i += step) {
+      pts.push(new THREE.Vector3(-size, 0, i), new THREE.Vector3(size, 0, i + size));
+      pts.push(new THREE.Vector3(i, 0, -size), new THREE.Vector3(i + size, 0, size));
+    }
+    const grid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat);
+    grid.rotation.x = Math.PI / 4; scene.add(grid);
+    let t = 0;
+    const animate = () => {
+      requestAnimationFrame(animate); t += 0.001;
+      grid.position.x = Math.sin(t) * 10; grid.position.z = (t * 10) % step;
+      renderer.render(scene, camera);
+    };
+    animate();
+  }
+
+  renderVals() {
+    const accent = this.props.accent || '#4c8fb8';
+    const st = this.state;
+
+    const SEG_BASE = "cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;border:none;border-radius:7px;padding:5px 10px;transition:all .15s;";
+    const SEG_ON = "background:linear-gradient(180deg,#FBFBFD,#E4E4EA);color:#1a1a1e;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.12);";
+    const SEG_OFF = "background:transparent;color:#8a8a92;";
+    const thresholds = [{v:150,l:'ALL'},{v:350,l:'≥350kW'},{v:500,l:'≥500kW'}].map(t => ({
+      label: t.l, onSelect: () => this.setState({ threshold: t.v }),
+      style: SEG_BASE + (st.threshold === t.v ? SEG_ON : SEG_OFF)
+    }));
+
+    const PILL_BASE = "cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;border:1px solid rgba(0,0,0,0.08);border-radius:9999px;padding:5px 10px;transition:all .15s;";
+    const PILL_ON = "background:linear-gradient(180deg,#2A2A2E,#141416);color:#F5F5F7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 1px 3px rgba(0,0,0,0.2);";
+    const PILL_OFF = "background:linear-gradient(180deg,#FBFBFD,#ECECF1);color:#4a4a52;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);";
+    const operators = ['All','Electrify America','bp pulse','WattEV'].map(o => ({
+      label: o === 'Electrify America' ? 'EA' : o, onSelect: () => this.setState({ operator: o }),
+      style: PILL_BASE + (st.operator === o ? PILL_ON : PILL_OFF)
+    }));
+
+    const gapBtnStyle = PILL_BASE + (st.showGaps
+      ? "background:linear-gradient(180deg,#c0392b,#9c2318);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 1px 3px rgba(0,0,0,0.2);"
+      : PILL_OFF);
+
+    const nodes = this.NODES.map(n => {
+      const passT = n.kw >= st.threshold;
+      const passO = st.operator === 'All' || n.op === st.operator;
+      const shown = passT && passO;
+      const r = 4 + n.kw / 100;
+      return {
+        ...n, r, ring: r + 5, ringW: n.status === 'live' ? 1.2 : 0.8,
+        color: this.colorFor(n.status),
+        opacity: shown ? 1 : 0.14,
+        labelY: n.y - r - 5, kwY: n.y + r + 11,
+        kwLabel: n.kw + ' kW',
+        onSelect: () => this.setState({ selectedId: n.id })
+      };
+    });
+
+    const roads = [
+      { points:'60,330 118,306', w:3, label:'710', sx:66, sy:312, tx:79, ty:322 },
+      { points:'112,378 92,306 78,208 82,116', w:2.5, label:'I-5', sx:56, sy:200, tx:69, ty:210 },
+      { points:'243,270 290,232 360,188 458,132 522,98 582,66', w:3.5, label:'I-15', sx:498, sy:108, tx:511, ty:118 },
+      { points:'118,306 185,290 245,342 322,358 396,368', w:2.5, label:'I-10', sx:150, sy:300, tx:163, ty:310 },
+      { points:'360,188 458,206 562,222', w:2.5, label:'I-40', sx:470, sy:196, tx:483, ty:206 }
+    ];
+
+    const routePoints = '60,330 118,306 185,290 243,270 290,232 360,188 458,132 522,98 582,66';
+
+    const gaps = [
+      { x1:360, y1:188, x2:458, y2:132, lx:373, ly:146, lw:66, tx:406, ty:157, label:'142 MI GAP' }
+    ];
+
+    const liveNodes = this.NODES.filter(n => n.status === 'live');
+    const totalMW = (this.NODES.reduce((a,n)=>a+n.kw,0)/1000).toFixed(2);
+    const stats = [
+      { label:'TOTAL CAPACITY', value: totalMW, unit:'MW', note: this.NODES.length + ' modeled sites' },
+      { label:'NHFN CORRIDOR COVERAGE', value:'68', unit:'%', note:'primary POLB freight routes' },
+      { label:'AVG GAP · ≥350kW SITES', value:'96', unit:'mi', note:'1 flagged gap on I-15' }
+    ];
+
+    const sel = this.NODES.find(n => n.id === st.selectedId);
+    const selected = sel ? {
+      ...sel, color: this.colorFor(sel.status), kwLabel: sel.kw + ' kW',
+      statusLabel: this.statusLabel(sel.status),
+      utilPct: sel.util + '%', util: sel.util
+    } : null;
+
+    const usDots = [
+      {x:820,y:230,r:6},{x:790,y:270,r:5},{x:700,y:300,r:7},{x:640,y:340,r:5},
+      {x:560,y:300,r:4},{x:480,y:280,r:4},{x:300,y:250,r:5},{x:200,y:430,r:8},
+      {x:760,y:180,r:5},{x:850,y:290,r:4},{x:620,y:250,r:4},{x:420,y:420,r:4}
+    ];
+
+    const E = React.createElement;
+    const MONO = "'JetBrains Mono',monospace";
+    const shieldEls = roads.map((r, i) => E('g', { key: 'sh' + i },
+      E('rect', { x: r.sx, y: r.sy, width: 26, height: 14, rx: 3, fill: '#FBFBFD', stroke: '#5c5c64', strokeWidth: 0.6 }),
+      E('text', { x: r.tx, y: r.ty, textAnchor: 'middle', fontFamily: MONO, fontSize: 9, fontWeight: 600, fill: '#3a3a3e' }, r.label)
+    ));
+    const gapEls = st.showGaps ? gaps.map((g, i) => E('g', { key: 'gp' + i },
+      E('line', { x1: g.x1, y1: g.y1, x2: g.x2, y2: g.y2, stroke: '#c0392b', strokeWidth: 1, strokeDasharray: '4 3', opacity: 0.8 }),
+      E('rect', { x: g.lx, y: g.ly, width: g.lw, height: 15, rx: 3, fill: '#fdecea', stroke: '#c0392b', strokeWidth: 0.6 }),
+      E('text', { x: g.tx, y: g.ty, textAnchor: 'middle', fontFamily: MONO, fontSize: 9, fontWeight: 600, fill: '#c0392b' }, g.label)
+    )) : null;
+    const nodeEls = nodes.map(n => E('g', { key: n.id, style: { cursor: 'pointer' }, opacity: n.opacity, onClick: n.onSelect },
+      E('circle', { cx: n.x, cy: n.y, r: n.ring, fill: 'none', stroke: n.color, strokeWidth: n.ringW, opacity: 0.5 }),
+      E('circle', { cx: n.x, cy: n.y, r: n.r, fill: n.color, stroke: '#FBFBFD', strokeWidth: 1.5 }),
+      E('text', { x: n.x, y: n.labelY, textAnchor: 'middle', fontFamily: MONO, fontSize: 9.5, fontWeight: 600, fill: '#1a1a1e' }, n.name),
+      E('text', { x: n.x, y: n.kwY, textAnchor: 'middle', fontFamily: MONO, fontSize: 8.5, fill: '#6b6b73' }, n.kwLabel)
+    ));
+
+    return {
+      accent, shieldEls, gapEls, nodeEls,
+      isUs: st.view === 'us', isSocal: st.view === 'socal',
+      usPath: this.usPathStr, usDots,
+      thresholds, operators, gapBtnStyle, showGaps: st.showGaps,
+      nodes, roads, routePoints, gaps, stats,
+      selected, noSelection: !selected,
+      toast: st.toast,
+      canvasRef: this.canvasRef,
+      viewBtnLabel: st.view === 'us' ? 'SoCal Detail ▸' : '◂ US Overview',
+      goSocal: () => this.setState({ view: 'socal' }),
+      toggleView: () => this.setState({ view: st.view === 'us' ? 'socal' : 'us' }),
+      toggleGaps: () => this.setState({ showGaps: !st.showGaps }),
+      useInSim: () => this.flash('▶ Charger added to current simulation'),
+      exportReport: () => this.flash('⤓ Generating gap report (PDF)…')
+    };
+  }
+}
+</script>
+</body>
+</html>

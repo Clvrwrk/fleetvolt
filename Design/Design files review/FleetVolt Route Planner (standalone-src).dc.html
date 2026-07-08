@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="ext-resource-dependency" content="./RouteDiagram.dc.html" data-resource-id="routeDiagram" />
+<template id="__bundler_thumbnail" data-bg-color="#DEDEE6">
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="1200" height="800" fill="#DEDEE6"/>
+<rect x="180" y="180" width="840" height="440" rx="28" fill="#EFEFF5" stroke="#c9c9d1" stroke-width="2"/>
+<line x1="230" y1="520" x2="970" y2="520" stroke="#8A8A93" stroke-width="3"/>
+<polyline points="250,500 380,430 520,300 640,470 760,360 900,410 960,400" fill="none" stroke="#4c8fb8" stroke-width="6" stroke-linejoin="round"/>
+<circle cx="380" cy="430" r="16" fill="#FBFBFD" stroke="#3a3a3e" stroke-width="4"/>
+<circle cx="760" cy="360" r="20" fill="#FBFBFD" stroke="#3a3a3e" stroke-width="4"/>
+<rect x="250" y="470" width="90" height="40" fill="#E5E5EB" stroke="#8A8A93" stroke-width="3"/>
+<circle cx="270" cy="520" r="14" fill="#FBFBFD" stroke="#5c5c64" stroke-width="4"/>
+<circle cx="320" cy="520" r="14" fill="#FBFBFD" stroke="#5c5c64" stroke-width="4"/>
+</svg>
+</template>
+<script>
+(function(){
+  var origFetch = window.fetch ? window.fetch.bind(window) : null;
+  if (!origFetch) return;
+  window.fetch = function(input, init){
+    var url = "";
+    try { url = typeof input === "string" ? input : (input && input.url) || ""; } catch(e){}
+    if (/RouteDiagram\.dc\.html/i.test(url)) {
+      return new Promise(function(resolve){
+        (function tryIt(n){
+          var r = window.__resources && window.__resources.routeDiagram;
+          if (r) { resolve(origFetch(r, init)); }
+          else if (n > 60) { resolve(origFetch(input, init)); }
+          else setTimeout(function(){ tryIt(n + 1); }, 40);
+        })(0);
+      });
+    }
+    return origFetch(input, init);
+  };
+})();
+</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<style>
+  body { margin:0; background:#DEDEE6; font-family:'Inter',sans-serif; }
+  input[type=range]{ -webkit-appearance:none; height:4px; border-radius:2px; background:linear-gradient(90deg,#8A8A93,#c9c9d1); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:linear-gradient(180deg,#FBFBFD,#d4d4da); border:1px solid rgba(0,0,0,0.25); box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.25); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:#FBFBFD; border:1px solid rgba(0,0,0,0.25); cursor:pointer; }
+  .fv-input{ width:100%; box-sizing:border-box; font-family:'Inter',sans-serif; font-size:12.5px; color:#1a1a1e; background:#FBFBFD; border:1px solid rgba(0,0,0,0.12); border-radius:8px; padding:8px 10px; box-shadow:inset 0 1px 2px rgba(0,0,0,0.05); outline:none; }
+</style>
+</helmet>
+<div style="min-height:100vh;box-sizing:border-box;background:radial-gradient(120% 90% at 50% 0%,#E7E7EE 0%,#D8D8E0 100%);display:flex;justify-content:center;align-items:flex-start;padding:56px 40px;">
+
+  <div style="width:100%;max-width:1320px;position:relative;background:#EFEFF5;border-radius:24px;border:1px solid rgba(0,0,0,0.06);background-image:linear-gradient(180deg,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0) 30%),linear-gradient(45deg,rgba(0,0,0,0.02) 25%,transparent 25%,transparent 75%,rgba(0,0,0,0.02) 75%),linear-gradient(45deg,rgba(0,0,0,0.02) 25%,transparent 25%,transparent 75%,rgba(0,0,0,0.02) 75%);background-size:100% 100%,22px 22px,22px 22px;background-position:0 0,0 0,11px 11px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 2px rgba(0,0,0,0.1),0 2.8px 2.2px rgba(0,0,0,.034),0 12.5px 10px rgba(0,0,0,.06),0 41.8px 33.4px rgba(0,0,0,.086),0 100px 80px rgba(0,0,0,.12);padding:28px;overflow:hidden;">
+
+    <canvas ref="{{ canvasRef }}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.35;pointer-events:none;z-index:0;"></canvas>
+    <div style="position:absolute;top:18px;left:18px;width:14px;height:14px;border-top:1px solid rgba(0,0,0,0.25);border-left:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;top:18px;right:18px;width:14px;height:14px;border-top:1px solid rgba(0,0,0,0.25);border-right:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;bottom:18px;left:18px;width:14px;height:14px;border-bottom:1px solid rgba(0,0,0,0.25);border-left:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;bottom:18px;right:18px;width:14px;height:14px;border-bottom:1px solid rgba(0,0,0,0.25);border-right:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+
+    <div style="position:relative;z-index:5;">
+      <!-- header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid rgba(0,0,0,0.08);">
+        <div style="display:flex;align-items:baseline;gap:14px;">
+          <a href="FleetVolt%20Home.dc.html" style="text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:11px;color:#4a4a52;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:6px 11px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.05);">← HOME</a>
+          <span style="font-size:19px;font-weight:700;color:#111116;letter-spacing:-0.3px;">Route Planner</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8a92;letter-spacing:1px;">PHYSICS CORRIDOR SIMULATION</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4a4a52;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid rgba(0,0,0,0.07);border-radius:9999px;padding:5px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ statusDot }};box-shadow:0 0 6px {{ statusDot }};"></span>{{ statusText }}
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:262px 1fr 300px;gap:20px;margin-top:20px;">
+
+        <!-- LEFT: inputs -->
+        <div style="display:flex;flex-direction:column;gap:13px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;">CORRIDOR DEFINITION</div>
+
+          <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:12px 13px;display:flex;flex-direction:column;gap:11px;">
+            <div>
+              <div style="font-size:11px;font-weight:500;color:#2a2a2e;margin-bottom:5px;">Origin</div>
+              <select class="fv-input" value="{{ origin }}" onChange="{{ onOrigin }}">
+                <sc-for list="{{ origins }}" as="o" hint-placeholder-count="2"><option value="{{ o }}">{{ o }}</option></sc-for>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:500;color:#2a2a2e;margin-bottom:5px;">Destination</div>
+              <select class="fv-input" value="{{ dest }}" onChange="{{ onDest }}">
+                <sc-for list="{{ dests }}" as="d" hint-placeholder-count="4"><option value="{{ d.name }}">{{ d.name }}</option></sc-for>
+              </select>
+            </div>
+          </div>
+
+          <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:12px 13px;display:flex;flex-direction:column;gap:11px;">
+            <div>
+              <div style="font-size:11px;font-weight:500;color:#2a2a2e;margin-bottom:6px;">Departure</div>
+              <input type="time" class="fv-input" value="{{ departure }}" onChange="{{ onDeparture }}" />
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:500;color:#2a2a2e;margin-bottom:6px;">Weather Scenario</div>
+              <div style="display:flex;background:#E4E4EA;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);">
+                <sc-for list="{{ weathers }}" as="w" hint-placeholder-count="3">
+                  <button onClick="{{ w.onSelect }}" style="{{ w.style }}">{{ w.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:12px 13px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:11px;font-weight:500;color:#2a2a2e;">Truck Unit</div>
+              <a href="FleetVolt%20Unit%20Configurator.dc.html" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3a7fa8;text-decoration:none;">CONFIGURE ›</a>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#111116;margin-top:-4px;">eCascadia · 438 kWh</div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;">
+                <span style="font-size:11px;font-weight:500;color:#2a2a2e;">Payload</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600;color:#111116;">{{ payloadDisplay }}</span>
+              </div>
+              <input type="range" min="0" max="44000" step="500" value="{{ payload }}" onChange="{{ onPayload }}" style="width:100%;" />
+            </div>
+          </div>
+
+          <button onClick="{{ runSim }}" style="cursor:pointer;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:12px;padding:14px;color:#F5F5F7;font-size:14px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 4px 14px rgba(0,0,0,0.22);transition:transform .18s ease;" style-hover="transform:translateY(-2px);">▶ Run Physics Simulation</button>
+        </div>
+
+        <!-- CENTER: route viz -->
+        <div style="display:flex;flex-direction:column;">
+          <div style="background:#ECECF2;border:1px solid rgba(0,0,0,0.05);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 2px 8px rgba(0,0,0,0.05);padding:14px 16px 6px;position:relative;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1px;">ROUTE ELEVATION & CHARGE PLAN — {{ corridorName }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#4a4a52;">{{ weatherLabel }}</span>
+            </div>
+            <div style="transition:transform .4s ease;" style-hover="transform:scale(1.01);">
+              <dc-import name="RouteDiagram" corridor="{{ corridor }}" accent="{{ accent }}" hint-size="100%,360px"></dc-import>
+            </div>
+          </div>
+
+          <!-- summary metrics -->
+          <div style="display:flex;gap:10px;margin-top:12px;font-family:'JetBrains Mono',monospace;">
+            <sc-for list="{{ summary }}" as="s" hint-placeholder-count="5">
+              <div style="flex:1;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid rgba(0,0,0,0.06);border-radius:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:9px 11px;">
+                <div style="font-size:8.5px;color:#9a9aa2;letter-spacing:0.5px;">{{ s.label }}</div>
+                <div style="font-size:15px;font-weight:600;color:#1a1a1e;">{{ s.value }}<span style="font-size:8.5px;color:#8a8a92;font-weight:400;"> {{ s.unit }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- SoC chart -->
+          <div style="margin-top:12px;background:#ECECF2;border:1px solid rgba(0,0,0,0.05);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 2px 8px rgba(0,0,0,0.05);padding:14px 16px 8px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1px;">STATE OF CHARGE — % vs DISTANCE</span>
+            {{ socChart }}
+          </div>
+        </div>
+
+        <!-- RIGHT: results -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;">CHARGING PLAN</div>
+          <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:12px 13px;">
+            <div style="display:grid;grid-template-columns:1fr 42px 46px 40px;gap:4px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,0.1);font-family:'JetBrains Mono',monospace;font-size:8px;color:#9a9aa2;letter-spacing:0.5px;">
+              <div>SITE</div><div style="text-align:right;">ARR%</div><div style="text-align:right;">kW</div><div style="text-align:right;">MIN</div>
+            </div>
+            <sc-for list="{{ chargePlan }}" as="c" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:1fr 42px 46px 40px;gap:4px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#2a2a2e;">
+                <div style="font-family:'Inter',sans-serif;font-weight:500;font-size:11px;">{{ c.site }}</div>
+                <div style="text-align:right;font-weight:600;color:{{ c.socColor }};">{{ c.arr }}</div>
+                <div style="text-align:right;color:#6b6b73;">{{ c.kw }}</div>
+                <div style="text-align:right;font-weight:600;color:#111116;">{{ c.min }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-top:2px;">EMISSIONS & TCO</div>
+          <sc-for list="{{ tco }}" as="t" hint-placeholder-count="3">
+            <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:11px 14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#9a9aa2;letter-spacing:0.5px;">{{ t.label }}</div>
+              <div style="display:flex;align-items:baseline;gap:5px;margin-top:3px;"><span style="font-size:20px;font-weight:700;color:#111116;letter-spacing:-0.5px;">{{ t.value }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a8a92;">{{ t.unit }}</span></div>
+              <div style="height:6px;background:#E0E0E6;border-radius:3px;margin-top:6px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.08);">
+                <div style="height:100%;width:{{ t.pct }};background:linear-gradient(90deg,{{ accent }},#3f9b6b);border-radius:3px;"></div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3f9b6b;margin-top:4px;">{{ t.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- bottom action bar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.08);">
+        <div style="display:flex;gap:10px;">
+          <button onClick="{{ openSave }}" style="cursor:pointer;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:9999px;padding:9px 18px;font-size:12.5px;font-weight:600;color:#F5F5F7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 2px 8px rgba(0,0,0,0.2);transition:transform .18s ease;" style-hover="transform:translateY(-1px);">+ Save as New Corridor</button>
+          <button onClick="{{ whatIf }}" style="cursor:pointer;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:9999px;padding:9px 16px;font-size:12.5px;font-weight:600;color:#1a1a1e;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.06);text-shadow:0 1px 1px rgba(255,255,255,0.8);transition:transform .18s ease;" style-hover="transform:translateY(-1px);">What-If Adjustments</button>
+          <button onClick="{{ compare }}" style="cursor:pointer;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:9999px;padding:9px 16px;font-size:12.5px;font-weight:600;color:#1a1a1e;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.06);text-shadow:0 1px 1px rgba(255,255,255,0.8);transition:transform .18s ease;" style-hover="transform:translateY(-1px);">Compare Scenarios</button>
+          <button onClick="{{ exportReport }}" style="cursor:pointer;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:9999px;padding:9px 16px;font-size:12.5px;font-weight:600;color:#1a1a1e;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.06);text-shadow:0 1px 1px rgba(255,255,255,0.8);transition:transform .18s ease;" style-hover="transform:translateY(-1px);">Export Report</button>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#9a9aa2;letter-spacing:1px;">POWERED BY CLEVERWORK · ZERO EMISSION ADVISORS</div>
+      </div>
+    </div>
+
+    <!-- SAVE MODAL -->
+    <sc-if value="{{ saveOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;z-index:30;background:rgba(40,40,46,0.32);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;">
+        <div style="width:400px;background:#EFEFF5;border-radius:18px;border:1px solid rgba(0,0,0,0.1);box-shadow:0 30px 80px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,1);padding:24px;position:relative;">
+          <div style="position:absolute;top:14px;left:14px;width:11px;height:11px;border-top:1px solid rgba(0,0,0,0.3);border-left:1px solid rgba(0,0,0,0.3);"></div>
+          <div style="position:absolute;top:14px;right:14px;width:11px;height:11px;border-top:1px solid rgba(0,0,0,0.3);border-right:1px solid rgba(0,0,0,0.3);"></div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-bottom:4px;">SAVE CORRIDOR RUN</div>
+          <div style="font-size:17px;font-weight:700;color:#111116;margin-bottom:16px;">Add to corridor library</div>
+
+          <div style="font-size:11px;font-weight:500;color:#2a2a2e;margin-bottom:5px;">Corridor Name</div>
+          <input type="text" class="fv-input" value="{{ saveName }}" onChange="{{ onSaveName }}" placeholder="e.g. POLB → Phoenix" />
+          <div style="font-size:11px;font-weight:500;color:#2a2a2e;margin:14px 0 5px;">Short Label</div>
+          <input type="text" class="fv-input" value="{{ saveShort }}" onChange="{{ onSaveShort }}" placeholder="e.g. Phoenix" />
+
+          <div style="display:flex;gap:8px;margin-top:16px;font-family:'JetBrains Mono',monospace;">
+            <div style="flex:1;background:#FBFBFD;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 10px;"><div style="font-size:8px;color:#9a9aa2;">DISTANCE</div><div style="font-size:13px;font-weight:600;color:#111116;">{{ saveDist }} mi</div></div>
+            <div style="flex:1;background:#FBFBFD;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 10px;"><div style="font-size:8px;color:#9a9aa2;">NET ENERGY</div><div style="font-size:13px;font-weight:600;color:#111116;">{{ saveEnergy }} kWh</div></div>
+            <div style="flex:1;background:#FBFBFD;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 10px;"><div style="font-size:8px;color:#9a9aa2;">STOPS</div><div style="font-size:13px;font-weight:600;color:#111116;">{{ saveStops }}</div></div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button onClick="{{ closeSave }}" style="flex:1;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#4a4a52;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,1);">Cancel</button>
+            <button onClick="{{ confirmSave }}" style="flex:1.4;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#F5F5F7;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:10px;padding:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 4px 14px rgba(0,0,0,0.22);">Save Corridor</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:40;background:linear-gradient(180deg,#2A2A2E,#141416);color:#F5F5F7;font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 18px;border-radius:9999px;box-shadow:0 8px 24px rgba(0,0,0,0.3);">{{ toast }}</div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4c8fb8&quot;,&quot;options&quot;:[&quot;#4c8fb8&quot;,&quot;#3f9b6b&quot;,&quot;#b8874c&quot;,&quot;#7a6bb8&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Effects&quot;}}">
+class Component extends DCLogic {
+  DESTS = [
+    { name:'Inland Empire', dist:62, grade:2.1, base:198,
+      series:[[0,30],[15,140],[32,360],[48,880],[62,1180]],
+      chargers:[{mi:0,depot:true,label:'POLB Terminal'},{mi:58,kw:350,label:'IE Logistics Hub'}] },
+    { name:'Barstow', dist:128, grade:3.8, base:312,
+      series:[[0,30],[20,220],[45,1500],[62,4190],[82,2600],[106,2050],[128,2180]],
+      chargers:[{mi:0,depot:true,label:'POLB Terminal'},{mi:62,kw:350,label:'Cajon Summit'},{mi:126,kw:500,label:'Barstow Depot'}] },
+    { name:'Las Vegas', dist:272, grade:4.5, base:648,
+      series:[[0,30],[62,4190],[128,2180],[175,1900],[210,2600],[245,4600],[272,2030]],
+      chargers:[{mi:0,depot:true,label:'POLB Terminal'},{mi:62,kw:350,label:'Cajon'},{mi:128,kw:500,label:'Barstow'},{mi:230,kw:350,label:'Baker'}] },
+    { name:'Phoenix', dist:358, grade:3.2, base:842,
+      series:[[0,30],[62,4190],[128,2180],[210,2600],[280,1400],[358,1080]],
+      chargers:[{mi:0,depot:true,label:'POLB Terminal'},{mi:62,kw:350,label:'Cajon'},{mi:128,kw:500,label:'Barstow'},{mi:240,kw:350,label:'Needles'},{mi:320,kw:500,label:'Buckeye'}] }
+  ];
+
+  state = { origin: 'POLB — Pier T', dest: 'Barstow', departure: '06:00', weather: 'clear', payload: 42000,
+    hasRun: true, saveOpen: false, saveName: '', saveShort: '', toast: '' };
+
+  flash(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 1900); }
+
+  componentDidMount() {
+    const start = () => { if (!window.THREE) { setTimeout(start, 120); return; } this.initGrid(this.canvasRef && this.canvasRef.current); };
+    start();
+  }
+  canvasRef = React.createRef();
+
+  initGrid(canvas) {
+    if (!canvas || canvas.__init || !window.THREE) return;
+    canvas.__init = true;
+    const THREE = window.THREE;
+    const w = canvas.clientWidth || 1000, h = canvas.clientHeight || 700;
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xEFEFF5, 0.0016);
+    const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+    camera.position.set(0, 50, 200); camera.lookAt(0, 0, 0);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const mat = new THREE.LineBasicMaterial({ color: 0x8A8A93, transparent: true, opacity: 0.15 });
+    const pts = []; const size = 1000, step = 40;
+    for (let i = -size; i <= size; i += step) {
+      pts.push(new THREE.Vector3(-size, 0, i), new THREE.Vector3(size, 0, i + size));
+      pts.push(new THREE.Vector3(i, 0, -size), new THREE.Vector3(i + size, 0, size));
+    }
+    const grid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat);
+    grid.rotation.x = Math.PI / 4; scene.add(grid);
+    let t = 0;
+    const animate = () => { requestAnimationFrame(animate); t += 0.001; grid.position.x = Math.sin(t) * 10; grid.position.z = (t * 10) % step; renderer.render(scene, camera); };
+    animate();
+  }
+
+  // weather multiplier on energy
+  wx() { return { clear: 1.0, heat: 1.12, wind: 1.08 }[this.state.weather] || 1; }
+
+  // build the corridor object fed to RouteDiagram + saved
+  buildCorridor() {
+    const st = this.state;
+    const d = this.DESTS.find(x => x.name === st.dest) || this.DESTS[1];
+    const payloadFactor = 0.82 + (st.payload / 44000) * 0.28; // 0.82..1.10
+    const energy = Math.round(d.base * payloadFactor * this.wx());
+    const regen = Math.round(energy * 0.15);
+    const stops = d.chargers.filter(c => !c.depot).length;
+    const savings = Math.round(63 - (d.grade - 2) * 1.5);
+    return {
+      id: 'plan', name: 'POLB → ' + d.name, short: d.name,
+      dist: d.dist, grade: d.grade, energy, regen, stops, savings,
+      series: d.series, chargers: d.chargers
+    };
+  }
+
+  buildSocChart(cor) {
+    const E = React.createElement;
+    const MONO = "'JetBrains Mono',monospace";
+    const accent = this.props.accent || '#4c8fb8';
+    const W = 560, H = 150, X0 = 42, X1 = 548, YT = 16, YB = 118;
+    const maxMi = cor.dist;
+    const px = mi => X0 + (mi / maxMi) * (X1 - X0);
+    const py = soc => YB - (soc / 100) * (YB - YT);
+
+    // simulate SoC: start 100, drain proportional to energy/dist, recharge at chargers
+    const kwhPerMi = cor.energy / cor.dist;
+    const cap = 438;
+    const stops = cor.chargers.filter(c => !c.depot).map(c => c.mi).sort((a, b) => a - b);
+    let soc = 100, lastMi = 0;
+    const pts = [[0, 100]];
+    const events = [];
+    const step = maxMi / 60;
+    let si = 0;
+    for (let mi = step; mi <= maxMi + 0.1; mi += step) {
+      soc -= (kwhPerMi * step / cap) * 100;
+      if (si < stops.length && mi >= stops[si]) {
+        pts.push([stops[si], Math.max(4, soc)]);
+        events.push([stops[si], Math.max(4, soc)]);
+        soc = Math.min(85, soc + 62); // charge to ~85
+        pts.push([stops[si], soc]);
+        si++;
+      }
+      pts.push([Math.min(mi, maxMi), Math.max(4, soc)]);
+    }
+    const line = pts.map(p => px(p[0]).toFixed(1) + ',' + py(Math.max(4, p[1])).toFixed(1)).join(' ');
+
+    const els = [];
+    // grid + axis labels
+    [0, 25, 50, 75, 100].forEach(v => {
+      els.push(E('line', { key: 'g' + v, x1: X0, y1: py(v), x2: X1, y2: py(v), stroke: '#8A8A93', strokeWidth: 0.5, strokeDasharray: v === 0 ? 'none' : '3 4', opacity: v === 0 ? 0.6 : 0.35 }));
+      els.push(E('text', { key: 't' + v, x: X0 - 6, y: py(v) + 3, textAnchor: 'end', fontFamily: MONO, fontSize: 8, fill: '#6b6b73' }, v));
+    });
+    // 20% reserve line
+    els.push(E('line', { key: 'res', x1: X0, y1: py(20), x2: X1, y2: py(20), stroke: '#c0392b', strokeWidth: 0.6, strokeDasharray: '4 3', opacity: 0.55 }));
+    els.push(E('text', { key: 'resl', x: X1, y: py(20) - 3, textAnchor: 'end', fontFamily: MONO, fontSize: 7.5, fill: '#c0392b' }, 'RESERVE 20%'));
+    // area + line
+    const area = 'M' + px(0) + ',' + YB + ' L' + pts.map(p => px(p[0]).toFixed(1) + ',' + py(Math.max(4, p[1])).toFixed(1)).join(' L') + ' L' + px(maxMi) + ',' + YB + ' Z';
+    els.push(E('path', { key: 'area', d: area, fill: accent, fillOpacity: 0.1 }));
+    els.push(E('polyline', { key: 'ln', points: line, fill: 'none', stroke: accent, strokeWidth: 1.6, vectorEffect: 'non-scaling-stroke' }));
+    // charge event markers
+    events.forEach((ev, i) => {
+      els.push(E('circle', { key: 'ev' + i, cx: px(ev[0]), cy: py(ev[1]), r: 3, fill: '#FBFBFD', stroke: accent, strokeWidth: 1.4 }));
+      els.push(E('text', { key: 'evl' + i, x: px(ev[0]), y: py(ev[1]) + 15, textAnchor: 'middle', fontFamily: MONO, fontSize: 7.5, fontWeight: 600, fill: accent }, '⚡' + Math.round(ev[1]) + '%'));
+    });
+    // x labels
+    els.push(E('text', { key: 'x0', x: X0, y: YB + 14, textAnchor: 'start', fontFamily: MONO, fontSize: 8, fill: '#9a9aa2' }, '0 mi'));
+    els.push(E('text', { key: 'x1', x: X1, y: YB + 14, textAnchor: 'end', fontFamily: MONO, fontSize: 8, fill: '#9a9aa2' }, maxMi + ' mi'));
+
+    return E('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', height: 'auto', display: 'block', overflow: 'visible' }, preserveAspectRatio: 'xMidYMid meet' }, els);
+  }
+
+  saveCorridor() {
+    const cor = this.buildCorridor();
+    const name = (this.state.saveName || cor.name).trim();
+    const short = (this.state.saveShort || cor.short).trim();
+    const rec = { ...cor, id: 'saved_' + Date.now(), name, short, saved: true };
+    try {
+      const raw = localStorage.getItem('fleetvolt_corridors');
+      const arr = raw ? JSON.parse(raw) : [];
+      arr.push(rec);
+      localStorage.setItem('fleetvolt_corridors', JSON.stringify(arr));
+    } catch (e) {}
+    this.setState({ saveOpen: false, saveName: '', saveShort: '' });
+    this.flash('✓ “' + short + '” added to corridor library');
+  }
+
+  renderVals() {
+    const st = this.state;
+    const accent = this.props.accent || '#4c8fb8';
+    const cor = this.buildCorridor();
+
+    const origins = ['POLB — Pier T', 'POLB — Pier G', 'POLB — Middle Harbor'];
+    const dests = this.DESTS;
+
+    const WX_BASE = "flex:1;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;border:none;border-radius:6px;padding:6px 4px;transition:all .15s;";
+    const WX_ON = "background:linear-gradient(180deg,#FBFBFD,#E4E4EA);color:#1a1a1e;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.12);";
+    const WX_OFF = "background:transparent;color:#8a8a92;";
+    const weathers = [['clear','Clear'],['heat','Heat 104°'],['wind','Headwind']].map(([v,l]) => ({
+      label: l, onSelect: () => this.setState({ weather: v }),
+      style: WX_BASE + (st.weather === v ? WX_ON : WX_OFF)
+    }));
+    const weatherLabel = { clear: 'Clear · 68°F', heat: 'Heat · 104°F', wind: 'Headwind 18mph' }[st.weather];
+
+    const summary = [
+      { label: 'DISTANCE', value: cor.dist, unit: 'mi' },
+      { label: 'PEAK GRADE', value: cor.grade, unit: '%' },
+      { label: 'NET ENERGY', value: cor.energy, unit: 'kWh' },
+      { label: 'kWh/mi', value: (cor.energy / cor.dist).toFixed(2), unit: '' },
+      { label: 'CHARGE STOPS', value: cor.stops, unit: '' }
+    ];
+
+    // charging plan
+    const kwhPerMi = cor.energy / cor.dist, cap = 438;
+    let soc = 100, last = 0;
+    const chargePlan = cor.chargers.filter(c => !c.depot).map(c => {
+      soc -= (kwhPerMi * (c.mi - last) / cap) * 100;
+      const arr = Math.max(5, Math.round(soc));
+      const kw = c.kw;
+      const min = Math.round((0.62 * cap) / kw * 60); // time to add ~62%
+      soc = Math.min(85, soc + 62); last = c.mi;
+      return { site: c.label, arr: arr + '%', kw: kw, min: min,
+        socColor: arr < 20 ? '#c0392b' : arr < 35 ? '#b8874c' : '#1a1a1e' };
+    });
+
+    // TCO / emissions
+    const dieselKwhEq = cor.dist * 2.9;
+    const co2 = (cor.dist * 1.61).toFixed(0); // kg avoided
+    const costEv = (cor.energy * 0.16).toFixed(0);
+    const costDiesel = (cor.dist / 6.2 * 4.85).toFixed(0);
+    const savePct = Math.round((1 - costEv / costDiesel) * 100);
+    const tco = [
+      { label: 'CO₂ AVOIDED vs DIESEL', value: co2, unit: 'kg', pct: cor.savings + '%', note: 'ton-mile basis' },
+      { label: 'ENERGY COST', value: '$' + costEv, unit: 'run', pct: (100 - savePct) + '%', note: 'vs $' + costDiesel + ' diesel' },
+      { label: 'COST SAVINGS', value: savePct, unit: '%', pct: savePct + '%', note: 'per corridor run' }
+    ];
+
+    return {
+      accent, canvasRef: this.canvasRef,
+      corridor: cor, corridorName: cor.name,
+      origin: st.origin, origins, onOrigin: e => this.setState({ origin: e.target.value }),
+      dest: st.dest, dests, onDest: e => this.setState({ dest: e.target.value }),
+      departure: st.departure, onDeparture: e => this.setState({ departure: e.target.value }),
+      weathers, weatherLabel, payload: st.payload, payloadDisplay: st.payload.toLocaleString() + ' lb',
+      onPayload: e => this.setState({ payload: +e.target.value }),
+      summary, chargePlan, tco,
+      socChart: this.buildSocChart(cor),
+      statusText: st.hasRun ? 'Simulation current' : 'Inputs changed — re-run',
+      statusDot: st.hasRun ? '#3f9b6b' : '#b8874c',
+      runSim: () => { this.setState({ hasRun: true }); this.flash('▶ Physics simulation complete'); },
+      openSave: () => this.setState({ saveOpen: true, saveName: cor.name, saveShort: cor.short }),
+      closeSave: () => this.setState({ saveOpen: false }),
+      onSaveName: e => this.setState({ saveName: e.target.value }),
+      onSaveShort: e => this.setState({ saveShort: e.target.value }),
+      confirmSave: () => this.saveCorridor(),
+      saveOpen: st.saveOpen, saveName: st.saveName, saveShort: st.saveShort,
+      saveDist: cor.dist, saveEnergy: cor.energy, saveStops: cor.stops,
+      whatIf: () => this.flash('⌁ What-If mode — adjust inputs live'),
+      compare: () => this.flash('⊟ Scenario comparison (baseline vs variant)'),
+      exportReport: () => this.flash('⤓ Exporting corridor report (PDF)…'),
+      toast: st.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

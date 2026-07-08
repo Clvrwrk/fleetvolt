@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@keyframes rd-flow { to { stroke-dashoffset: -600; } }
+@keyframes rd-draw { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</helmet>
+<div style="width:100%;">
+  <svg viewBox="0 0 640 300" style="width:100%;height:auto;display:block;overflow:visible;" preserveAspectRatio="xMidYMid meet">
+    <!-- horizontal elevation gridlines -->
+    <g>
+      <line x1="60" y1="250" x2="600" y2="250" stroke="#8A8A93" stroke-width="0.5" />
+      <line x1="60" y1="191" x2="600" y2="191" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5" />
+      <line x1="60" y1="133" x2="600" y2="133" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5" />
+      <line x1="60" y1="74" x2="600" y2="74" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5" />
+      <text x="54" y="252" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="8" fill="#6b6b73">0</text>
+      <text x="54" y="194" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="8" fill="#6b6b73">1,500</text>
+      <text x="54" y="136" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="8" fill="#6b6b73">3,000</text>
+      <text x="54" y="77" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="8" fill="#6b6b73">4,500</text>
+      <text x="46" y="160" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" fill="#9a9aa2" transform="rotate(-90,46,160)" letter-spacing="1">ELEVATION · FT</text>
+    </g>
+
+    <!-- terrain fill + line -->
+    <path d="{{ elevFill }}" fill="#E5E5EB" stroke="none" opacity="0.75" />
+    <polyline points="{{ elevLine }}" fill="none" stroke="#5c5c64" stroke-width="1" vector-effect="non-scaling-stroke" />
+    <!-- ambient energy pulse -->
+    <polyline points="{{ elevLine }}" fill="none" stroke="{{ accent }}" stroke-width="1.4" stroke-dasharray="10 590" opacity="0.7" style="animation:rd-flow 6s linear infinite;" vector-effect="non-scaling-stroke" />
+
+    <!-- top distance dimension bracket -->
+    <g>
+      <line x1="60" y1="50" x2="{{ distX }}" y2="50" stroke="#8A8A93" stroke-width="0.5" />
+      <line x1="60" y1="46" x2="60" y2="54" stroke="#8A8A93" stroke-width="0.5" />
+      <line x1="{{ distX }}" y1="46" x2="{{ distX }}" y2="54" stroke="#8A8A93" stroke-width="0.5" />
+      <text x="{{ midX }}" y="45" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" font-weight="500" fill="#1a1a1e" letter-spacing="0.5">{{ dist }} MI CORRIDOR</text>
+    </g>
+
+    <!-- peak grade callout -->
+    <g>
+      <circle cx="{{ peakX }}" cy="{{ peakY }}" r="2" fill="#1a1a1e" />
+      <line x1="{{ peakX }}" y1="{{ peakY }}" x2="{{ peakX }}" y2="{{ peakLabelY }}" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="2 2" />
+      <text x="{{ peakX }}" y="{{ peakLabelY }}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8.5" font-weight="600" fill="#1a1a1e">▲ {{ grade }}% GRADE</text>
+    </g>
+
+    <!-- charger nodes -->
+    <sc-for list="{{ chargerNodes }}" as="node" hint-placeholder-count="3">
+      <g>
+        <line x1="{{ node.x }}" y1="250" x2="{{ node.x }}" y2="{{ node.y }}" stroke="#8A8A93" stroke-width="0.5" stroke-dasharray="2 3" />
+        <circle cx="{{ node.x }}" cy="{{ node.y }}" r="{{ node.r }}" fill="#FBFBFD" stroke="#3a3a3e" stroke-width="0.75" />
+        <circle cx="{{ node.x }}" cy="{{ node.y }}" r="1.4" fill="#3a3a3e" />
+        <text x="{{ node.x }}" y="{{ node.labelY }}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" font-weight="600" fill="#1a1a1e">{{ node.kw }}</text>
+        <text x="{{ node.x }}" y="{{ node.nameY }}" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" fill="#6b6b73">{{ node.label }}</text>
+      </g>
+    </sc-for>
+
+    <!-- x-axis trip-mile markers -->
+    <g>
+      <sc-for list="{{ xTicks }}" as="t" hint-placeholder-count="5">
+        <g>
+          <line x1="{{ t.x }}" y1="250" x2="{{ t.x }}" y2="256" stroke="#8A8A93" stroke-width="0.6" />
+          <sc-if value="{{ t.showLabel }}" hint-placeholder-val="{{ true }}">
+            <text x="{{ t.x }}" y="285" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="500" fill="#3a3a3e">{{ t.mi }}</text>
+          </sc-if>
+        </g>
+      </sc-for>
+      <text x="330" y="297" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" fill="#9a9aa2" letter-spacing="1">TRIP DISTANCE · MI</text>
+    </g>
+
+    <!-- Class 8 BEV tractor + 40ft container (eCascadia side profile), at origin, facing travel direction -->
+    <g transform="translate(60,200)">
+      <!-- 40ft container / trailer body -->
+      <rect x="0" y="4" width="66" height="25" rx="1.5" fill="#F2F2F5" stroke="#5c5c64" stroke-width="0.7" />
+      <!-- corrugation ribs -->
+      <g stroke="#8A8A93" stroke-width="0.35" opacity="0.55">
+        <line x1="5" y1="6" x2="5" y2="27" /><line x1="10" y1="6" x2="10" y2="27" /><line x1="15" y1="6" x2="15" y2="27" /><line x1="20" y1="6" x2="20" y2="27" /><line x1="25" y1="6" x2="25" y2="27" /><line x1="30" y1="6" x2="30" y2="27" /><line x1="35" y1="6" x2="35" y2="27" /><line x1="40" y1="6" x2="40" y2="27" /><line x1="45" y1="6" x2="45" y2="27" /><line x1="50" y1="6" x2="50" y2="27" /><line x1="55" y1="6" x2="55" y2="27" /><line x1="60" y1="6" x2="60" y2="27" />
+      </g>
+      <line x1="0" y1="8" x2="66" y2="8" stroke="#8A8A93" stroke-width="0.4" opacity="0.5" />
+      <line x1="0" y1="25" x2="66" y2="25" stroke="#8A8A93" stroke-width="0.4" opacity="0.5" />
+
+      <!-- trailer chassis rail + kingpin gap -->
+      <line x1="14" y1="31" x2="118" y2="31" stroke="#5c5c64" stroke-width="0.6" />
+
+      <!-- Aerodynamic day cab (facing right) -->
+      <path d="M66,29 L66,10 Q66.5,5 71,5 L88,5 Q94,5 98,10 L105,16 L113,22 Q117,24 118,28 L118,29 Z" fill="#F7F7FA" stroke="#5c5c64" stroke-width="0.8" stroke-linejoin="round" />
+      <!-- roof aero fairing dome -->
+      <path d="M70,5 Q79,1.5 90,5" fill="none" stroke="#8A8A93" stroke-width="0.4" opacity="0.7" />
+      <!-- side door window -->
+      <path d="M72,10 L90,10 L90,19 L72,19 Z" fill="#E4E7EA" stroke="#8A8A93" stroke-width="0.4" />
+      <line x1="80.5" y1="10" x2="80.5" y2="19" stroke="#8A8A93" stroke-width="0.4" opacity="0.6" />
+      <!-- windshield -->
+      <path d="M91,10 L98,10 L104,16 L91,16 Z" fill="#E4E7EA" stroke="#8A8A93" stroke-width="0.4" />
+      <!-- hood / nose detail -->
+      <line x1="105" y1="20" x2="116" y2="26" stroke="#8A8A93" stroke-width="0.4" opacity="0.6" />
+      <path d="M113,26 L118,26" stroke="#8A8A93" stroke-width="0.4" />
+
+      <!-- side fairing / battery pack (highlighted) between cab and drive tandem -->
+      <path d="M40,29 L40,31 Q40,33 42,33 L78,33 Q80,33 80,31 L80,29 Z" fill="#DCE6EA" stroke="{{ accent }}" stroke-width="0.6" />
+      <line x1="50" y1="29" x2="50" y2="33" stroke="{{ accent }}" stroke-width="0.35" opacity="0.6" />
+      <line x1="60" y1="29" x2="60" y2="33" stroke="{{ accent }}" stroke-width="0.35" opacity="0.6" />
+      <line x1="70" y1="29" x2="70" y2="33" stroke="{{ accent }}" stroke-width="0.35" opacity="0.6" />
+
+      <!-- wheels: trailer tandem, drive tandem, steer -->
+      <g>
+        <circle cx="10" cy="38" r="6" fill="#FBFBFD" stroke="#5c5c64" stroke-width="0.75" /><circle cx="10" cy="38" r="2" fill="#8A8A93" />
+        <circle cx="24" cy="38" r="6" fill="#FBFBFD" stroke="#5c5c64" stroke-width="0.75" /><circle cx="24" cy="38" r="2" fill="#8A8A93" />
+        <circle cx="58" cy="38" r="6" fill="#FBFBFD" stroke="#5c5c64" stroke-width="0.75" /><circle cx="58" cy="38" r="2" fill="#8A8A93" />
+        <circle cx="72" cy="38" r="6" fill="#FBFBFD" stroke="#5c5c64" stroke-width="0.75" /><circle cx="72" cy="38" r="2" fill="#8A8A93" />
+        <circle cx="110" cy="38" r="6" fill="#FBFBFD" stroke="#5c5c64" stroke-width="0.75" /><circle cx="110" cy="38" r="2" fill="#8A8A93" />
+      </g>
+
+      <text x="59" y="52" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" fill="#6b6b73">CLASS 8 · BEV · 40FT</text>
+    </g>
+  </svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:640,&quot;height&quot;:300},&quot;corridor&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{name:string,dist:number,grade:number,energy:number,regen:number,stops:number,series:number[][],chargers:object[]}&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4c8fb8&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const DEF = {
+      name: 'POLB \u2192 Barstow', dist: 128, grade: 3.8, energy: 312, regen: 47, stops: 2,
+      series: [[0,30],[20,220],[45,1500],[62,4190],[82,2600],[106,2050],[128,2180]],
+      chargers: [{mi:0,depot:true},{mi:62,kw:350,label:'Cajon Summit'},{mi:126,kw:500,label:'Barstow Depot'}]
+    };
+    const c = this.props.corridor || DEF;
+    const series = c.series, maxMi = series[series.length - 1][0];
+    const X0 = 60, X1 = 600, YT = 74, YB = 250, MAXFT = 4600;
+    const px = mi => X0 + (mi / maxMi) * (X1 - X0);
+    const py = ft => YB - (ft / MAXFT) * (YB - YT);
+    const pts = series.map(s => px(s[0]).toFixed(1) + ',' + py(s[1]).toFixed(1));
+    const elevLine = pts.join(' ');
+    const elevFill = 'M ' + px(0).toFixed(1) + ',' + YB + ' L ' + pts.join(' L ') + ' L ' + px(maxMi).toFixed(1) + ',' + YB + ' Z';
+    const interp = mi => {
+      for (let i = 1; i < series.length; i++) {
+        if (mi <= series[i][0]) {
+          const a = series[i-1], b = series[i];
+          const t = (mi - a[0]) / ((b[0] - a[0]) || 1);
+          return a[1] + t * (b[1] - a[1]);
+        }
+      }
+      return series[series.length - 1][1];
+    };
+    const chargerNodes = (c.chargers || []).map(ch => {
+      const x = px(ch.mi), y = py(interp(ch.mi));
+      const r = ch.depot ? 3.5 : (ch.kw >= 500 ? 7 : 5.5);
+      return {
+        x: x.toFixed(1), y: y.toFixed(1), r,
+        labelY: (y - 11).toFixed(1), nameY: 264,
+        kw: ch.depot ? 'DEPOT' : ch.kw + ' kW',
+        label: ch.label || 'Origin'
+      };
+    });
+    const xTicks = [];
+    for (let mi = 0; mi <= maxMi + 0.001; mi += 10) xTicks.push(mi);
+    const labelEvery = 1;
+    const ticks = xTicks.map((mi, i) => ({ x: px(mi).toFixed(1), mi, showLabel: i % labelEvery === 0 }));
+    let peakSlope = 0, peakMi = 0;
+    for (let i = 1; i < series.length; i++) {
+      const s = Math.abs((series[i][1] - series[i-1][1]) / ((series[i][0] - series[i-1][0]) || 1));
+      if (s > peakSlope) { peakSlope = s; peakMi = (series[i][0] + series[i-1][0]) / 2; }
+    }
+    const peakX = px(peakMi), peakY = py(interp(peakMi));
+    return {
+      name: c.name, dist: c.dist, grade: c.grade, energy: c.energy, regen: c.regen, stops: c.stops,
+      elevLine, elevFill, chargerNodes, xTicks: ticks, accent: this.props.accent || '#4c8fb8',
+      distX: px(maxMi).toFixed(1), midX: ((X0 + px(maxMi)) / 2).toFixed(1),
+      peakX: peakX.toFixed(1), peakY: peakY.toFixed(1), peakLabelY: (peakY - 12).toFixed(1)
+    };
+  }
+}
+</script>
+</body>
+</html>

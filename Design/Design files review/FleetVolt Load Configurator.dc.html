@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<style>
+  body { margin:0; background:#DEDEE6; font-family:'Inter',sans-serif; }
+  input[type=range]{ -webkit-appearance:none; height:4px; border-radius:2px; background:linear-gradient(90deg,#8A8A93,#c9c9d1); outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:linear-gradient(180deg,#FBFBFD,#d4d4da); border:1px solid rgba(0,0,0,0.25); box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.25); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:#FBFBFD; border:1px solid rgba(0,0,0,0.25); cursor:pointer; }
+  @keyframes fv-warn { 0%,100%{ opacity:0.55; } 50%{ opacity:1; } }
+</style>
+</helmet>
+<div style="min-height:100vh;box-sizing:border-box;background:radial-gradient(120% 90% at 50% 0%,#E7E7EE 0%,#D8D8E0 100%);display:flex;justify-content:center;align-items:flex-start;padding:56px 40px;">
+
+  <div style="width:100%;max-width:1280px;position:relative;background:#EFEFF5;border-radius:24px;border:1px solid rgba(0,0,0,0.06);background-image:linear-gradient(180deg,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0) 30%),linear-gradient(45deg,rgba(0,0,0,0.02) 25%,transparent 25%,transparent 75%,rgba(0,0,0,0.02) 75%),linear-gradient(45deg,rgba(0,0,0,0.02) 25%,transparent 25%,transparent 75%,rgba(0,0,0,0.02) 75%);background-size:100% 100%,22px 22px,22px 22px;background-position:0 0,0 0,11px 11px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 2px rgba(0,0,0,0.1),0 2.8px 2.2px rgba(0,0,0,.034),0 12.5px 10px rgba(0,0,0,.06),0 41.8px 33.4px rgba(0,0,0,.086),0 100px 80px rgba(0,0,0,.12);padding:28px;overflow:hidden;">
+
+    <canvas ref="{{ canvasRef }}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.35;pointer-events:none;z-index:0;"></canvas>
+    <div style="position:absolute;top:18px;left:18px;width:14px;height:14px;border-top:1px solid rgba(0,0,0,0.25);border-left:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;top:18px;right:18px;width:14px;height:14px;border-top:1px solid rgba(0,0,0,0.25);border-right:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;bottom:18px;left:18px;width:14px;height:14px;border-bottom:1px solid rgba(0,0,0,0.25);border-left:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+    <div style="position:absolute;bottom:18px;right:18px;width:14px;height:14px;border-bottom:1px solid rgba(0,0,0,0.25);border-right:1px solid rgba(0,0,0,0.25);z-index:3;"></div>
+
+    <div style="position:relative;z-index:5;">
+      <!-- header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid rgba(0,0,0,0.08);">
+        <div style="display:flex;align-items:baseline;gap:14px;">
+          <a href="FleetVolt%20Home.dc.html" style="text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:11px;color:#4a4a52;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:6px 11px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.05);">← HOME</a>
+          <span style="font-size:19px;font-weight:700;color:#111116;letter-spacing:-0.3px;">Load Configurator</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8a92;letter-spacing:1px;">DRAYAGE PAYLOAD MODEL — POLB</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:520px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-right:2px;">PRESET</span>
+          <sc-for list="{{ presets }}" as="p" hint-placeholder-count="4">
+            <button onClick="{{ p.onSelect }}" style="{{ p.style }}">{{ p.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:296px 1fr 268px;gap:20px;margin-top:20px;">
+
+        <!-- LEFT: load controls -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;">CONTAINER TYPE</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <sc-for list="{{ containers }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.onSelect }}" style="{{ c.style }}">
+                <span style="font-size:12.5px;font-weight:600;">{{ c.label }}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.7;margin-top:2px;">{{ c.sub }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-top:2px;">PAYLOAD & DISTRIBUTION</div>
+          <sc-for list="{{ controls }}" as="c" hint-placeholder-count="2">
+            <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:11px 13px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:500;color:#2a2a2e;">{{ c.label }}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#111116;">{{ c.display }}</span>
+              </div>
+              <input type="range" min="{{ c.min }}" max="{{ c.max }}" step="{{ c.step }}" value="{{ c.value }}" onChange="{{ c.onInput }}" style="width:100%;" />
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#9a9aa2;margin-top:5px;">
+                <span>{{ c.minLabel }}</span><span>{{ c.maxLabel }}</span>
+              </div>
+            </div>
+          </sc-for>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-top:2px;">DISTRIBUTION MODE</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+            <sc-for list="{{ biasModes }}" as="b" hint-placeholder-count="3">
+              <button onClick="{{ b.onSelect }}" style="{{ b.style }}">{{ b.label }}</button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:2px;">
+            <button onClick="{{ autoEff }}" style="flex:1;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:#1a1a1e;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:9px;padding:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.05);text-shadow:0 1px 1px rgba(255,255,255,0.8);">⌁ Auto · Efficiency</button>
+            <button onClick="{{ autoStab }}" style="flex:1;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:#1a1a1e;background:linear-gradient(180deg,#FBFBFD,#E9E9EF);border:1px solid rgba(0,0,0,0.1);border-radius:9px;padding:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 1px 2px rgba(0,0,0,0.05);text-shadow:0 1px 1px rgba(255,255,255,0.8);">⚖ Auto · Stability</button>
+          </div>
+
+          <sc-if value="{{ isReefer }}" hint-placeholder-val="{{ false }}">
+            <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:11px 13px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:500;color:#2a2a2e;">Reefer Setpoint</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#111116;">{{ reeferDisplay }}</span>
+              </div>
+              <input type="range" min="-10" max="40" step="1" value="{{ reefer }}" onChange="{{ onReefer }}" style="width:100%;" />
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- CENTER: load diagram -->
+        <div style="display:flex;flex-direction:column;">
+          <div style="background:#ECECF2;border:1px solid rgba(0,0,0,0.05);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 2px 8px rgba(0,0,0,0.05);padding:14px 16px 8px;position:relative;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1px;">SIDE ELEVATION — LOAD & AXLE DISTRIBUTION</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#4a4a52;">GCW {{ gcwDisplay }}</span>
+            </div>
+            {{ diagram }}
+          </div>
+
+          <!-- axle summary + gcw meter -->
+          <div style="display:flex;gap:10px;margin-top:12px;font-family:'JetBrains Mono',monospace;">
+            <sc-for list="{{ axleCards }}" as="a" hint-placeholder-count="3">
+              <div style="flex:1;background:linear-gradient(180deg,#FBFBFD,#ECECF1);border:1px solid {{ a.border }};border-radius:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:9px 11px;">
+                <div style="font-size:8.5px;color:#9a9aa2;letter-spacing:0.5px;">{{ a.label }}</div>
+                <div style="font-size:15px;font-weight:600;color:{{ a.color }};">{{ a.value }}<span style="font-size:8.5px;color:#8a8a92;font-weight:400;"> {{ a.unit }}</span></div>
+                <div style="font-size:8px;color:{{ a.color }};margin-top:1px;">{{ a.status }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- LOAD HISTORY -->
+          <div style="margin-top:12px;background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;">LOAD HISTORY — {{ containerLabel }}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#9a9aa2;">Δ vs MODELED · ACTUAL TELEMETRY</div>
+            </div>
+
+            <!-- summary strip -->
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <sc-for list="{{ loadStats }}" as="s" hint-placeholder-count="4">
+                <div style="flex:1;background:#EFEFF5;border:1px solid rgba(0,0,0,0.05);border-radius:8px;padding:8px 10px;font-family:'JetBrains Mono',monospace;">
+                  <div style="font-size:8px;color:#9a9aa2;letter-spacing:0.5px;">{{ s.label }}</div>
+                  <div style="font-size:15px;font-weight:600;color:#111116;">{{ s.value }}</div>
+                  <div style="font-size:8px;color:#8a8a92;">{{ s.unit }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- table header -->
+            <div style="display:grid;grid-template-columns:52px 1fr 0.9fr 76px 44px 60px 56px;gap:6px;padding:0 8px 7px;border-bottom:1px solid rgba(0,0,0,0.1);font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#9a9aa2;letter-spacing:0.5px;">
+              <div>DATE</div><div>CORRIDOR</div><div>DRIVER</div><div>PAYLOAD</div><div style="text-align:right;">DIST</div><div style="text-align:right;">ACT</div><div style="text-align:right;">Δ MODEL</div>
+            </div>
+            <!-- rows -->
+            <div>
+              <sc-for list="{{ loadRuns }}" as="r" hint-placeholder-count="8">
+                <div style="display:grid;grid-template-columns:52px 1fr 0.9fr 76px 44px 60px 56px;gap:6px;align-items:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.05);font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#2a2a2e;">
+                  <div style="color:#8a8a92;">{{ r.date }}</div>
+                  <div style="font-family:'Inter',sans-serif;font-weight:500;">{{ r.route }}</div>
+                  <div style="font-family:'Inter',sans-serif;">{{ r.driver }}</div>
+                  <div style="color:#6b6b73;">{{ r.payload }}</div>
+                  <div style="text-align:right;color:#6b6b73;">{{ r.dist }}</div>
+                  <div style="text-align:right;font-weight:600;color:#111116;">{{ r.act }}</div>
+                  <div style="text-align:right;font-weight:600;color:{{ r.deltaColor }};">{{ r.delta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: impact -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;">PERFORMANCE IMPACT</div>
+          <sc-for list="{{ impacts }}" as="p" hint-placeholder-count="4">
+            <div style="background:linear-gradient(180deg,#FBFBFD,#EDEDF2);border:1px solid rgba(0,0,0,0.06);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);padding:12px 14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#9a9aa2;letter-spacing:0.5px;">{{ p.label }}</div>
+              <div style="display:flex;align-items:baseline;gap:5px;margin-top:3px;"><span style="font-size:22px;font-weight:700;color:#111116;letter-spacing:-0.5px;">{{ p.value }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8a8a92;">{{ p.unit }}</span></div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:{{ p.deltaColor }};margin-top:2px;">{{ p.delta }}</div>
+            </div>
+          </sc-for>
+
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#9a9aa2;letter-spacing:1.5px;margin-top:4px;">RECOMMENDATION</div>
+          <div style="{{ warnBoxStyle }}">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:15px;">{{ warnIcon }}</span>
+              <span style="font-size:13px;font-weight:700;color:{{ warnColor }};">{{ warnTitle }}</span>
+            </div>
+            <div style="font-family:'Inter',sans-serif;font-size:11px;color:#3a3a3e;line-height:1.5;margin-top:7px;">{{ warnBody }}</div>
+            <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a3a3e;margin-top:9px;padding-top:8px;border-top:1px dashed rgba(0,0,0,0.12);"><span style="color:#8a8a92;">Regen / Brake Bias</span><span>{{ regenBias }}</span></div>
+          </div>
+
+          <button onClick="{{ applyLoad }}" style="cursor:pointer;background:linear-gradient(180deg,#2A2A2E,#141416);border:1px solid #000;border-radius:12px;padding:13px;color:#F5F5F7;font-size:13px;font-weight:600;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 4px 14px rgba(0,0,0,0.22);transition:transform .18s ease;" style-hover="transform:translateY(-2px);">Apply to Simulation</button>
+        </div>
+      </div>
+
+      <div style="text-align:right;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#9a9aa2;letter-spacing:1px;">CARB DRAYAGE COMPLIANT · POWERED BY CLEVERWORK</div>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:20;background:linear-gradient(180deg,#2A2A2E,#141416);color:#F5F5F7;font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 18px;border-radius:9999px;box-shadow:0 8px 24px rgba(0,0,0,0.3);">{{ toast }}</div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4c8fb8&quot;,&quot;options&quot;:[&quot;#4c8fb8&quot;,&quot;#3f9b6b&quot;,&quot;#b8874c&quot;,&quot;#7a6bb8&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Effects&quot;}}">
+class Component extends DCLogic {
+  state = { container: 'dry40', payload: 42000, cgShift: 0, bias: 'even', reefer: 34, toast: '' };
+
+  CONTAINERS = {
+    dry40: { label: '40ft Dry', sub: 'STANDARD', tare: 8800, maxPay: 44000, reefer: false },
+    dry20: { label: '20ft Dry', sub: 'SHORT', tare: 5100, maxPay: 47000, reefer: false },
+    reefer: { label: '40ft Reefer', sub: 'REFRIGERATED', tare: 10200, maxPay: 42000, reefer: true },
+    tank: { label: '40ft Tank', sub: 'LIQUID BULK', tare: 9600, maxPay: 45000, reefer: false }
+  };
+
+  // legal limits (lb)
+  LIMITS = { steer: 12000, drive: 34000, tandem: 34000, gcw: 82000 };
+
+  flash(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: '' }), 1800);
+  }
+
+  componentDidMount() {
+    const start = () => {
+      if (!window.THREE) { setTimeout(start, 120); return; }
+      this.initGrid(this.canvasRef && this.canvasRef.current);
+    };
+    start();
+  }
+  canvasRef = React.createRef();
+
+  initGrid(canvas) {
+    if (!canvas || canvas.__init || !window.THREE) return;
+    canvas.__init = true;
+    const THREE = window.THREE;
+    const w = canvas.clientWidth || 1000, h = canvas.clientHeight || 700;
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xEFEFF5, 0.0016);
+    const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+    camera.position.set(0, 50, 200); camera.lookAt(0, 0, 0);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const mat = new THREE.LineBasicMaterial({ color: 0x8A8A93, transparent: true, opacity: 0.15 });
+    const pts = []; const size = 1000, step = 40;
+    for (let i = -size; i <= size; i += step) {
+      pts.push(new THREE.Vector3(-size, 0, i), new THREE.Vector3(size, 0, i + size));
+      pts.push(new THREE.Vector3(i, 0, -size), new THREE.Vector3(i + size, 0, size));
+    }
+    const grid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat);
+    grid.rotation.x = Math.PI / 4; scene.add(grid);
+    let t = 0;
+    const animate = () => {
+      requestAnimationFrame(animate); t += 0.001;
+      grid.position.x = Math.sin(t) * 10; grid.position.z = (t * 10) % step;
+      renderer.render(scene, camera);
+    };
+    animate();
+  }
+
+  // core physics-ish model -----------------------------------------
+  compute() {
+    const st = this.state;
+    const cfg = this.CONTAINERS[st.container];
+    const tractor = 21000; // BEV tractor incl. battery
+    const payload = Math.min(st.payload, cfg.maxPay);
+    const gcw = tractor + cfg.tare + payload;
+
+    // longitudinal CG fraction over rear tandem (0 = fully fwd, 1 = fully rear)
+    const biasBase = { even: 0.50, forward: 0.38, rear: 0.63, custom: 0.50 }[st.bias];
+    const frac = Math.max(0.28, Math.min(0.74, biasBase + st.cgShift / 100));
+
+    // axle loads (simplified static distribution)
+    const steer = 12000 + (cfg.tare + tractor - 21000) * 0.1; // roughly fixed
+    const cargoOnRear = (payload + cfg.tare) * frac;
+    const cargoOnDrive = (payload + cfg.tare) * (1 - frac) * 0.55 + 8000;
+    const drive = Math.min(999999, cargoOnDrive);
+    const tandem = cargoOnRear + 3000;
+    const steerFinal = 12000;
+
+    // CG height (reefer + tank ride higher)
+    const cgHeight = cfg.reefer ? 78 : (st.container === 'tank' ? 84 : 70); // inches
+
+    // energy impact vs 42k baseline on dry40
+    const baseGcw = 21000 + 8800 + 42000;
+    const dKwhMi = ((gcw - baseGcw) / 1000) * 0.021 + (cfg.reefer ? 0.14 : 0) + (st.container === 'tank' ? 0.03 : 0);
+    const gradeLossPct = ((gcw - baseGcw) / 1000) * 0.9 + (cfg.reefer ? 2 : 0);
+
+    return {
+      cfg, payload, gcw, frac, steer: steerFinal, drive, tandem, cgHeight,
+      dKwhMi, gradeLossPct,
+      overGcw: gcw > this.LIMITS.gcw,
+      overDrive: drive > this.LIMITS.drive,
+      overTandem: tandem > this.LIMITS.tandem,
+      highCg: cgHeight >= 80
+    };
+  }
+
+  fmt(n) { return Math.round(n).toLocaleString(); }
+
+  buildDiagram(m) {
+    const E = React.createElement;
+    const MONO = "'JetBrains Mono',monospace";
+    const accent = this.props.accent || '#4c8fb8';
+    const W = 640, H = 300;
+    const ground = 232;
+    // geometry
+    const cabX = 70, cabW = 70;
+    const chassisX = cabX, chassisX2 = 560;
+    const contX = 150, contW = 400, contTop = 96, contH = 96;
+    const steerWx = cabX + 20, driveWx = 205, tandemWx = 500;
+
+    // CG marker x within container span
+    const cgX = contX + m.frac * contW;
+    // load stress fill height (fraction of container filled by payload)
+    const fillFrac = Math.max(0.12, Math.min(1, m.payload / m.cfg.maxPay));
+    const fillTop = contTop + contH * (1 - fillFrac);
+
+    const stressColor = m.payload / m.cfg.maxPay > 0.92 ? '#c0392b'
+      : m.payload / m.cfg.maxPay > 0.72 ? '#b8874c' : accent;
+
+    const wheel = (cx) => E('g', { key: 'w' + cx },
+      E('circle', { cx, cy: ground + 14, r: 14, fill: '#FBFBFD', stroke: '#5c5c64', strokeWidth: 1 }),
+      E('circle', { cx, cy: ground + 14, r: 4.5, fill: '#8A8A93' })
+    );
+
+    const dimText = (x, y, t, fill) => E('text', { x, y, textAnchor: 'middle', fontFamily: MONO, fontSize: 9.5, fontWeight: 600, fill: fill || '#1a1a1e' }, t);
+
+    const els = [];
+    // baseline / ground
+    els.push(E('line', { key: 'gl', x1: 20, y1: ground + 28, x2: 620, y2: ground + 28, stroke: '#8A8A93', strokeWidth: 0.5 }));
+    // reference datum tick (kingpin)
+    els.push(E('line', { key: 'ref', x1: contX, y1: 60, x2: contX, y2: ground + 34, stroke: '#8A8A93', strokeWidth: 0.5, strokeDasharray: '3 3', opacity: 0.6 }));
+    els.push(dimText(contX, 54, 'DATUM', '#9a9aa2'));
+
+    // chassis rail
+    els.push(E('line', { key: 'ch', x1: chassisX, y1: ground, x2: chassisX2, y2: ground, stroke: '#5c5c64', strokeWidth: 2 }));
+    // cab
+    els.push(E('path', { key: 'cab', d: 'M' + cabX + ',' + ground + ' L' + cabX + ',' + (ground - 54) + ' L' + (cabX + 40) + ',' + (ground - 54) + ' L' + (cabX + cabW) + ',' + (ground - 20) + ' L' + (cabX + cabW) + ',' + ground + ' Z', fill: '#E5E5EB', stroke: '#8A8A93', strokeWidth: 0.75 }));
+    els.push(E('rect', { key: 'cabw', x: cabX + 6, y: ground - 48, width: 20, height: 16, fill: '#D1D1D4', stroke: '#8A8A93', strokeWidth: 0.5 }));
+    // battery pack under chassis
+    els.push(E('rect', { key: 'bat', x: 150, y: ground + 2, width: 120, height: 10, fill: '#DCE6EA', stroke: accent, strokeWidth: 0.7 }));
+    els.push(dimText(210, ground + 24, 'BATTERY 438 kWh', '#6b6b73'));
+
+    // container outline
+    els.push(E('rect', { key: 'cont', x: contX, y: contTop, width: contW, height: contH, fill: 'none', stroke: '#3a3a3e', strokeWidth: 1 }));
+    // payload fill (stress intensity)
+    els.push(E('rect', { key: 'fill', x: contX + 2, y: fillTop, width: contW - 4, height: (contTop + contH) - fillTop - 1, fill: stressColor, opacity: 0.18 }));
+    // load hatch lines
+    for (let i = 1; i < 8; i++) {
+      const lx = contX + (contW / 8) * i;
+      els.push(E('line', { key: 'h' + i, x1: lx, y1: fillTop, x2: lx, y2: contTop + contH - 1, stroke: stressColor, strokeWidth: 0.4, opacity: 0.35 }));
+    }
+    els.push(dimText(contX + contW / 2, contTop - 8, m.cfg.label.toUpperCase() + ' · ' + this.fmt(m.payload) + ' LB'));
+
+    // container length dimension
+    els.push(E('line', { key: 'dl', x1: contX, y1: contTop - 22, x2: contX + contW, y2: contTop - 22, stroke: '#8A8A93', strokeWidth: 0.5 }));
+    els.push(E('line', { key: 'dl1', x1: contX, y1: contTop - 26, x2: contX, y2: contTop - 18, stroke: '#8A8A93', strokeWidth: 0.5 }));
+    els.push(E('line', { key: 'dl2', x1: contX + contW, y1: contTop - 26, x2: contX + contW, y2: contTop - 18, stroke: '#8A8A93', strokeWidth: 0.5 }));
+
+    // CG vertical line
+    const cgColor = m.highCg ? '#c0392b' : '#141416';
+    els.push(E('line', { key: 'cg', x1: cgX, y1: contTop - 4, x2: cgX, y2: ground + 34, stroke: cgColor, strokeWidth: 1.4, strokeDasharray: '5 3' }));
+    els.push(E('polygon', { key: 'cgm', points: (cgX - 5) + ',' + (contTop - 4) + ' ' + (cgX + 5) + ',' + (contTop - 4) + ' ' + cgX + ',' + (contTop + 5), fill: cgColor }));
+    els.push(E('circle', { key: 'cgd', cx: cgX, cy: contTop + contH / 2, r: 3, fill: cgColor }));
+    els.push(dimText(cgX, ground + 46, 'CG · ' + m.cgHeight + '" H', cgColor));
+
+    // CG distance-from-datum callout
+    const cgDist = Math.round(m.frac * 40);
+    els.push(E('line', { key: 'cgd2', x1: contX, y1: contTop - 4, x2: cgX, y2: contTop - 4, stroke: cgColor, strokeWidth: 0.5 }));
+    els.push(dimText((contX + cgX) / 2, contTop - 9, cgDist + ' FT AFT', cgColor));
+
+    // wheels
+    els.push(wheel(steerWx));
+    els.push(wheel(driveWx));
+    els.push(wheel(driveWx + 30));
+    els.push(wheel(tandemWx));
+    els.push(wheel(tandemWx + 30));
+
+    // axle load callouts
+    const axle = (cx, label, val, over) => {
+      const col = over ? '#c0392b' : '#1a1a1e';
+      return E('g', { key: 'ax' + cx },
+        E('line', { x1: cx, y1: ground + 30, x2: cx, y2: ground + 60, stroke: col, strokeWidth: 0.5, strokeDasharray: '2 2' }),
+        E('rect', { x: cx - 30, y: ground + 60, width: 60, height: 30, rx: 4, fill: over ? '#fdecea' : '#FBFBFD', stroke: col, strokeWidth: 0.6, style: over ? { animation: 'fv-warn 1.4s ease-in-out infinite' } : undefined }),
+        E('text', { x: cx, y: ground + 72, textAnchor: 'middle', fontFamily: MONO, fontSize: 7.5, fill: '#9a9aa2' }, label),
+        E('text', { x: cx, y: ground + 84, textAnchor: 'middle', fontFamily: MONO, fontSize: 10, fontWeight: 600, fill: col }, this.fmt(val))
+      );
+    };
+    els.push(axle(steerWx, 'STEER', m.steer, m.steer > this.LIMITS.steer));
+    els.push(axle(driveWx + 15, 'DRIVE', m.drive, m.overDrive));
+    els.push(axle(tandemWx + 15, 'TANDEM', m.tandem, m.overTandem));
+
+    return E('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', height: 'auto', display: 'block', overflow: 'visible' }, preserveAspectRatio: 'xMidYMid meet' }, els);
+  }
+
+  renderVals() {
+    const st = this.state;
+    const m = this.compute();
+    const accent = this.props.accent || '#4c8fb8';
+
+    // presets
+    const PRESET_BASE = "cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:6px 10px;transition:all .15s;background:linear-gradient(180deg,#FBFBFD,#ECECF1);color:#4a4a52;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);";
+    const presetDefs = [
+      { label: 'POLB 42k', apply: { container: 'dry40', payload: 42000, bias: 'even', cgShift: 0 } },
+      { label: 'Reefer Full', apply: { container: 'reefer', payload: 42000, bias: 'even', cgShift: 0 } },
+      { label: 'Light 20ft', apply: { container: 'dry20', payload: 24000, bias: 'forward', cgShift: 0 } },
+      { label: 'Tank Bulk', apply: { container: 'tank', payload: 45000, bias: 'rear', cgShift: 0 } }
+    ];
+    const presets = presetDefs.map(p => ({
+      label: p.label, style: PRESET_BASE,
+      onSelect: () => this.setState({ ...p.apply })
+    }));
+
+    // container selector
+    const C_BASE = "display:flex;flex-direction:column;align-items:flex-start;text-align:left;cursor:pointer;font-family:'Inter',sans-serif;border:1px solid rgba(0,0,0,0.08);border-radius:11px;padding:10px 12px;transition:all .15s;";
+    const C_ON = "background:linear-gradient(180deg,#2A2A2E,#141416);color:#F5F5F7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 2px 8px rgba(0,0,0,0.22);";
+    const C_OFF = "background:linear-gradient(180deg,#FBFBFD,#ECECF1);color:#3a3a3e;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 1px 2px rgba(0,0,0,0.04);";
+    const containers = Object.keys(this.CONTAINERS).map(k => ({
+      label: this.CONTAINERS[k].label, sub: this.CONTAINERS[k].sub,
+      onSelect: () => this.setState({ container: k, payload: Math.min(st.payload, this.CONTAINERS[k].maxPay) }),
+      style: C_BASE + (st.container === k ? C_ON : C_OFF)
+    }));
+
+    // sliders
+    const controls = [
+      { key: 'payload', label: 'Payload Weight', value: st.payload, min: 0, max: m.cfg.maxPay, step: 500,
+        display: this.fmt(m.payload) + ' lb', minLabel: '0', maxLabel: this.fmt(m.cfg.maxPay) + ' lb',
+        onInput: e => this.setState({ payload: +e.target.value }) },
+      { key: 'cgShift', label: 'Load Position Trim', value: st.cgShift, min: -12, max: 12, step: 1,
+        display: (st.cgShift > 0 ? '+' : '') + st.cgShift + ' (aft)', minLabel: 'FWD', maxLabel: 'AFT',
+        onInput: e => this.setState({ cgShift: +e.target.value, bias: 'custom' }) }
+    ];
+
+    // bias modes
+    const B_BASE = "cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:8px 6px;transition:all .15s;";
+    const B_ON = "background:linear-gradient(180deg,#2A2A2E,#141416);color:#F5F5F7;box-shadow:inset 0 1px 0 rgba(255,255,255,0.14);";
+    const B_OFF = "background:linear-gradient(180deg,#FBFBFD,#ECECF1);color:#4a4a52;box-shadow:inset 0 1px 0 rgba(255,255,255,0.9);";
+    const biasDefs = [['even','Even'],['forward','Fwd Bias'],['rear','Rear Bias'],['custom','Custom']];
+    const biasModes = biasDefs.map(([k,l]) => ({
+      label: l, onSelect: () => this.setState({ bias: k, cgShift: k === 'custom' ? st.cgShift : 0 }),
+      style: B_BASE + (st.bias === k ? B_ON : B_OFF)
+    }));
+
+    // axle cards
+    const axleCard = (label, val, limit, unit) => {
+      const over = val > limit;
+      const near = !over && val > limit * 0.93;
+      const color = over ? '#c0392b' : (near ? '#b8874c' : '#1a1a1e');
+      return { label, value: this.fmt(val), unit: unit || 'lb', color,
+        border: over ? '#c0392b' : 'rgba(0,0,0,0.06)',
+        status: over ? '⚠ OVER LIMIT' : (near ? 'NEAR LIMIT' : 'WITHIN LIMIT ✓') };
+    };
+    const axleCards = [
+      axleCard('STEER AXLE', m.steer, this.LIMITS.steer),
+      axleCard('DRIVE AXLE', m.drive, this.LIMITS.drive),
+      axleCard('TRAILER TANDEM', m.tandem, this.LIMITS.tandem)
+    ];
+
+    // impacts
+    const impacts = [
+      { label: 'Δ ENERGY vs BASELINE', value: (m.dKwhMi >= 0 ? '+' : '') + m.dKwhMi.toFixed(2), unit: 'kWh/mi',
+        delta: m.dKwhMi > 0.05 ? 'higher consumption' : 'near baseline', deltaColor: m.dKwhMi > 0.15 ? '#c0392b' : '#8a8a92' },
+      { label: 'CAJON GRADE PERFORMANCE', value: '−' + m.gradeLossPct.toFixed(1), unit: '%',
+        delta: m.gradeLossPct > 6 ? 'climb speed impacted' : 'acceptable', deltaColor: m.gradeLossPct > 6 ? '#c0392b' : '#3f9b6b' },
+      { label: 'GROSS COMBINED WEIGHT', value: this.fmt(m.gcw), unit: 'lb',
+        delta: m.overGcw ? '⚠ exceeds 82,000 lb' : (this.LIMITS.gcw - m.gcw) < 4000 ? 'near legal max' : 'legal',
+        deltaColor: m.overGcw ? '#c0392b' : '#3f9b6b' },
+      { label: 'RANGE (128 mi corridor)', value: (128 - m.dKwhMi * 128 / 2.4).toFixed(0), unit: 'mi margin',
+        delta: 'to next charger', deltaColor: '#8a8a92' }
+    ];
+
+    // recommendation / warning
+    let warnState = 'ok';
+    if (m.overGcw || m.overDrive || m.overTandem) warnState = 'crit';
+    else if (m.highCg || m.frac > 0.68 || m.frac < 0.34) warnState = 'warn';
+
+    const warnMap = {
+      ok: { icon: '✓', color: '#3f9b6b', title: 'Load Optimal',
+        body: 'Distribution is within axle limits and CG height is safe. Configuration is efficiency-balanced for the POLB→Barstow corridor.',
+        box: 'background:#f0f7f2;border:1px solid rgba(63,155,107,0.35);' },
+      warn: { icon: '⚠', color: '#b8874c', title: 'Review Distribution',
+        body: m.highCg ? 'Center of gravity is high for this container type — reduce descent speed on the Cajon grade and favor stability trim.' : 'Load bias is skewed. Consider Auto-Balance to recenter axle loads and reduce tire wear.',
+        box: 'background:#fbf6ee;border:1px solid rgba(184,135,76,0.4);' },
+      crit: { icon: '⛔', color: '#c0392b', title: 'Limit Exceeded',
+        body: 'One or more axle groups (or GCW) exceed legal limits. Reduce payload or shift load forward before dispatch — this configuration is not CARB/DOT compliant.',
+        box: 'background:#fdecea;border:1px solid rgba(192,57,43,0.4);' }
+    };
+    const wm = warnMap[warnState];
+    const regenBias = warnState === 'crit' ? '— hold —' : (m.frac > 0.6 ? 'Rear +15% regen' : m.frac < 0.42 ? 'Front +10% brake' : 'Balanced 50/50');
+
+    // load history (actuals) — Δ measured against the current configuration's modeled kWh/mi
+    const modeledKwhMi = 2.20 + m.dKwhMi;
+    const RUNS = [
+      { date:'06-24', route:'Barstow', driver:'M. Ortiz', payload:'42k dry', dist:128, act:2.31 },
+      { date:'06-23', route:'Inland Empire', driver:'D. Chen', payload:'38k dry', dist:62, act:1.96 },
+      { date:'06-21', route:'Las Vegas', driver:'R. Silva', payload:'42k reefer', dist:272, act:2.58 },
+      { date:'06-20', route:'Barstow', driver:'A. Patel', payload:'44k dry', dist:128, act:2.44 },
+      { date:'06-18', route:'Inland Empire', driver:'M. Ortiz', payload:'24k light', dist:62, act:1.74 },
+      { date:'06-16', route:'Las Vegas', driver:'D. Chen', payload:'45k tank', dist:272, act:2.63 },
+      { date:'06-14', route:'Barstow', driver:'R. Silva', payload:'42k reefer', dist:128, act:2.49 },
+      { date:'06-12', route:'Inland Empire', driver:'A. Patel', payload:'40k dry', dist:62, act:1.88 }
+    ];
+    const loadRuns = RUNS.map(r => {
+      const d = r.act - modeledKwhMi;
+      return { ...r, payload: r.payload, dist: r.dist + ' mi', act: r.act.toFixed(2),
+        delta: (d >= 0 ? '+' : '') + d.toFixed(2), deltaColor: d <= 0 ? '#3f9b6b' : '#c0392b' };
+    });
+    const avgAct = RUNS.reduce((a, r) => a + r.act, 0) / RUNS.length;
+    const best = RUNS.reduce((a, r) => r.act < a.act ? r : a);
+    const loadStats = [
+      { label: 'FLEET AVG', value: avgAct.toFixed(2), unit: 'kWh/mi' },
+      { label: 'BEST RUN', value: best.act.toFixed(2), unit: best.driver },
+      { label: 'MODELED', value: modeledKwhMi.toFixed(2), unit: 'this load' },
+      { label: 'RUNS LOGGED', value: RUNS.length, unit: '30d' }
+    ];
+
+    return {
+      accent, canvasRef: this.canvasRef,
+      presets, containers, controls, biasModes,
+      containerLabel: m.cfg.label, loadRuns, loadStats,
+      isReefer: m.cfg.reefer, reefer: st.reefer, reeferDisplay: st.reefer + '°F',
+      onReefer: e => this.setState({ reefer: +e.target.value }),
+      diagram: this.buildDiagram(m),
+      gcwDisplay: this.fmt(m.gcw) + ' lb',
+      axleCards, impacts,
+      warnIcon: wm.icon, warnColor: wm.color, warnTitle: wm.title, warnBody: wm.body, regenBias,
+      warnBoxStyle: 'border-radius:12px;padding:13px 15px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),0 1px 2px rgba(0,0,0,0.04);' + wm.box,
+      toast: st.toast,
+      autoEff: () => { this.setState({ bias: 'forward', cgShift: 0 }); this.flash('⌁ Balanced for efficiency'); },
+      autoStab: () => { this.setState({ bias: 'even', cgShift: 0 }); this.flash('⚖ Balanced for stability'); },
+      applyLoad: () => this.flash('✓ Load applied to current simulation')
+    };
+  }
+}
+</script>
+</body>
+</html>
