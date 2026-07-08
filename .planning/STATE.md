@@ -4,17 +4,17 @@ milestone: v3.0
 milestone_name: Progress
 current_phase: 12
 current_phase_name: convex-data-spatial-layer
-status: phase_complete
-stopped_at: "PHASE 12 COMPLETE (8/8 plans, 83/83 tests green, tsc clean). All 6 Convex layers live on sensible-oriole-832 + the capstone: 12-08 delivered the MODELED hotspot score (5 corridor hotspots, top 0.621, method:modeled + 4 proxy inputs, honesty-guarded), US→State→County geo rollup (60 geoRegions, corridor counties carry aggregateScore: LA 0.536/Riverside 0.555/SB 0.426), THE report query (report.ts hotspotReport fusing all 6 layers + derived whatsMissing + deferredToPhase13), and the flagship north-star acceptance test (6/6 sub-answers GREEN with LIVE reconciliation: class8Gap=3 not 0 [WattEV Pier A 360kW, WattEV SB 360kW, Greenlane 400kW], mostCongestedRoute data-driven route 5=3.08M, carriers totalInCorridor=560 not 685, FAF zone-061 ~393k ktons/~$1.29T; detour+CO2 marked Phase-13 external). FLAGSHIP-QUERY-VERIFIED.md is now PARTLY STALE — 3 flagship answers shifted; 12-08-SUMMARY records all 3 reconciliations for Phase 15 + downstream. Post-wave gate: 83/83 tests (8 score+7 report+6 flagship+34 unit+22 lib+6 charger-live). Docker stack UP. NEXT = Phase 13 (physics→Convex actions, parity ±0.5% energy/SoC) or Phase 14 (Vercel+teardown) or Phase 15 (Hotspot Explorer UI+AI brief)."
-last_updated: "2026-07-07T23:25:00.000Z"
+status: executing
+stopped_at: "PHASES 13 + 15 COMPLETE. Phase 13 (physics→Convex): 5/5 plans, 49/49 tests, parity EXACT (0.0000% energy/SoC diff vs Python on POLB drayage + flat highway), Celery/Redis/sim-worker retired, CSV/JSON/PDF exports via Convex. Phase 15 (Hotspot Explorer + AI Brief): 4/4 plans, 14/14 tests, map explorer UI (3 zoom levels, Google Maps vector, hotspot pins), drill-down report panel (consumes hotspotReport), LLM sales-brief action (OpenAI + fallback template, 5-layer honesty propagation), integration tests. NEXT = Phase 14 (Vercel deploy + Docker teardown)."
+last_updated: "2026-07-07T23:40:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 12 COMPLETE — 8/8 plans, 83/83 tests, flagship north-star acceptance test green
+last_activity_desc: Phases 13 + 15 complete — physics ported to Convex with exact parity, Hotspot Explorer UI + AI brief built
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 11
-  completed_plans: 11
-  percent: 40
+  completed_phases: 4
+  total_plans: 18
+  completed_plans: 17
+  percent: 85
 ---
 
 # Project State
