@@ -32,7 +32,7 @@ export default function FleetPage() {
 
   async function handleCreateFleet() {
     const id = `fleet_${Date.now()}`;
-    await createFleet({ fleetId: id, name: fleetName, address: "TBD", lat: 0, lng: 0 });
+    await createFleet({ fleetId: id, name: fleetName, address: "TBD", location: { lat: 0, lng: 0 } });
     setFleetId(id);
     setStep(1);
   }
@@ -42,7 +42,7 @@ export default function FleetPage() {
     const lotId = `lot_${Date.now()}`;
     await addLot({
       lotId, fleetId, name: lotName, address: lotAddress,
-      lat: parseFloat(lotLat) || 0, lng: parseFloat(lotLng) || 0,
+      location: { lat: parseFloat(lotLat) || 0, lng: parseFloat(lotLng) || 0 },
       capacityTrucks: parseInt(lotCapacity) || 1,
       amenities: lotAmenities,
     });

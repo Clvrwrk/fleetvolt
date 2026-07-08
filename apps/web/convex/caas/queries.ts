@@ -60,7 +60,7 @@ export const listZonesByPriority = query({
  */
 export const getZoneReport = query({
   args: { zoneId: v.string() },
-  handler: async (ctx, { zoneId }) => {
+  handler: async (ctx, { zoneId }): Promise<Record<string, unknown> | null> => {
     const zone = await ctx.db
       .query("caasDeploymentZones")
       .withIndex("by_zoneId", (q) => q.eq("zoneId", zoneId))

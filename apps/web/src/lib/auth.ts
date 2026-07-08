@@ -7,8 +7,8 @@ import { useEffect, useState, useCallback } from "react";
 // redirect-based auth via the WorkOS hosted login page.
 
 const WORKOS_CLIENT_ID = process.env.NEXT_PUBLIC_WORKOS_CLIENT_ID;
-const REDIRECT_URI = process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI || `${window.location.origin}/callback`;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+const REDIRECT_URI = process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI || "";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "";
 
 export function useWorkOSAuth() {
   const [user, setUser] = useState<null | { id: string; email: string; firstName?: string; lastName?: string }>(null);

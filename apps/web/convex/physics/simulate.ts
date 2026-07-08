@@ -156,7 +156,7 @@ export const simulate = action({
   args: {
     request: v.any(),
   },
-  handler: async (ctx, { request }) => {
+  handler: async (ctx, { request }): Promise<unknown> => {
     const req = request as SimulateRequest;
     const inputsHash = await computeInputsHashAsync(
       req as unknown as Record<string, unknown>,
