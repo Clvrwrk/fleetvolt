@@ -1,19 +1,15 @@
-import type { Metadata } from "next";
-import { PulseSurface } from "@/components/pulse/pulse-surface";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Freight Pulse — FleetVolt Route",
-  description:
-    "West Coast freight corridor pulse: Technical Brand Geometry surface for Class 8 BEV freight flows",
-};
+// ── Phase 16 / Wave 6 / Task 6.2: Dead route cleanup ──────────────────────
+//
+// /pulse → redirect to /caas
+// The old /pulse page was a legacy freight pulse visualization with complex
+// dependencies (gsap, Google Maps, Radix) that is not in any role's sidebar nav.
+// The CaaS dashboard now provides the primary analytics view for CaaS users.
+// This redirect prevents the broken loading behavior and dead-end route.
+//
+// UX checks: NAV-3 (no dead links)
 
-/**
- * /pulse — thin server shell rendering the client PulseSurface.
- *
- * D-06: /pulse ships OPEN in Phase 7 — NO auth guard/redirect. The WorkOS
- * boundary is a Phase 10 change. No Convex hooks here (hooks are client-only,
- * Pitfall #4); PulseSurface is the 'use client' boundary.
- */
 export default function PulsePage() {
-  return <PulseSurface />;
+  redirect("/caas");
 }
