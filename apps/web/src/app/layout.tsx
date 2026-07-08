@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { NavHeader } from "@/components/design/nav-header";
+import { AppShell } from "@/components/nav/app-shell";
+
+// Phase 16 / Wave 1: NavHeader is deprecated — replaced by AppShell.
+// The old nav-header.tsx file is kept but no longer imported.
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,8 +35,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className={`${inter.className} min-w-[1024px] antialiased`}>
         <ConvexClientProvider>
-          <NavHeader />
-          {children}
+          <AppShell>{children}</AppShell>
         </ConvexClientProvider>
       </body>
     </html>
