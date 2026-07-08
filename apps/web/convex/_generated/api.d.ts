@@ -87,6 +87,8 @@ import type * as userData_mutations from "../userData/mutations.js";
 import type * as userData_queries from "../userData/queries.js";
 import type * as userFilters from "../userFilters.js";
 import type * as users_queries from "../users/queries.js";
+import type * as workbench_actions from "../workbench/actions.js";
+import type * as workbench_queries from "../workbench/queries.js";
 
 import type {
   ApiFromModules,
@@ -174,6 +176,8 @@ declare const fullApi: ApiFromModules<{
   "userData/queries": typeof userData_queries;
   userFilters: typeof userFilters;
   "users/queries": typeof users_queries;
+  "workbench/actions": typeof workbench_actions;
+  "workbench/queries": typeof workbench_queries;
 }>;
 
 /**
