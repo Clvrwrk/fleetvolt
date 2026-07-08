@@ -13,7 +13,7 @@
 //   Step 6: Carrier association — carrier-finder near home terminal
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "../../../../convex/_generated/api";
 import { RoutePlannerFrame } from "@/components/design/route-planner-frame";
 import { ScreenHeader } from "@/components/design/screen-header";
 import { FvInsetCard } from "@/components/design/fv-inset-card";
