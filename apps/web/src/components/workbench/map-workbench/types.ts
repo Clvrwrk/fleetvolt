@@ -106,13 +106,38 @@ export type RouteGeometryResult = {
   metadata?: Record<string, unknown>;
 };
 
+export type WorkbenchMapAction =
+  | { type: "set_origin"; place: WorkbenchPlace }
+  | { type: "set_destination"; place: WorkbenchPlace }
+  | { type: "toggle_layer"; layer: WorkbenchLayerId; enabled: boolean }
+  | {
+      type: "focus_bounds";
+      bounds: { north: number; south: number; east: number; west: number };
+    }
+  | { type: "select_asset"; selection: WorkbenchSelection }
+  | { type: "set_layers"; layers: WorkbenchLayerId[] };
+
+export type WorkbenchAiQueryRun = {
+  name: string;
+  args: Record<string, unknown>;
+  resultSummary: string;
+};
+
 export type WorkbenchAiResult = {
   id: string;
   mode: WorkbenchMode;
-  response: string;
+  answerSummary: string;
   draftPatch?: Partial<WorkbenchPlanDraft>;
+  mapActions: WorkbenchMapAction[];
+  cards: WorkbenchResultCard[];
+  queriesRun: WorkbenchAiQueryRun[];
+  fallback: boolean;
+  error?: string | null;
+  model?: string;
+  providerWarnings?: string[];
+  /** @deprecated Prefer answerSummary — kept for transitional callers */
+  response?: string;
   routeGeometry?: RouteGeometryResult;
   resultCards?: WorkbenchResultCard[];
   activeLayers?: WorkbenchLayerId[];
-  providerWarnings?: string[];
 };

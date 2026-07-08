@@ -130,4 +130,83 @@ describe("useMapWorkbenchStore", () => {
     useMapWorkbenchStore.getState().selectAsset(null);
     assert.equal(useMapWorkbenchStore.getState().selectedAsset, null);
   });
+
+  it("applies AI map actions and cards without inventing metrics", () => {
+    const origin = {
+      id: "polb",
+      label: "Port of Long Beach",
+      latitude: 33.7542,
+      longitude: -118.2165,
+      kind: "port" as const,
+      source: "fleetvolt" as const,
+    };
+    const destination = {
+      label: "Barstow",
+      latitude: 34.8958,
+      longitude: -117.0173,
+      kind: "manual" as const,
+      source: "manual" as const,
+    };
+
+    useMapWorkbenchStore.getState().applyAiResult({
+      id: "wbai_test",
+      mode: "driver_day_plan",
+      answerSummary: "Drafted POLB → Barstow.",
+      draftPatch: { origin, destination, notes: "AI draft" },
+      mapActions: [
+        { type: "set_origin", place: origin },
+        { type: "set_destination", place: destination },
+        { type: "set_layers", layers: ["route", "chargers", "parking"] },
+        {
+          type: "focus_bounds",
+          bounds: { north: 35, south: 33, east: -117, west: -119 },
+        },
+      ],
+      cards: [
+        {
+          id: "ai-card",
+          title: "Route draft",
+          summary: "Origin and destination set.",
+          severity: "success",
+          layerId: "route",
+        },
+      ],
+      queriesRun: [],
+      fallback: false,
+      providerWarnings: ["Google route geometry is advisory."],
+    });
+
+    const state = useMapWorkbenchStore.getState();
+    assert.equal(state.draft.origin?.label, "Port of Long Beach");
+    assert.equal(state.draft.destination?.label, "Barstow");
+    assert.deepEqual(state.activeLayers, ["route", "chargers", "parking"]);
+    assert.equal(state.resultCards[0]?.id, "ai-card");
+    assert.equal(state.lastAiSummary, "Drafted POLB → Barstow.");
+    assert.deepEqual(state.focusBounds, {
+      north: 35,
+      south: 33,
+      east: -117,
+      west: -119,
+    });
+    assert.ok(state.providerWarnings.some((w) => /advisory/i.test(w)));
+  });
+
+  it("ignores unknown AI map action types", () => {
+    useMapWorkbenchStore.getState().applyAiResult({
+      id: "wbai_bad",
+      mode: "driver_day_plan",
+      answerSummary: "Ignored bad action",
+      mapActions: [{ type: "drop_table" } as never],
+      cards: [],
+      queriesRun: [],
+      fallback: true,
+    });
+
+    assert.deepEqual(useMapWorkbenchStore.getState().activeLayers, [
+      "route",
+      "chargers",
+      "parking",
+      "pois",
+    ]);
+  });
 });

@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const PROTECTED_PREFIXES = [
   "/planner",
+  "/workbench",
   "/driver",
   "/fleet",
   "/caas",

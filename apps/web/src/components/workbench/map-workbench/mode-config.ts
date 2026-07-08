@@ -4,6 +4,8 @@ import type {
   WorkbenchPlanDraft,
 } from "./types";
 
+export type { WorkbenchMode };
+
 export type WorkbenchModeConfig = {
   mode: WorkbenchMode;
   title: string;

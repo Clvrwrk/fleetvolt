@@ -240,15 +240,22 @@ function MapFocusController({
   mode,
   routeCoordinates,
   selectedAsset,
+  focusBounds,
 }: {
   mode: WorkbenchMode;
   routeCoordinates: RouteCoordinate[];
   selectedAsset: WorkbenchSelection | null;
+  focusBounds: google.maps.LatLngBoundsLiteral | null;
 }) {
   const map = useMap();
 
   useEffect(() => {
     if (!map) {
+      return;
+    }
+
+    if (focusBounds) {
+      map.fitBounds(paddedBounds(focusBounds), 48);
       return;
     }
 
@@ -272,7 +279,7 @@ function MapFocusController({
     }
 
     map.fitBounds(mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS, 36);
-  }, [map, mode, routeCoordinates, selectedAsset]);
+  }, [map, focusBounds, mode, routeCoordinates, selectedAsset]);
 
   return null;
 }
@@ -287,6 +294,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const selectedAsset = useMapWorkbenchStore((state) => state.selectedAsset);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
+  const focusBounds = useMapWorkbenchStore((state) => state.focusBounds);
   const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
 
   useEffect(() => {
@@ -332,6 +340,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             mode={mode}
             routeCoordinates={routeCoordinates}
             selectedAsset={selectedAsset}
+            focusBounds={focusBounds}
           />
           <RouteLayer
             coordinates={routeCoordinates}

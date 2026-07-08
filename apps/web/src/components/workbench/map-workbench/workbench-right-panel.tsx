@@ -148,6 +148,7 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
   const resultCards = useMapWorkbenchStore((state) => state.resultCards);
   const providerWarnings = useMapWorkbenchStore((state) => state.providerWarnings);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
+  const lastAiSummary = useMapWorkbenchStore((state) => state.lastAiSummary);
   const storeMode = useMapWorkbenchStore((state) => state.mode);
   const mode = resolveResultMode(storeMode, searchParams.get("mode"));
   const emptyCards = mode === "caas_gap_map" ? caasInitialCards : mode === "fleet_contract_plan" ? fleetInitialCards : initialCards;
@@ -170,6 +171,18 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        {lastAiSummary ? (
+          <article
+            data-testid="workbench-ai-summary"
+            className="rounded-2xl border border-[var(--fv-accent)]/25 bg-[var(--fv-accent)]/8 p-3 shadow-sm"
+          >
+            <TechnicalLabel>AI summary</TechnicalLabel>
+            <p className="mt-1 text-xs leading-5 text-[var(--fv-graphite)]">{lastAiSummary}</p>
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--fv-steel)]">
+              Cards and map actions are primary
+            </p>
+          </article>
+        ) : null}
         {cards.map((card) => (
           <article
             key={card.id}

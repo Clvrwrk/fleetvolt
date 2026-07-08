@@ -9,6 +9,7 @@ import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import type { WorkbenchLayerId, WorkbenchMode, WorkbenchResultCard } from "./types";
+import { AiCommandBar } from "./ai-command-bar";
 import { ContractConstraints, getFleetContractDefaults } from "./inputs/contract-constraints";
 import { RouteBuilder } from "./inputs/route-builder";
 import { DRIVER_TRUCK_PROFILES, TruckProfileSelect } from "./inputs/truck-profile-select";
@@ -275,6 +276,8 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        <AiCommandBar mode={mode} />
+
         <section className="space-y-2" aria-labelledby="route-builder-heading">
           <div className="flex items-center gap-2" id="route-builder-heading">
             <Route size={16} className="text-[var(--fv-accent)]" />
@@ -378,6 +381,7 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
                 <button
                   key={layer.id}
                   type="button"
+                  data-testid={`workbench-layer-toggle-${layer.id}`}
                   onClick={() => toggleLayer(layer.id)}
                   aria-pressed={isActive}
                   className={cn(

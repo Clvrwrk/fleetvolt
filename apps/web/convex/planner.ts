@@ -240,6 +240,11 @@ OUTPUT FORMAT:
 
 // ── The Convex action ─────────────────────────────────────────────────────────
 
+/**
+ * Grounded AI planner for chat UI. Workbench map-first callers should prefer
+ * `api.workbench.ai.workbenchPlanWithAi`, which wraps this action and projects
+ * the answer into draft patches, map actions, and result cards.
+ */
 export const planWithAi = action({
   args: {
     message: v.string(),
@@ -250,6 +255,32 @@ export const planWithAi = action({
     ),
     context: v.optional(v.string()),
   },
+  returns: v.object({
+    answer: v.string(),
+    visualization: v.object({
+      type: v.union(
+        v.literal("heatmap"),
+        v.literal("route_map"),
+        v.literal("table"),
+        v.literal("text"),
+      ),
+      data: v.any(),
+    }),
+    queries_run: v.array(
+      v.object({
+        name: v.string(),
+        args: v.any(),
+        result_summary: v.string(),
+      }),
+    ),
+    role: v.union(
+      v.literal("driver"),
+      v.literal("fleet_manager"),
+      v.literal("caas"),
+    ),
+    model: v.string(),
+    fallback: v.boolean(),
+  }),
   handler: async (ctx, { message, role, context }): Promise<PlannerResult> => {
     const apiKey = process.env.OPENAI_API_KEY;
     const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
@@ -339,7 +370,7 @@ export const planWithAi = action({
     if (plan.queries.length > 0 && queryRuns.every((r) => r.result_summary.startsWith("ERROR:"))) {
       allQueriesFailed = true;
       const errorAnswer = buildErrorAnswer(firstErrorMessage, plan.queries.length);
-      await ctx.runMutation(api["observability/mutations"].recordQueryHistory, {
+      await ctx.runMutation(api.observability.mutations.recordQueryHistory, {
         queryId,
         role,
         message,
@@ -350,7 +381,7 @@ export const planWithAi = action({
         queriesRun: queryRuns.map((r) => ({ name: r.name, args: r.args, result_summary: r.result_summary })),
       }).catch(() => undefined);
       for (const run of queryRuns.filter((r) => r.result_summary.startsWith("ERROR:"))) {
-        await ctx.runMutation(api["observability/mutations"].recordQueryResponseError, {
+        await ctx.runMutation(api.observability.mutations.recordQueryResponseError, {
           errorId: `qerr_${queryId}_${Math.random().toString(36).slice(2, 8)}`,
           queryId,
           functionName: run.name,
@@ -396,7 +427,7 @@ export const planWithAi = action({
     // ── Step 4: Build visualization data ──────────────────────────────────
     const vizData = buildVisualizationData(plan.visualization, queryResults);
 
-    await ctx.runMutation(api["observability/mutations"].recordQueryHistory, {
+    await ctx.runMutation(api.observability.mutations.recordQueryHistory, {
       queryId,
       role,
       message,
