@@ -17,9 +17,6 @@ const nextConfig: NextConfig = {
     // These are pre-existing and don't affect runtime — fix incrementally.
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 };
 
 export default nextConfig;
