@@ -402,7 +402,26 @@ decisions. See `.planning/MILESTONE-CONTEXT.md` for full scoping + locked decisi
   3. Celery worker, sim-worker, and Redis are removed from the stack
   4. CSV/JSON/PDF exports produced via Convex/Vercel path
 
-**Plans**: TBD
+**Plans**: 5/5 planned
+
+Plans:
+
+**Wave 1**
+
+- [ ] 13-01-PLAN.md — Port Python physics core to Convex TS (constants, types, segment builder, physics engine, SoC integrator, KPIs, weather, speed resolver, overrides, inputs hash)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 13-02-PLAN.md — Convex action wrapper + charging planner + feasibility + orchestrator (the simulate action)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 13-03-PLAN.md — Parity validation: Python vs Convex TS (±0.5% energy/SoC, exact tier/stop count)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 13-04-PLAN.md — Retire Celery/Redis/sim-worker from docker-compose
+- [ ] 13-05-PLAN.md — CSV/JSON/PDF exports via Convex/Vercel path
 
 ### Phase 14: Vercel Deploy + Decommission Docker
 
@@ -446,7 +465,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 |-------|----------------|--------|-----------|
 | 11. Google Maps App-Wide + Routing | DONE | ✅ code verified (visual check deferred to 14) | 2026-07-07 |
 | 12. Convex Data + Spatial Layer | 0/TBD | Scoped | - |
-| 13. Physics Engine → Convex Actions | 0/TBD | Not started | - |
+| 13. Physics Engine → Convex Actions | 5/5 planned | Planned | - |
 | 14. Vercel Deploy + Decommission Docker | 0/TBD | Not started | - |
 | 15. Hotspot Explorer (UI + AI sales brief) | 0/TBD | Scoped (new, 2026-07-07) | - |
 
