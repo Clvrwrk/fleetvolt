@@ -17,9 +17,11 @@
 // weakening any of the four existing required-field rules.
 import { Infer, v } from "convex/values";
 
-/** The thirteen allowed provenance sources; SIMULATED/ESTIMATE discriminate
+/** The allowed provenance sources; SIMULATED/ESTIMATE discriminate
  *  synthetic values from measured ones (SRC-04). AFDC/OSM/Census/NATD were
- *  added in Phase 12 (P12-01) for the converged data+spatial layer. */
+ *  added in Phase 12 (P12-01) for the converged data+spatial layer.
+ *  CARB (California Air Resources Board) added in P-ROLES for air-district
+ *  geo enrichment. */
 export const PROVENANCE_SOURCES = [
   "FAF5",
   "Caltrans_AADT",
@@ -34,6 +36,7 @@ export const PROVENANCE_SOURCES = [
   "OSM",
   "Census",
   "NATD",
+  "CARB",
 ] as const;
 
 export type ProvenanceSource = (typeof PROVENANCE_SOURCES)[number];
@@ -67,6 +70,7 @@ export const provenance = v.object({
     v.literal("OSM"),
     v.literal("Census"),
     v.literal("NATD"),
+    v.literal("CARB"),
   ),
   year: v.optional(v.number()), // dataset vintage
   fetchedAt: v.number(), // epoch ms of ingest

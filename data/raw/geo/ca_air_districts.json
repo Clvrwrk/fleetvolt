@@ -1,0 +1,287 @@
+{
+  "description": "California Air Resources Board (CARB) air district boundaries mapped to county FIPS codes. Derived from CARB air district map (public data). Each entry has: code (district abbreviation), name (full district name), counties (array of {fips, countyName}). CA state FIPS = '06'.",
+  "source": "California Air Resources Board — Air Districts Map",
+  "sourceUrl": "https://ww2.arb.ca.gov/applications/california-air-districts-map",
+  "airDistricts": [
+    {
+      "code": "SCAQMD",
+      "name": "South Coast Air Quality Management District",
+      "counties": [
+        { "fips": "06037", "county": "Los Angeles" },
+        { "fips": "06059", "county": "Orange" },
+        { "fips": "06065", "county": "Riverside" },
+        { "fips": "06071", "county": "San Bernardino (partial — western SB Valley)" }
+      ]
+    },
+    {
+      "code": "BAAQMD",
+      "name": "Bay Area Air Quality Management District",
+      "counties": [
+        { "fips": "06001", "county": "Alameda" },
+        { "fips": "06013", "county": "Contra Costa" },
+        { "fips": "06041", "county": "Marin" },
+        { "fips": "06055", "county": "Napa" },
+        { "fips": "06075", "county": "San Francisco" },
+        { "fips": "06081", "county": "San Mateo" },
+        { "fips": "06085", "county": "Santa Clara" },
+        { "fips": "06095", "county": "Solano (partial — southern)" },
+        { "fips": "06097", "county": "Sonoma (partial — southern)" }
+      ]
+    },
+    {
+      "code": "SJVAPCD",
+      "name": "San Joaquin Valley Air Pollution Control District",
+      "counties": [
+        { "fips": "06019", "county": "Fresno" },
+        { "fips": "06029", "county": "Kern" },
+        { "fips": "06031", "county": "Kings" },
+        { "fips": "06039", "county": "Madera" },
+        { "fips": "06047", "county": "Merced" },
+        { "fips": "06077", "county": "San Joaquin" },
+        { "fips": "06099", "county": "Stanislaus" },
+        { "fips": "06107", "county": "Tulare" }
+      ]
+    },
+    {
+      "code": "SDAPCD",
+      "name": "San Diego County Air Pollution Control District",
+      "counties": [
+        { "fips": "06073", "county": "San Diego" }
+      ]
+    },
+    {
+      "code": "AQMD",
+      "name": "Sacramento Metropolitan Air Quality Management District",
+      "counties": [
+        { "fips": "06067", "county": "Sacramento" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Ventura County Air Pollution Control District",
+      "counties": [
+        { "fips": "06111", "county": "Ventura" }
+      ]
+    },
+    {
+      "code": "MDAQMD",
+      "name": "Mojave Desert Air Quality Management District",
+      "counties": [
+        { "fips": "06071", "county": "San Bernardino (partial — desert region)" },
+        { "fips": "06071", "county": "San Bernardino (note: SCAQMD covers western, MDAQMD covers desert)" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Imperial County Air Pollution Control District",
+      "counties": [
+        { "fips": "06025", "county": "Imperial" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Santa Barbara County Air Pollution Control District",
+      "counties": [
+        { "fips": "06083", "county": "Santa Barbara" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Monterey Bay Air Resources District",
+      "counties": [
+        { "fips": "06053", "county": "Monterey" },
+        { "fips": "06069", "county": "San Benito" },
+        { "fips": "06087", "county": "Santa Cruz" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Northern Sierra Air Quality Management District",
+      "counties": [
+        { "fips": "06057", "county": "Nevada" },
+        { "fips": "06091", "county": "Sierra" },
+        { "fips": "06101", "county": "Plumas" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Butte County Air Quality Management District",
+      "counties": [
+        { "fips": "06007", "county": "Butte" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Shasta County Air Quality Management District",
+      "counties": [
+        { "fips": "06089", "county": "Shasta" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Placer County Air Pollution Control District",
+      "counties": [
+        { "fips": "06061", "county": "Placer" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "El Dorado County Air Quality Management District",
+      "counties": [
+        { "fips": "06017", "county": "El Dorado" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Yolo-Solano Air Quality Management District",
+      "counties": [
+        { "fips": "06113", "county": "Yolo" },
+        { "fips": "06095", "county": "Solano (partial — eastern)" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Feather River Air Quality Management District",
+      "counties": [
+        { "fips": "06101", "county": "Plumas (partial — southern)" },
+        { "fips": "06021", "county": "Glenn" },
+        { "fips": "06101", "county": "Plumas" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Colusa County Air Pollution Control District",
+      "counties": [
+        { "fips": "06011", "county": "Colusa" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Tuolumne County Air Pollution Control District",
+      "counties": [
+        { "fips": "06109", "county": "Tuolumne" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Calaveras County Air Pollution Control District",
+      "counties": [
+        { "fips": "06009", "county": "Calaveras" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Lake County Air Quality Management District",
+      "counties": [
+        { "fips": "06033", "county": "Lake" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Mendocino County Air Quality Management District",
+      "counties": [
+        { "fips": "06045", "county": "Mendocino" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Humboldt County Air Quality Management District",
+      "counties": [
+        { "fips": "06023", "county": "Humboldt" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Siskiyou County Air Pollution Control District",
+      "counties": [
+        { "fips": "06093", "county": "Siskiyou" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Tehama County Air Pollution Control District",
+      "counties": [
+        { "fips": "06103", "county": "Tehama" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Lassen County Air Pollution Control District",
+      "counties": [
+        { "fips": "06035", "county": "Lassen" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Modoc County Air Pollution Control District",
+      "counties": [
+        { "fips": "06049", "county": "Modoc" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Sutter County Air Pollution Control District",
+      "counties": [
+        { "fips": "06101", "county": "Sutter" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Yuba County Air Quality Management District",
+      "counties": [
+        { "fips": "06115", "county": "Yuba" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Amador County Air Pollution Control District",
+      "counties": [
+        { "fips": "06005", "county": "Amador" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Mariposa County Air Pollution Control District",
+      "counties": [
+        { "fips": "06043", "county": "Mariposa" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Inyo County Air Pollution Control District",
+      "counties": [
+        { "fips": "06027", "county": "Inyo" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Mono County Air Pollution Control District",
+      "counties": [
+        { "fips": "06051", "county": "Mono" }
+      ]
+    },
+    {
+      "code": "GBUAPCD",
+      "name": "Great Basin Unified Air Pollution Control District",
+      "counties": [
+        { "fips": "06027", "county": "Inyo (partial)" },
+        { "fips": "06051", "county": "Mono (partial)" },
+        { "fips": "06109", "county": "Tuolumne (partial)" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Del Norte County Air Quality Management District",
+      "counties": [
+        { "fips": "06015", "county": "Del Norte" }
+      ]
+    },
+    {
+      "code": "APCD",
+      "name": "Trinity County Air Pollution Control District",
+      "counties": [
+        { "fips": "06105", "county": "Trinity" }
+      ]
+    }
+  ]
+}

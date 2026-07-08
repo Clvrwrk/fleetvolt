@@ -1,6 +1,7 @@
 data/raw/*
 !data/raw/nrel/
 !data/raw/elevation/
+!data/raw/geo/
 data/raw/nrel/*
 !data/raw/nrel/chargers_sample.csv
 data/raw/elevation/*
