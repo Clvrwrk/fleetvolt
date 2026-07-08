@@ -30,7 +30,7 @@ export default function CaasPage() {
         </div>
         <div className="p-4 rounded-lg bg-[var(--fv-surface,#1a1a2e)] border border-[var(--fv-stroke,#2a2a3e)]">
           <TrendingUp size={20} className="text-[var(--fv-accent,#3b82f6)] mb-2" />
-          <div className="text-2xl font-bold text-[var(--fv-text,#e0e0e8)]">{hotspots ? Math.max(...hotspots.map((h: { score: number }) => h.score)).toFixed(3) : "—"}</div>
+          <div className="text-2xl font-bold text-[var(--fv-text,#e0e0e8)]">{hotspots ? Math.max(...hotspots.map((h: { score: number | undefined }) => h.score ?? 0)).toFixed(3) : "—"}</div>
           <div className="text-sm text-[var(--fv-text-muted,#888)]">Top hotspot score</div>
         </div>
       </div>
@@ -40,7 +40,7 @@ export default function CaasPage() {
         <div className="p-4 rounded-lg bg-[var(--fv-surface,#1a1a2e)] border border-[var(--fv-stroke,#2a2a3e)]">
           <h2 className="font-semibold text-[var(--fv-text,#e0e0e8)] mb-3">Modeled Dwell Hotspots</h2>
           <div className="space-y-2">
-            {(hotspots ?? []).slice(0, 5).map((h: { _id: string; title: string; score: number; location?: { lat: number; lng: number } }) => (
+            {(hotspots ?? []).slice(0, 5).map((h: { _id: string; title: string; score: number | undefined; location?: { lat: number; lng: number } }) => (
               <div key={h._id} className="flex items-center justify-between p-2 rounded bg-[var(--fv-bg,#0d0d1a)]">
                 <div>
                   <div className="text-sm text-[var(--fv-text,#e0e0e8)]">{h.title}</div>
@@ -48,9 +48,9 @@ export default function CaasPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-20 h-2 rounded-full bg-[var(--fv-bg,#0d0d1a)] overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-yellow-500 to-red-500" style={{ width: `${h.score * 100}%` }} />
+                    <div className="h-full bg-gradient-to-r from-yellow-500 to-red-500" style={{ width: `${h.score ?? 0 * 100}%` }} />
                   </div>
-                  <span className="text-sm font-mono text-[var(--fv-text,#e0e0e8)]">{h.score.toFixed(3)}</span>
+                  <span className="text-sm font-mono text-[var(--fv-text,#e0e0e8)]">{h.score ?? 0.toFixed(3)}</span>
                 </div>
               </div>
             ))}
