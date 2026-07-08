@@ -1,17 +1,33 @@
 "use client";
 
-import { useQuery } from "convex/react";
+// ── Phase 16 / Wave 4 / Task 4.3: CaaS Dashboard ───────────────────────────
+//
+// Adds: welcome header + role badge, KPI row at top, PrimaryButton CTA.
+// Keeps existing hotspot/county content below the KPI row.
+// Registration/setup flow moves to /caas/setup.
+//
+// UX checks: HOME-2, VIS-1, VIS-3 (F-pattern), COG-1 (4 KPIs)
+// UX principles: Miller's Law (4 KPIs), Von Restorff (one primary CTA)
+
 import Link from "next/link";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { useWorkOSAuth } from "@/lib/auth";
 import { FramedPanel } from "@/components/design/framed-panel";
 import { SkeuomorphicCard } from "@/components/design/skeuomorphic-card";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { KpiCell } from "@/components/design/kpi-cell";
+import { PrimaryButton } from "@/components/design/primary-button";
 import { StatusBadge } from "@/components/design/status-badge";
+import { ArrowRight, Zap } from "lucide-react";
 
 export default function CaasPage() {
+  const { displayName, loading } = useWorkOSAuth();
+
   const hotspots = useQuery(api.hotspots.queries.listModeledHotspots, {});
   const geoRegions = useQuery(api.geo.queries.listGeoRegions, {});
+
+  const greeting = displayName ? `Welcome, ${displayName}` : "CaaS Dashboard";
 
   const counties = (geoRegions ?? []).filter((r: { level: string }) => r.level === "county");
   const corridorCounties = (counties as { fips: string; name: string; aggregateScore?: number; airDistrict?: string }[])
@@ -19,30 +35,56 @@ export default function CaasPage() {
 
   const topScore = hotspots ? Math.max(...hotspots.map((h: { score: number | undefined }) => h.score ?? 0)).toFixed(3) : "—";
 
+  // Derived KPIs
+  const totalChargersModeled = hotspots?.length ?? 0;
+  const class8GapSites = hotspots ? hotspots.filter((h: { score: number | undefined }) => (h.score ?? 0) > 0.7).length : 0;
+  const activeDeploymentZones = 0; // No CaaS company created yet
+  const avgCorridorScore = corridorCounties.length > 0
+    ? (corridorCounties.reduce((sum, c) => sum + (c.aggregateScore ?? 0), 0) / corridorCounties.length).toFixed(3)
+    : "—";
+
+  // ── Loading state ──────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <FramedPanel maxWidthClass="max-w-[1100px]">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 w-48 rounded bg-[var(--fv-surface-muted)]" />
+          <div className="flex gap-2.5">
+            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
+            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
+            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
+            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
+          </div>
+          <div className="h-48 rounded-lg bg-[var(--fv-surface-muted)]" />
+        </div>
+      </FramedPanel>
+    );
+  }
+
   return (
     <FramedPanel maxWidthClass="max-w-[1100px]">
-      {/* Header bar */}
+      {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between border-b border-black/8 pb-4">
         <div className="flex items-baseline gap-3.5">
           <span className="text-[19px] font-bold tracking-tight text-[var(--fv-graphite)]">
-            Charging-as-a-Service
+            {greeting}
           </span>
-          <TechnicalLabel>DEPLOYMENT ZONES & GAP ANALYSIS</TechnicalLabel>
+          <StatusBadge variant="warn">CaaS</StatusBadge>
         </div>
-        <StatusBadge variant="ok">
-          Live AFDC + NATD Data
-        </StatusBadge>
+        <Link href="/caas/setup" className="text-xs text-[var(--fv-steel)] hover:text-[var(--fv-accent)]">
+          CaaS settings →
+        </Link>
       </div>
 
-      {/* KPI strip */}
-      <div className="mt-5 flex gap-2.5">
-        <KpiCell label="MODELED HOTSPOTS" value={hotspots?.length ?? 0} className="flex-1" />
-        <KpiCell label="CORRIDOR COUNTIES" value={corridorCounties.length} className="flex-1" />
-        <KpiCell label="TOP SCORE" value={topScore} className="flex-1" />
-        <KpiCell label="SITES ANALYZED" value="1,847" className="flex-1" />
+      {/* ── KPI Row (4 cells — Miller's Law) ─────────────────────────────── */}
+      <div className="mt-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <KpiCell label="TOTAL CHARGERS MODELED" value={totalChargersModeled} />
+        <KpiCell label="CLASS-8 GAP SITES" value={class8GapSites} />
+        <KpiCell label="ACTIVE DEPLOYMENT ZONES" value={activeDeploymentZones} />
+        <KpiCell label="AVG CORRIDOR SCORE" value={avgCorridorScore} />
       </div>
 
-      {/* Two-column data panels */}
+      {/* ── Two-column data panels (existing content preserved) ──────────── */}
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Hotspots */}
         <SkeuomorphicCard padding="lg">
@@ -97,9 +139,7 @@ export default function CaasPage() {
                 <div>
                   <div className="text-sm text-[var(--fv-graphite)]">{c.name}</div>
                   {c.airDistrict && (
-                    <div className="font-mono text-[10px] text-[var(--fv-steel)]">
-                      {c.airDistrict}
-                    </div>
+                    <div className="font-mono text-[10px] text-[var(--fv-steel)]">{c.airDistrict}</div>
                   )}
                 </div>
                 <span className="font-mono text-[11px] font-semibold text-[var(--fv-slate)]">
@@ -116,7 +156,7 @@ export default function CaasPage() {
         </SkeuomorphicCard>
       </div>
 
-      {/* AI Planner CTA */}
+      {/* ── Primary CTA: Open AI Planner (Von Restorff) ──────────────────── */}
       <SkeuomorphicCard padding="lg" className="mt-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -128,8 +168,11 @@ export default function CaasPage() {
               with top carriers and siting recommendations.
             </p>
           </div>
-          <Link href="/planner" className="fv-btn-primary no-underline inline-block" style={{ width: "auto", padding: "12px 20px" }}>
-            Open AI Planner →
+          <Link href="/planner" className="no-underline inline-block">
+            <PrimaryButton className="flex items-center gap-2">
+              <Zap size={16} />
+              Open AI Planner
+            </PrimaryButton>
           </Link>
         </div>
       </SkeuomorphicCard>
