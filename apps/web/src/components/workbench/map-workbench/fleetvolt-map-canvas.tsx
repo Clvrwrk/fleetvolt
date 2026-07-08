@@ -1,0 +1,368 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import {
+  APIProvider,
+  Map,
+  RenderingType,
+  useMap,
+} from "@vis.gl/react-google-maps";
+import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
+import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
+import { cn } from "@/lib/utils";
+import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
+import { GeoRegionLayer, type WorkbenchGeoRegion } from "./layers/geo-region-layer";
+import { RouteLayer } from "./layers/route-layer";
+import { SelectedAssetCard } from "./layers/selected-asset-card";
+import type {
+  RouteCoordinate,
+  WorkbenchMode,
+  WorkbenchSelection,
+} from "./types";
+
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAP_ID;
+
+const CA_BOUNDS: google.maps.LatLngBoundsLiteral = {
+  north: 42.1,
+  south: 32.3,
+  east: -114.1,
+  west: -124.6,
+};
+
+const US_BOUNDS: google.maps.LatLngBoundsLiteral = {
+  north: 49.5,
+  south: 24.4,
+  east: -66.5,
+  west: -125.0,
+};
+
+const SAMPLE_ROUTES: Record<WorkbenchMode, RouteCoordinate[]> = {
+  driver_day_plan: [
+    { latitude: 33.7542, longitude: -118.2165 },
+    { latitude: 33.9022, longitude: -117.8854 },
+    { latitude: 34.1064, longitude: -117.5931 },
+    { latitude: 34.8958, longitude: -117.0173 },
+  ],
+  fleet_contract_plan: [
+    { latitude: 33.7542, longitude: -118.2165 },
+    { latitude: 34.0556, longitude: -117.1825 },
+    { latitude: 34.5361, longitude: -117.2912 },
+    { latitude: 35.3733, longitude: -119.0187 },
+  ],
+  caas_gap_map: [
+    { latitude: 37.8044, longitude: -122.2712 },
+    { latitude: 37.7397, longitude: -121.4252 },
+    { latitude: 36.7378, longitude: -119.7871 },
+    { latitude: 34.0522, longitude: -118.2437 },
+  ],
+};
+
+const SAMPLE_ASSETS: Record<WorkbenchMode, WorkbenchMapAsset[]> = {
+  driver_day_plan: [
+    {
+      id: "charger-ontario-hd",
+      type: "charger",
+      layerId: "chargers",
+      label: "Ontario Class 8 charging plaza",
+      latitude: 34.0573,
+      longitude: -117.6509,
+      subtitle: "350 kW · trailer friendly",
+      metric: "350 kW",
+      metadata: { status: "candidate", access: "trailer friendly", source: "sample layer" },
+    },
+    {
+      id: "parking-fontana-yard",
+      type: "parking",
+      layerId: "parking",
+      label: "Fontana overnight truck parking",
+      latitude: 34.0922,
+      longitude: -117.435,
+      subtitle: "secure parking near I-10",
+      metric: "42 bays",
+      metadata: { siteAccess: "24/7", source: "sample layer" },
+    },
+    {
+      id: "poi-barstow-rest",
+      type: "poi",
+      layerId: "pois",
+      label: "Barstow driver services",
+      latitude: 34.8958,
+      longitude: -117.0173,
+      subtitle: "food · rest · staging",
+      metric: "POI",
+      metadata: { category: "driver amenity", source: "sample layer" },
+    },
+  ],
+  fleet_contract_plan: [
+    {
+      id: "fleet-yard-redlands",
+      type: "fleet-yard",
+      layerId: "fleet-yards",
+      label: "Redlands fleet yard",
+      latitude: 34.0556,
+      longitude: -117.1825,
+      subtitle: "yard return candidate",
+      metric: "Yard",
+      metadata: { dwell: "45 min", source: "sample layer" },
+    },
+    {
+      id: "charger-victorville-hd",
+      type: "charger",
+      layerId: "chargers",
+      label: "Victorville HD charger",
+      latitude: 34.5361,
+      longitude: -117.2912,
+      subtitle: "contract route charge stop",
+      metric: "420 kW",
+      metadata: { status: "candidate", source: "sample layer" },
+    },
+    {
+      id: "highway-i15-flow",
+      type: "highway",
+      layerId: "highways",
+      label: "I-15 freight segment",
+      latitude: 34.2483,
+      longitude: -117.41,
+      subtitle: "high freight intensity",
+      metric: "AADT+",
+      metadata: { modeled: true, source: "sample layer" },
+    },
+  ],
+  caas_gap_map: [
+    {
+      id: "gap-central-valley",
+      type: "class8-gap",
+      layerId: "class8-gaps",
+      label: "Central Valley Class 8 gap",
+      latitude: 36.7378,
+      longitude: -119.7871,
+      subtitle: "modeled charger coverage gap",
+      metric: "Gap",
+      metadata: { method: "modeled", source: "sample layer" },
+    },
+    {
+      id: "carrier-stockton-cluster",
+      type: "carrier",
+      layerId: "carriers",
+      label: "Stockton carrier cluster",
+      latitude: 37.9577,
+      longitude: -121.2908,
+      subtitle: "drayage outreach cluster",
+      metric: "Carriers",
+      metadata: { method: "modeled", source: "sample layer" },
+    },
+    {
+      id: "caas-zone-la-basin",
+      type: "caas-zone",
+      layerId: "caas-zones",
+      label: "LA Basin mobile CaaS zone",
+      latitude: 34.0522,
+      longitude: -118.2437,
+      subtitle: "deployment opportunity",
+      metric: "Zone",
+      metadata: { priority: "medium", source: "sample layer" },
+    },
+  ],
+};
+
+const SAMPLE_REGIONS: WorkbenchGeoRegion[] = [
+  {
+    id: "ca-state-region",
+    name: "California freight opportunity",
+    level: "state",
+    centroid: { latitude: 36.7783, longitude: -119.4179 },
+    bbox: [-124.6, 32.3, -114.1, 42.1],
+    score: 0.82,
+    metadata: { method: "modeled", coverage: "state" },
+  },
+  {
+    id: "la-county-region",
+    name: "Los Angeles County",
+    level: "county",
+    centroid: { latitude: 34.3207, longitude: -118.2248 },
+    bbox: [-118.95, 33.7, -117.65, 34.85],
+    score: 0.73,
+    metadata: { method: "modeled", coverage: "county" },
+  },
+  {
+    id: "san-joaquin-region",
+    name: "San Joaquin freight corridor",
+    level: "county",
+    centroid: { latitude: 37.934, longitude: -121.2722 },
+    bbox: [-121.65, 37.48, -120.91, 38.28],
+    score: 0.58,
+    metadata: { method: "modeled", coverage: "county" },
+  },
+];
+
+type FleetVoltMapCanvasProps = {
+  mode: WorkbenchMode;
+  className?: string;
+};
+
+function boundsForCoordinates(
+  coordinates: RouteCoordinate[],
+): google.maps.LatLngBoundsLiteral | null {
+  if (coordinates.length === 0) {
+    return null;
+  }
+
+  return coordinates.reduce<google.maps.LatLngBoundsLiteral>(
+    (bounds, coordinate) => ({
+      north: Math.max(bounds.north, coordinate.latitude),
+      south: Math.min(bounds.south, coordinate.latitude),
+      east: Math.max(bounds.east, coordinate.longitude),
+      west: Math.min(bounds.west, coordinate.longitude),
+    }),
+    {
+      north: coordinates[0]!.latitude,
+      south: coordinates[0]!.latitude,
+      east: coordinates[0]!.longitude,
+      west: coordinates[0]!.longitude,
+    },
+  );
+}
+
+function paddedBounds(bounds: google.maps.LatLngBoundsLiteral): google.maps.LatLngBoundsLiteral {
+  const latPad = Math.max(0.05, (bounds.north - bounds.south) * 0.18);
+  const lngPad = Math.max(0.05, (bounds.east - bounds.west) * 0.18);
+
+  return {
+    north: bounds.north + latPad,
+    south: bounds.south - latPad,
+    east: bounds.east + lngPad,
+    west: bounds.west - lngPad,
+  };
+}
+
+function MapFocusController({
+  mode,
+  routeCoordinates,
+  selectedAsset,
+}: {
+  mode: WorkbenchMode;
+  routeCoordinates: RouteCoordinate[];
+  selectedAsset: WorkbenchSelection | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    if (
+      selectedAsset &&
+      typeof selectedAsset.latitude === "number" &&
+      typeof selectedAsset.longitude === "number"
+    ) {
+      map.panTo({ lat: selectedAsset.latitude, lng: selectedAsset.longitude });
+      const zoom = map.getZoom();
+      if (typeof zoom !== "number" || zoom < 9) {
+        map.setZoom(10);
+      }
+      return;
+    }
+
+    const routeBounds = boundsForCoordinates(routeCoordinates);
+    if (routeBounds) {
+      map.fitBounds(paddedBounds(routeBounds), 56);
+      return;
+    }
+
+    map.fitBounds(mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS, 36);
+  }, [map, mode, routeCoordinates, selectedAsset]);
+
+  return null;
+}
+
+function visibleLayer(activeLayers: string[], layerId: string): boolean {
+  return activeLayers.includes(layerId);
+}
+
+export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps) {
+  const storeMode = useMapWorkbenchStore((state) => state.mode);
+  const reset = useMapWorkbenchStore((state) => state.reset);
+  const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
+  const selectedAsset = useMapWorkbenchStore((state) => state.selectedAsset);
+  const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
+  const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
+
+  useEffect(() => {
+    if (storeMode !== mode) {
+      reset(mode);
+    }
+  }, [mode, reset, storeMode]);
+
+  const routeCoordinates = routeGeometry?.coordinates.length
+    ? routeGeometry.coordinates
+    : SAMPLE_ROUTES[mode];
+
+  const assets = useMemo(() => SAMPLE_ASSETS[mode], [mode]);
+  const defaultBounds = mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS;
+
+  if (!API_KEY || !MAP_ID) {
+    return (
+      <div
+        data-testid="fleetvolt-map-canvas"
+        className={cn("flex h-full min-h-[420px] w-full items-center justify-center p-4", className)}
+      >
+        <MapTokenMissingBanner />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-testid="fleetvolt-map-canvas"
+      className={cn("relative h-full min-h-[420px] w-full overflow-hidden", className)}
+    >
+      <APIProvider apiKey={API_KEY} version="quarterly">
+        <Map
+          mapId={MAP_ID}
+          renderingType={RenderingType.VECTOR}
+          defaultBounds={defaultBounds}
+          gestureHandling="greedy"
+          disableDefaultUI
+          className="h-full w-full"
+          data-testid="fleetvolt-vector-map"
+        >
+          <MapFocusController
+            mode={mode}
+            routeCoordinates={routeCoordinates}
+            selectedAsset={selectedAsset}
+          />
+          <RouteLayer
+            coordinates={routeCoordinates}
+            visible={visibleLayer(activeLayers, "route")}
+          />
+          <GeoRegionLayer
+            regions={SAMPLE_REGIONS}
+            visible={visibleLayer(activeLayers, "geo-regions")}
+            selectedAsset={selectedAsset}
+            onSelectRegion={selectAsset}
+          />
+          <AssetMarkerLayer
+            assets={assets.filter((asset) => visibleLayer(activeLayers, asset.layerId))}
+            selectedAsset={selectedAsset}
+            onSelectAsset={selectAsset}
+          />
+        </Map>
+      </APIProvider>
+
+      <div className="pointer-events-none absolute left-3 top-3 rounded-2xl border border-black/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur md:left-5 md:top-5">
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--fv-steel)]">
+          Google vector map
+        </div>
+        <div className="mt-1 text-sm font-semibold text-[var(--fv-graphite)]">
+          Shared FleetVolt canvas
+        </div>
+      </div>
+
+      <div className="absolute bottom-5 right-5 z-10">
+        <SelectedAssetCard selection={selectedAsset} onClose={() => selectAsset(null)} />
+      </div>
+    </div>
+  );
+}
