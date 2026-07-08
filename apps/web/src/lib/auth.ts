@@ -25,6 +25,18 @@ const WORKOS_CLIENT_ID = process.env.NEXT_PUBLIC_WORKOS_CLIENT_ID;
 const REDIRECT_URI = process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI || "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "";
 
+function getRedirectUri() {
+  if (REDIRECT_URI) return REDIRECT_URI;
+  if (typeof window !== "undefined") return `${window.location.origin}/callback`;
+  return "";
+}
+
+function getAppUrl() {
+  if (APP_URL) return APP_URL;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "";
+}
+
 export type FleetVoltRole = "driver" | "fleet_manager" | "caas";
 
 export type AuthUser = {
@@ -92,7 +104,7 @@ export function useWorkOSAuth() {
     // Redirect to WorkOS hosted login
     const authUrl = new URL("https://auth.workos.com/user_management/authorize");
     authUrl.searchParams.set("client_id", WORKOS_CLIENT_ID || "");
-    authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
+    authUrl.searchParams.set("redirect_uri", getRedirectUri());
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("provider", "authkit");
     // Pass selected role in state param for the callback to read
