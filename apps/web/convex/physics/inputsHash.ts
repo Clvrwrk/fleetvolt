@@ -1,7 +1,9 @@
 // Canonical SHA-256 inputs hash — port of inputs_hash.py + services/api/src/inputs_hash.ts.
 // Produces the same hash as the Python reference for the test vector.
-
-import { createHash } from "node:crypto";
+//
+// Two exports:
+//   - computeInputsHash (sync, uses node:crypto — for tests/non-Convex)
+//   - computeInputsHashAsync (async, uses Web Crypto — for Convex actions)
 
 export const PHYSICS_VERSION = "phase3-v1";
 export const CHARGER_VERSION = "afdc-static-v1";
@@ -67,7 +69,7 @@ function serializeCanonical(value: JsonValue): string {
   return `{${entries.join(",")}}`;
 }
 
-export function computeInputsHash(
+export function buildPayload(
   scenario: Record<string, unknown>,
   physicsVersion: string,
   chargerVersion: string,
@@ -77,13 +79,31 @@ export function computeInputsHash(
     physics_version: physicsVersion,
     scenario,
   }) as Record<string, JsonValue>;
-
-  const serialized = serializeCanonical(payload);
-  return createHash("sha256").update(serialized, "utf8").digest("hex");
+  return serializeCanonical(payload);
 }
 
-export const TEST_VECTOR_EXPECTED_HASH = computeInputsHash(
-  TEST_VECTOR_SCENARIO,
-  PHYSICS_VERSION,
-  CHARGER_VERSION,
-);
+function bytesToHex(bytes: Uint8Array): string {
+  const hex: string[] = [];
+  for (const b of bytes) {
+    hex.push(b.toString(16).padStart(2, "0"));
+  }
+  return hex.join("");
+}
+
+/** Async hash using Web Crypto API (works in Convex + Node 18+). */
+export async function computeInputsHashAsync(
+  scenario: Record<string, unknown>,
+  physicsVersion: string,
+  chargerVersion: string,
+): Promise<string> {
+  const serialized = buildPayload(scenario, physicsVersion, chargerVersion);
+  const data = new TextEncoder().encode(serialized);
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  return bytesToHex(new Uint8Array(hashBuf));
+}
+
+/** Sync hash — removed (was using node:crypto which Convex can't bundle).
+ *  Use computeInputsHashAsync in Convex actions; tests use inputsHashSync.ts. */
+
+export const TEST_VECTOR_EXPECTED_HASH =
+  "789f520088569f9c6c2ece701ece58a78052a65c0667faaef769ca998039266c";

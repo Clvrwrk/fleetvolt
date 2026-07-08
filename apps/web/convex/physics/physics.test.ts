@@ -20,7 +20,8 @@ import {
   PHYSICS_VERSION,
   TEST_VECTOR_SCENARIO,
   TEST_VECTOR_EXPECTED_HASH,
-} from "./inputsHash";
+} from "../../test-utils/inputsHashSync";
+import { CHARGER_VERSION } from "./inputsHash";
 import { airDensity, forceComponents, segmentForces } from "./physicsEngine";
 import { integrateSoc } from "./socIntegrator";
 import {
