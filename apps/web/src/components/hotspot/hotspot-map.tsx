@@ -21,6 +21,7 @@ import {
   RenderingType,
   useMap,
 } from "@vis.gl/react-google-maps";
+import type { Id } from "../../../convex/_generated/dataModel";
 import {
   zoomLevelForZoom,
   scoreToColor,
@@ -41,7 +42,7 @@ const US_BOUNDS = {
 
 // ── Data types (matching the Convex query returns) ──────────────────────────
 interface HotspotPin {
-  _id: string;
+  _id: Id<"hotspots">;
   title: string;
   location: { lat: number; lng: number };
   score?: number;
@@ -65,7 +66,7 @@ export type HotspotMapProps = {
   onHotspotSelect?: (h: {
     lat: number;
     lng: number;
-    hotspotId: string;
+    hotspotId: Id<"hotspots">;
     title: string;
   }) => void;
 };

@@ -12,16 +12,18 @@ import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useQuery } from "convex/react";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { TechnicalFrame } from "@/components/design/technical-frame";
 import { BlueprintGrid } from "@/components/design/blueprint-grid";
 import { MetadataBlock } from "@/components/design/metadata-block";
 import { HotspotMap } from "./hotspot-map";
+import { HotspotReportPanel } from "./hotspot-report-panel";
 
 export interface SelectedHotspot {
   lat: number;
   lng: number;
-  hotspotId: string;
+  hotspotId: Id<"hotspots">;
   title: string;
 }
 
@@ -95,11 +97,15 @@ export function HotspotExplorer() {
             {selectedHotspot && (
               <div
                 data-testid="hotspot-report-slot"
-                className="w-full lg:w-[380px] shrink-0"
+                className="w-full lg:w-[400px] shrink-0"
               >
-                <p className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
-                  Selected: {selectedHotspot.title} (modeled)
-                </p>
+                <HotspotReportPanel
+                  lat={selectedHotspot.lat}
+                  lng={selectedHotspot.lng}
+                  hotspotId={selectedHotspot.hotspotId}
+                  title={selectedHotspot.title}
+                  onClose={() => setSelectedHotspot(null)}
+                />
               </div>
             )}
           </div>
