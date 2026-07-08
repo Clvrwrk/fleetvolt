@@ -500,7 +500,7 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 
 ### Phase 17: Role-Based Map Workbench — Driver Day Plan, Fleet Contract Plan, CaaS Gap Map
 
-**Goal**: Convert FleetVolt from dashboard/card outputs into a full-viewport, role-specific Google Maps-style planning workbench. Dashboards become launchpads. The workbench is the primary spatial surface for Driver day planning, Fleet contract planning, and CaaS gap/opportunity analysis.
+**Goal**: As a Driver, Fleet Manager, or CaaS planner, I want to open a full-viewport map workbench from my role dashboard, so that I can plan day routes, contracts, and charger gaps on the map instead of in centered cards.
 
 **Mode:** mvp
 

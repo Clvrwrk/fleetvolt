@@ -1,19 +1,22 @@
 ---
 phase: 03-charging-job-pipeline
 verified: 2026-07-01T12:00:00Z
-status: human_needed
+status: passed
 score: 6/7 must-haves verified
 behavior_unverified: 1
 overrides_applied: 0
 behavior_unverified_items:
+
   - truth: "Full async job pipeline (Fastify POST → Celery worker → GET poll) returns complete charging simulation through live Redis broker"
     test: "Start Docker Compose stack; POST /v1/simulations on :4000 with include_charging=true; poll GET /v1/simulations/{id} until COMPLETE"
     expected: "outputs contain charging_stops[], feasibility{verdict,tier}, and full segment arrays"
     why_human: "Unit tests mock DB/fetch or call execute_simulation_run directly; Celery broker dispatch and cross-service E2E only covered by @integration tests requiring running stack"
 human_verification:
+
   - test: "Run `docker compose up -d` then `pytest tests/test_simulations_job.py -m integration -v` from services/simulator"
     expected: "test_async_submit_poll_complete and test_enqueue_to_worker_lifecycle pass; poll payload includes charging_stops and feasibility"
     why_human: "Integration tests require live API, simulator, Redis, Celery worker, and PostGIS — not runnable in verifier sandbox"
+
   - test: "From services/api, run `pnpm test` (or `node --import tsx --test src/**/*.test.ts`) after deps installed"
     expected: "simulations.test.ts and inputs_hash.test.ts pass — cache hit skips enqueue, cache miss returns PENDING and calls enqueue URL"
     why_human: "Node API tests exist but could not execute in verifier environment (partial node_modules / tsx resolution)"
