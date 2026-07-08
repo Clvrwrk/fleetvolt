@@ -1,45 +1,32 @@
-import type { components } from "@fleetvolt/shared-types";
-import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
+import { HomeScreen } from "@/components/home/home-screen";
+import { fetchCorridorPresets } from "@/lib/server-catalog";
 
-type TruckConfigSummary = components["schemas"]["TruckConfigSummary"];
-type CorridorsResponse = components["schemas"]["CorridorsResponse"];
-
-async function fetchTrucks(): Promise<TruckConfigSummary[]> {
-  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+async function fetchChargerCount(): Promise<number> {
+  // Fastify API decommissioned (Phase 14). Charger count comes from Convex
+  // client-side. This server-side fetch is a no-op without API_URL.
+  const apiUrl = process.env.API_URL;
+  if (!apiUrl) return 0;
   try {
-    const response = await fetch(`${apiUrl}/v1/trucks`, { cache: "no-store" });
-    if (!response.ok) {
-      return [];
-    }
-    return (await response.json()) as TruckConfigSummary[];
-  } catch {
-    return [];
-  }
-}
-
-async function fetchCorridors(): Promise<
-  CorridorsResponse["presets"]
-> {
-  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
-  try {
-    const response = await fetch(`${apiUrl}/v1/corridors`, {
+    const response = await fetch(`${apiUrl}/v1/meta/stack`, {
       cache: "no-store",
     });
     if (!response.ok) {
-      return [];
+      return 0;
     }
-    const data = (await response.json()) as CorridorsResponse;
-    return data.presets ?? [];
+    const data = (await response.json()) as {
+      table_counts?: Record<string, number>;
+    };
+    return data.table_counts?.chargers ?? 0;
   } catch {
-    return [];
+    return 0;
   }
 }
 
 export default async function HomePage() {
-  const [trucks, corridors] = await Promise.all([
-    fetchTrucks(),
-    fetchCorridors(),
+  const [corridors, chargerCount] = await Promise.all([
+    fetchCorridorPresets(),
+    fetchChargerCount(),
   ]);
 
-  return <WorkspaceLayout trucks={trucks} corridors={corridors} />;
+  return <HomeScreen corridors={corridors} chargerCount={chargerCount} />;
 }

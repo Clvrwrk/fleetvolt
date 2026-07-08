@@ -20,6 +20,15 @@ export async function fetchRouteGeometry(
   destLon: number,
   signal?: AbortSignal,
 ): Promise<{ coordinates: RouteCoordinates; distance_m: number }> {
+  // The /api/v1/routing/route rewrite (Fastify proxy) is decommissioned (Phase 14).
+  // Route geometry now comes from Convex simulation results or Google Routes API
+  // (client-side). This function returns empty coordinates as a fallback — the
+  // map panel handles the geometry-unavailable state gracefully.
+  const apiUrl = process.env.API_URL;
+  if (!apiUrl) {
+    return { coordinates: [], distance_m: 0 };
+  }
+
   const params = new URLSearchParams({
     origin_lat: String(originLat),
     origin_lon: String(originLon),
@@ -28,7 +37,7 @@ export async function fetchRouteGeometry(
     shape_format: "geojson",
   });
 
-  const res = await fetch(`/api/v1/routing/route?${params}`, { signal });
+  const res = await fetch(`${apiUrl}/v1/routing/route?${params}`, { signal });
   if (!res.ok) {
     throw new Error(`Route fetch failed: ${res.status} ${await res.text()}`);
   }

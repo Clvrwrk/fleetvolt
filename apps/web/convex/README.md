@@ -112,3 +112,44 @@ NOT the prod URL.
 
 > ⚠️ **Manual gate:** `npx convex deploy` and data ingest to prod are human steps.
 > The dev deployment holds all current data; verify prod has data before going live.
+
+## Production Deploy Checklist
+
+> **HUMAN CHECKLIST** — these steps are executed by Chris (or an operator with Vercel +
+> Convex dashboard access). The plan prepares the code; it does NOT execute the live deploy.
+
+1. **Set env vars in Vercel dashboard** (Settings → Environment Variables):
+   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — browser key (referrer-restricted to fleetvolt.network)
+   - `NEXT_PUBLIC_GOOGLE_MAP_ID` — vector map ID
+   - `NEXT_PUBLIC_CONVEX_URL` — the PRODUCTION Convex URL (from step 2 below, NOT dev)
+   - `CONVEX_DEPLOY_KEY` — server-side Convex deploy key (not browser-visible)
+
+2. **Create the Convex production deployment:**
+   ```bash
+   cd apps/web
+   npx convex deploy
+   ```
+   Record the prod URL returned (e.g. `https://fleetvolt-<hash>.convex.cloud`).
+
+3. **Set `NEXT_PUBLIC_CONVEX_URL` in Vercel** to the prod Convex URL from step 2.
+
+4. **Deploy to Vercel:**
+   ```bash
+   npx vercel --prod
+   ```
+   (Or connect the GitHub repo in the Vercel dashboard for auto-deploy on push to `main`.)
+
+5. **Add the `fleetvolt.network` domain** in the Vercel dashboard (Settings → Domains).
+
+6. **Point DNS:** Add an A record or CNAME pointing `fleetvolt.network` to Vercel
+   (Vercel dashboard provides the exact DNS records to add).
+
+7. **Wait for SSL cert provisioning** (automatic via Vercel — typically 1-5 minutes).
+
+8. **Verify the health endpoint:** `curl https://fleetvolt.network/health` — expect
+   `200` with `{"status":"ok","timestamp":"...","services":{"convex":true,"googleMaps":true}}`.
+
+9. **Visually verify MAP-01/02/03** on `https://fleetvolt.network/planner`:
+   - MAP-01: SoC-gradient polyline renders along the route
+   - MAP-02: Power-scaled charger markers with popups appear
+   - MAP-03: Hover→chart sync works (hovering map segments highlights chart)
