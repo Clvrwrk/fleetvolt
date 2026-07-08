@@ -1,169 +1,131 @@
 import Link from "next/link";
+import { Truck, Users, Building2, ArrowRight } from "lucide-react";
 import { FramedPanel } from "@/components/design/framed-panel";
 import { SkeuomorphicCard } from "@/components/design/skeuomorphic-card";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { KpiCell } from "@/components/design/kpi-cell";
-import { StatusBadge } from "@/components/design/status-badge";
-import { HomeRouteSvg } from "@/components/home/home-route-svg";
 
 /**
- * Homepage — Screen 1 PRD: Framed Instrument with technical SVG, dimension
- * callouts, 3 action buttons, KPI strip, and metadata blocks.
+ * Welcome / landing page (Phase 16 / Wave 2 — Task 2.1)
+ *
+ * Unauthenticated users visiting fleetvolt.network see this page.
+ * It renders WITHOUT the AppShell (public route — AppShell bypasses
+ * "/", "/role-select", "/callback").
+ *
+ * Structure (top → bottom):
+ *   1. Hero headline + subtitle
+ *   2. Three role cards (display-only — clicking "Get Started" goes to /role-select)
+ *   3. Single primary CTA "Get Started" → /role-select  (Von Restorff: one CTA)
+ *   4. KPI strip (credibility row)
+ *   5. Footer credit
+ *
+ * UX laws:
+ *   - Hick's Law: 3 role choices max
+ *   - Von Restorff: single "Get Started" CTA stands out
+ *   - Jakob's Law: layout matches Vercel/Linear/Stripe welcome pages
  */
 export default function HomePage() {
   return (
-    <FramedPanel maxWidthClass="max-w-[1100px]">
-      {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-black/8 pb-4">
-        <div className="flex items-baseline gap-3.5">
-          <span className="text-[19px] font-bold tracking-tight text-[var(--fv-graphite)]">
-            FleetVolt Route
-          </span>
-          <span className="font-mono text-[11px] tracking-wide text-[var(--fv-steel)]">
-            EV FREIGHT MODELER v2.1 — POLB FOCUS
-          </span>
-        </div>
-        <StatusBadge variant="ok">
-          SoCal Charger Network — Updated 4h ago
-        </StatusBadge>
-      </div>
-
-      {/* Central technical SVG area */}
-      <div className="mt-6">
-        <SkeuomorphicCard padding="lg" className="bg-[var(--fv-surface-viz)]">
-          <TechnicalLabel className="mb-2 block">
-            ROUTE SCHEMATIC — POLB → BAKERSFIELD CORRIDOR
-          </TechnicalLabel>
-          <div className="transition-transform duration-300 hover:scale-[1.01]">
-            <HomeRouteSvg />
-          </div>
-        </SkeuomorphicCard>
-      </div>
-
-      {/* Dimension callout strip */}
-      <div className="mt-4 flex gap-4">
-        <div className="flex-1" style={{ borderTop: "0.5px dashed var(--fv-steel)" }}>
-          <div className="pt-1.5">
-            <TechnicalLabel className="text-[9px]">TYPICAL DRAYAGE LEG</TechnicalLabel>
-            <div className="font-mono text-[11px] font-semibold text-[var(--fv-slate)]">
-              42 <span className="text-[var(--fv-steel)]">mi</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1" style={{ borderTop: "0.5px dashed var(--fv-steel)" }}>
-          <div className="pt-1.5">
-            <TechnicalLabel className="text-[9px]">CAJON PASS GRADE</TechnicalLabel>
-            <div className="font-mono text-[11px] font-semibold text-[var(--fv-slate)]">
-              3.8<span className="text-[var(--fv-steel)]"> %</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1" style={{ borderTop: "0.5px dashed var(--fv-steel)" }}>
-          <div className="pt-1.5">
-            <TechnicalLabel className="text-[9px]">NET ENERGY</TechnicalLabel>
-            <div className="font-mono text-[11px] font-semibold text-[var(--fv-slate)]">
-              312 <span className="text-[var(--fv-steel)]">kWh</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1" style={{ borderTop: "0.5px dashed var(--fv-steel)" }}>
-          <div className="pt-1.5">
-            <TechnicalLabel className="text-[9px]">REGEN CREDIT</TechnicalLabel>
-            <div className="font-mono text-[11px] font-semibold text-[var(--fv-slate)]">
-              +47 <span className="text-[var(--fv-steel)]">kWh</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1" style={{ borderTop: "0.5px dashed var(--fv-steel)" }}>
-          <div className="pt-1.5">
-            <TechnicalLabel className="text-[9px]">CHARGE STOPS</TechnicalLabel>
-            <div className="font-mono text-[11px] font-semibold text-[var(--fv-slate)]">
-              2 <span className="text-[var(--fv-steel)]">stops</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/planner"
-          className="fv-btn-primary block text-center no-underline"
-          style={{ width: "auto", padding: "14px 24px" }}
+    <FramedPanel maxWidthClass="max-w-[860px]" padding="default">
+      {/* ── Hero ────────────────────────────────────────────────────── */}
+      <div className="text-center pt-6 pb-2">
+        <h1
+          className="font-bold tracking-tight text-[var(--fv-graphite)]"
+          style={{ fontSize: "26px", lineHeight: "1.2" }}
         >
-          ▶ Start New Route Simulation
-        </Link>
-        <Link
-          href="/unit"
-          className="fv-btn-secondary no-underline inline-block"
+          Plan EV Freight Routes with AI
+        </h1>
+        <p
+          className="mx-auto mt-3 max-w-[520px] text-[var(--fv-slate)]"
+          style={{ fontSize: "13px", lineHeight: "1.55" }}
         >
-          Configure Truck Unit
-        </Link>
-        <Link
-          href="/hotspot"
-          className="fv-btn-secondary no-underline inline-block"
-        >
-          Explore SoCal Network
-        </Link>
+          Physics-based charging-stop planner for California ports. Energy
+          modeling, charger gaps, route optimization — grounded in real data.
+        </p>
       </div>
 
-      {/* KPI strip */}
-      <div className="mt-6 flex gap-2.5">
-        <KpiCell
-          label="ACTIVE CORRIDORS"
-          value="14"
-          className="flex-1"
+      {/* ── Role cards (display-only — not clickable on this page) ──── */}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <RoleCard
+          icon={Truck}
+          title="Driver"
+          desc="Plan your route, find chargers, check amenities, time your runs."
         />
+        <RoleCard
+          icon={Users}
+          title="Fleet Manager"
+          desc="Manage your fleet, parking lots, routes, and driver assignments."
+        />
+        <RoleCard
+          icon={Building2}
+          title="Charging-as-a-Service"
+          desc="Analyze charger gaps, deployment zones, and siting opportunities."
+        />
+      </div>
+
+      {/* ── Single primary CTA (Von Restorff) ──────────────────────── */}
+      <div className="mt-8 flex justify-center">
+        <Link
+          href="/role-select"
+          className="fv-btn-primary inline-flex items-center gap-2 no-underline"
+          style={{ padding: "14px 36px", fontSize: "15px", width: "auto" }}
+        >
+          Get Started
+          <ArrowRight size={18} />
+        </Link>
+      </div>
+
+      {/* ── KPI strip (credibility row) ─────────────────────────────── */}
+      <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <KpiCell label="TRUCK CONFIGS" value="37" className="flex-1" />
+        <KpiCell label="CHARGERS" value="2,867" className="flex-1" />
+        <KpiCell label="CARRIERS" value="1,823" className="flex-1" />
         <KpiCell
           label="AVG SAVINGS VS DIESEL"
           value="62"
           unit="%"
           className="flex-1"
         />
-        <KpiCell
-          label="CHARGERS MODELED"
-          value="1,847"
-          className="flex-1"
-        />
-        <KpiCell
-          label="TRUCK CONFIGS"
-          value="37"
-          className="flex-1"
-        />
       </div>
 
-      {/* Bottom action bar with KPIs */}
-      <div className="fv-action-bar">
-        <div className="fv-action-bar-actions">
-          <Link href="/driver" className="fv-btn-secondary no-underline inline-block">
-            Driver Preferences
-          </Link>
-          <Link href="/fleet" className="fv-btn-secondary no-underline inline-block">
-            Fleet Management
-          </Link>
-          <Link href="/caas" className="fv-btn-secondary no-underline inline-block">
-            Charging-as-a-Service
-          </Link>
-          <Link href="/role-select" className="fv-btn-secondary no-underline inline-block">
-            Sign In
-          </Link>
-        </div>
-        <div className="hidden gap-5 font-mono xl:flex">
-          <div className="text-right">
-            <div className="text-[8.5px] tracking-wide text-[var(--fv-text-muted)]">
-              LAST SIMULATION
-            </div>
-            <div className="text-base font-semibold text-[var(--fv-graphite)]">
-              2h AGO
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer credit */}
-      <div className="fv-footer-credit mt-3.5 text-right">
-        POWERED BY CLEVERWORK · ZERO EMISSION ADVISORS
+      {/* ── Footer ──────────────────────────────────────────────────── */}
+      <div className="fv-footer-credit mt-6 text-center">
+        <TechnicalLabel>
+          POWERED BY CLEVERWORK · ZERO EMISSION ADVISORS
+        </TechnicalLabel>
       </div>
     </FramedPanel>
+  );
+}
+
+/* ── RoleCard sub-component ──────────────────────────────────────────── */
+
+type RoleCardProps = {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  desc: string;
+};
+
+function RoleCard({ icon: Icon, title, desc }: RoleCardProps) {
+  return (
+    <SkeuomorphicCard padding="lg" className="text-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--fv-blueprint-blue)]/10">
+          <Icon size={28} className="text-[var(--fv-blueprint-blue)]" />
+        </div>
+        <h2
+          className="font-semibold text-[var(--fv-graphite)]"
+          style={{ fontSize: "16px" }}
+        >
+          {title}
+        </h2>
+        <p
+          className="text-[var(--fv-slate)]"
+          style={{ fontSize: "12px", lineHeight: "1.45" }}
+        >
+          {desc}
+        </p>
+      </div>
+    </SkeuomorphicCard>
   );
 }
