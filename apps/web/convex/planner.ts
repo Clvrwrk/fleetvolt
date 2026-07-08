@@ -253,6 +253,7 @@ export const planWithAi = action({
   handler: async (ctx, { message, role, context }): Promise<PlannerResult> => {
     const apiKey = process.env.OPENAI_API_KEY;
     const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+    const queryId = `qry_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
     // ── No API key: return a fallback that explains the situation ──────────
     if (!apiKey) {
@@ -338,6 +339,26 @@ export const planWithAi = action({
     if (plan.queries.length > 0 && queryRuns.every((r) => r.result_summary.startsWith("ERROR:"))) {
       allQueriesFailed = true;
       const errorAnswer = buildErrorAnswer(firstErrorMessage, plan.queries.length);
+      await ctx.runMutation(api["observability/mutations"].recordQueryHistory, {
+        queryId,
+        role,
+        message,
+        response: errorAnswer,
+        visualizationType: "text",
+        status: "error",
+        errorMessage: firstErrorMessage,
+        queriesRun: queryRuns.map((r) => ({ name: r.name, args: r.args, result_summary: r.result_summary })),
+      }).catch(() => undefined);
+      for (const run of queryRuns.filter((r) => r.result_summary.startsWith("ERROR:"))) {
+        await ctx.runMutation(api["observability/mutations"].recordQueryResponseError, {
+          errorId: `qerr_${queryId}_${Math.random().toString(36).slice(2, 8)}`,
+          queryId,
+          functionName: run.name,
+          args: run.args,
+          errorMessage: run.result_summary,
+          errorKind: "planner_query_error",
+        }).catch(() => undefined);
+      }
       return {
         answer: errorAnswer,
         visualization: { type: "text", data: null },
@@ -374,6 +395,17 @@ export const planWithAi = action({
 
     // ── Step 4: Build visualization data ──────────────────────────────────
     const vizData = buildVisualizationData(plan.visualization, queryResults);
+
+    await ctx.runMutation(api["observability/mutations"].recordQueryHistory, {
+      queryId,
+      role,
+      message,
+      response: answerResponse,
+      visualizationType: plan.visualization,
+      status: queryRuns.some((r) => r.result_summary.startsWith("ERROR:")) ? "error" : "success",
+      errorMessage: queryRuns.find((r) => r.result_summary.startsWith("ERROR:"))?.result_summary,
+      queriesRun: queryRuns.map((r) => ({ name: r.name, args: r.args, result_summary: r.result_summary })),
+    }).catch(() => undefined);
 
     return {
       answer: answerResponse,
