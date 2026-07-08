@@ -2,7 +2,9 @@ import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import type { paths } from "@fleetvolt/shared-types";
 import { registerExportRoutes, type ExportsDeps } from "./exports.js";
-import { registerSimulationRoutes, type SimulationsDeps } from "./simulations.js";
+// Phase 13-04: simulation routes deprecated — import kept for type compat.
+// The routes return 410 Gone if registered, but registration is commented out.
+import { type SimulationsDeps } from "./simulations.js";
 
 export type StackMetaResponse =
   paths["/v1/meta/stack"]["get"]["responses"]["200"]["content"]["application/json"];
@@ -219,7 +221,9 @@ export async function buildApp(options?: {
     return proxySimulatorGet(request, reply, "/v1/physics/validation", 15000);
   });
 
-  registerSimulationRoutes(app, options?.simulationsDeps);
+  // Phase 13-04: simulations routes deprecated — physics runs as Convex action.
+  // Routes are kept in simulations.ts for rollback safety but no longer registered.
+  // registerSimulationRoutes(app, options?.simulationsDeps);
   registerExportRoutes(app, options?.exportsDeps);
 
   return app;

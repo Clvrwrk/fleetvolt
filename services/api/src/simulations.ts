@@ -1,211 +1,51 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { pool } from "./db.js";
-import {
-  CHARGER_VERSION,
-  PHYSICS_VERSION,
-  computeInputsHash,
-} from "./inputs_hash.js";
 
-type SimulateRequest = Record<string, unknown>;
+/**
+ * DEPRECATED — Phase 13-04
+ *
+ * The async job pipeline (POST /v1/simulations → Celery → poll
+ * GET /v1/simulations/:id) has been replaced by the Convex simulate action
+ * (apps/web/convex/physics/simulate.ts). The web client now calls
+ * api.physics.simulate.simulate directly — no Fastify proxy needed.
+ *
+ * These routes are kept for rollback safety but are no longer registered
+ * in app.ts. They return 410 Gone if called directly.
+ */
 
-interface SimulationRunRow extends Record<string, unknown> {
-  id: string;
-  status: string;
-  outputs?: unknown;
-  error?: unknown;
-  duration_ms?: number | null;
-  inputs_hash?: string | null;
-  physics_version?: string | null;
-  charger_version?: string | null;
-  inputs?: unknown;
-}
+const DEPRECATION_MESSAGE =
+  "Simulations now run via Convex action — call api.physics.simulate.simulate from the web client.";
 
-function appendAuditFields(
-  payload: Record<string, unknown>,
-  row: SimulationRunRow,
-): void {
-  if (row.inputs_hash != null) {
-    payload.inputs_hash = row.inputs_hash;
-  }
-  if (row.physics_version != null) {
-    payload.physics_version = row.physics_version;
-  }
-  if (row.charger_version != null) {
-    payload.charger_version = row.charger_version;
-  }
-  if (row.inputs !== undefined && row.inputs !== null) {
-    payload.inputs = row.inputs;
-  }
-}
-
-export interface DbPool {
-  query(
-    sql: string,
-    params?: unknown[],
-  ): Promise<{ rows: Record<string, unknown>[] }>;
-}
-
+/**
+ * @deprecated Since Phase 13-04 — kept for type compat with app.ts options.
+ */
 export interface SimulationsDeps {
-  pool: DbPool;
+  pool: unknown;
   fetchFn: typeof fetch;
   simulatorUrl: string;
 }
 
-const defaultDeps: SimulationsDeps = {
-  pool,
-  fetchFn: fetch,
-  simulatorUrl: process.env.SIMULATOR_URL ?? "http://localhost:8000",
-};
-
-export function createSimulationsHandlers(deps: SimulationsDeps = defaultDeps) {
-  async function postSimulation(
-    request: FastifyRequest<{ Body: SimulateRequest }>,
-    reply: FastifyReply,
-  ) {
-    const body = request.body;
-    const hash = computeInputsHash(body, PHYSICS_VERSION, CHARGER_VERSION);
-
-    const cached = await deps.pool.query(
-      `SELECT id, status, outputs, inputs_hash, physics_version, charger_version, inputs
-       FROM simulation_runs
-       WHERE inputs_hash = $1 AND status = 'COMPLETE'
-       ORDER BY created_at DESC LIMIT 1`,
-      [hash],
-    );
-
-    if (cached.rows[0]) {
-      const row = cached.rows[0] as SimulationRunRow;
-      const payload: Record<string, unknown> = {
-        job_id: row.id,
-        status: "COMPLETE",
-        outputs: row.outputs,
-      };
-      appendAuditFields(payload, row);
-      return payload;
-    }
-
-    const inserted = await deps.pool.query(
-      `INSERT INTO simulation_runs (
-         inputs, inputs_hash, status, physics_version, charger_version
-       )
-       VALUES ($1, $2, 'PENDING', $3, $4)
-       RETURNING id`,
-      [body, hash, PHYSICS_VERSION, CHARGER_VERSION],
-    );
-
-    const jobId = (inserted.rows[0] as { id: string }).id;
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-
-    try {
-      const response = await deps.fetchFn(
-        `${deps.simulatorUrl}/v1/internal/jobs/${jobId}/enqueue`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ inputs: body }),
-          signal: controller.signal,
-        },
-      );
-      clearTimeout(timeout);
-
-      if (!response.ok) {
-        const message = await response.text();
-        await deps.pool.query(
-          `UPDATE simulation_runs
-           SET status = 'FAILED', error = $2::jsonb
-           WHERE id = $1`,
-          [
-            jobId,
-            JSON.stringify({
-              code: "enqueue_failed",
-              message,
-              stage: "enqueue",
-            }),
-          ],
-        );
-        return reply.status(response.status).send({
-          error: "simulator_error",
-          message,
-        });
-      }
-    } catch (error) {
-      clearTimeout(timeout);
-      request.log.error({ err: error }, "simulator unreachable");
-      await deps.pool.query(
-        `UPDATE simulation_runs
-         SET status = 'FAILED', error = $2::jsonb
-         WHERE id = $1`,
-        [
-          jobId,
-          JSON.stringify({
-            code: "simulator_unreachable",
-            message: error instanceof Error ? error.message : String(error),
-            stage: "enqueue",
-          }),
-        ],
-      );
-      return reply.status(503).send({
-        error: "simulator_unreachable",
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    return { job_id: jobId, status: "PENDING" };
-  }
-
-  async function getSimulation(
-    request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply,
-  ) {
-    const { id } = request.params;
-
-    const result = await deps.pool.query(
-      `SELECT id, status, outputs, error, duration_ms,
-              inputs_hash, physics_version, charger_version, inputs
-       FROM simulation_runs
-       WHERE id = $1`,
-      [id],
-    );
-
-    if (!result.rows[0]) {
-      return reply.status(404).send({
-        error: "not_found",
-        message: "Simulation run not found",
-      });
-    }
-
-    const row = result.rows[0] as SimulationRunRow;
-    const payload: Record<string, unknown> = {
-      job_id: row.id,
-      status: row.status,
-    };
-
-    if (row.status === "COMPLETE" && row.outputs !== undefined) {
-      payload.outputs = row.outputs;
-    }
-    if (row.status === "FAILED" && row.error !== undefined) {
-      payload.error = row.error;
-    }
-    if (row.duration_ms != null) {
-      payload.duration_ms = row.duration_ms;
-    }
-
-    appendAuditFields(payload, row);
-
-    return payload;
-  }
-
-  return { postSimulation, getSimulation };
-}
-
 export function registerSimulationRoutes(
   app: FastifyInstance,
-  deps?: SimulationsDeps,
+  _deps?: unknown,
 ) {
-  const { postSimulation, getSimulation } = createSimulationsHandlers(deps);
+  app.post("/v1/simulations", async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply
+      .status(410)
+      .header("Deprecation", "true")
+      .header("Link", "</v1/simulations>; rel=\"deprecation\"")
+      .send({
+        error: "deprecated",
+        message: DEPRECATION_MESSAGE,
+      });
+  });
 
-  app.post("/v1/simulations", postSimulation);
-  app.get("/v1/simulations/:id", getSimulation);
+  app.get("/v1/simulations/:id", async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply
+      .status(410)
+      .header("Deprecation", "true")
+      .send({
+        error: "deprecated",
+        message: DEPRECATION_MESSAGE,
+      });
+  });
 }

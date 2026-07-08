@@ -14,6 +14,8 @@ import { ReactNode } from "react";
 // which is acceptable for the demo shell (the app still renders).
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
+export { convex };
+
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   return <ConvexProvider client={convex}>{children}</ConvexProvider>;
 }

@@ -15,16 +15,7 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:8-alpine
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
+  # sim-worker + redis retired in Phase 13 — physics runs as Convex action
   simulator:
     build: ./services/simulator
     ports:
@@ -35,6 +26,7 @@ services:
       PTV_DEVELOPER_API_KEY: ${PTV_DEVELOPER_API_KEY:-}
       PORT: "8000"
       PYTHONPATH: /app:/data
+      FLEETVOLT_DATA_ROOT: /data
     volumes:
       - ./data:/data
     depends_on:
@@ -42,25 +34,8 @@ services:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head &&
+             python -m app.bootstrap_db &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
-  sim-worker:
-    build: ./services/simulator
-    command: celery -A app.worker worker -c 2 --loglevel=info
-    environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
-      CELERY_BROKER_URL: redis://redis:6379/0
-      PTV_DEVELOPER_API_KEY: ${PTV_DEVELOPER_API_KEY:-}
-      PYTHONPATH: /app:/data
-    volumes:
-      - ./data:/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      simulator:
-        condition: service_started
 
   api:
     build:
@@ -70,6 +45,10 @@ services:
       - "4000:4000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-fleetvolt}:${POSTGRES_PASSWORD:-fleetvolt}@postgres:5432/${POSTGRES_DB:-fleetvolt}
+      # SIMULATOR_URL retained for Fastify proxy routes (meta/stack, trucks,
+      # corridors, chargers, routing, physics/validation). Simulation routes
+      # are deprecated (13-04) — physics runs as a Convex action. PDF export
+      # moves to Convex in 13-05.
       SIMULATOR_URL: http://simulator:8000
       PORT: "4000"
     depends_on:
@@ -79,7 +58,9 @@ services:
         condition: service_started
 
   web:
-    build: ./apps/web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
     ports:
       - "3000:3000"
     environment:
