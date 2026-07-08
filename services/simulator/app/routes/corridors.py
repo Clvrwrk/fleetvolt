@@ -9,11 +9,13 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from app.paths import data_root
+
 router = APIRouter(prefix="/v1", tags=["corridors"])
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-CORRIDORS_DIR = REPO_ROOT / "data" / "corridors"
-TERMINALS_PATH = REPO_ROOT / "data" / "terminals" / "polb_terminals.json"
+_DATA = data_root()
+CORRIDORS_DIR = _DATA / "corridors"
+TERMINALS_PATH = _DATA / "terminals" / "polb_terminals.json"
 EXCLUDED_CORRIDORS = frozenset({"socal_bbox"})
 
 

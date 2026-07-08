@@ -12,6 +12,7 @@ from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.paths import data_root
 from app.simulation.constants import US_MILE_M
 from app.simulation.elevation_service import ElevationService, ElevationServiceError
 from app.simulation.kpi_aggregator import aggregate_kpis
@@ -42,10 +43,10 @@ from app.simulation.weather import apply_weather
 
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-CORRIDORS_DIR = REPO_ROOT / "data" / "corridors"
-TERMINALS_PATH = REPO_ROOT / "data" / "terminals" / "polb_terminals.json"
-TRUCKS_DIR = REPO_ROOT / "data" / "trucks"
+_DATA = data_root()
+CORRIDORS_DIR = _DATA / "corridors"
+TERMINALS_PATH = _DATA / "terminals" / "polb_terminals.json"
+TRUCKS_DIR = _DATA / "trucks"
 
 MAX_ROUTE_MI = 800.0
 MAX_ROUTE_M = MAX_ROUTE_MI * US_MILE_M

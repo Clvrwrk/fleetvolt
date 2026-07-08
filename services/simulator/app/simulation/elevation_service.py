@@ -11,19 +11,29 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.paths import data_root
 from app.simulation.route_provider import RouteProvider
 
-# Import shared elevation sampling utilities from ingest module
-_REPO_ROOT = Path(__file__).resolve().parents[4]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-from data.ingest.elevation import (  # noqa: E402
-    compute_max_grade_pct,
-    fetch_elevations_batch,
-    filter_bridge_spikes,
-    sample_polyline,
-)
+_data_root = data_root()
+if (_data_root / "ingest").is_dir():
+    if str(_data_root) not in sys.path:
+        sys.path.insert(0, str(_data_root))
+    from ingest.elevation import (  # noqa: E402
+        compute_max_grade_pct,
+        fetch_elevations_batch,
+        filter_bridge_spikes,
+        sample_polyline,
+    )
+else:
+    _repo_root = _data_root.parent
+    if str(_repo_root) not in sys.path:
+        sys.path.insert(0, str(_repo_root))
+    from data.ingest.elevation import (  # noqa: E402
+        compute_max_grade_pct,
+        fetch_elevations_batch,
+        filter_bridge_spikes,
+        sample_polyline,
+    )
 
 CORRIDOR_KEY_PATTERN = re.compile(r"^[a-z0-9_]+$")
 

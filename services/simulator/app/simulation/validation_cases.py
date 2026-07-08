@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 
 from sqlalchemy.orm import Session
 
+from app.paths import data_root
 from app.simulation.constants import US_MILE_M
 from app.simulation.elevation_service import ElevationProfileResult, ElevationService
 from app.simulation.orchestrator import run_simulation
@@ -23,8 +24,7 @@ from app.simulation.schemas import (
     WeatherPreset,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-REFERENCE_CASES_PATH = REPO_ROOT / "data" / "validation" / "reference_cases.json"
+REFERENCE_CASES_PATH = data_root() / "validation" / "reference_cases.json"
 
 
 def load_reference_cases(path: Path = REFERENCE_CASES_PATH) -> dict[str, Any]:

@@ -10,8 +10,9 @@ from typing import Any
 import numpy as np
 from shapely.geometry import Point, shape
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-PORT_GEOJSON_PATH = REPO_ROOT / "data" / "geo" / "port_polb_lb.geojson"
+from app.paths import data_root
+
+PORT_GEOJSON_PATH = data_root() / "geo" / "port_polb_lb.geojson"
 
 PORT_SPEED_CAP_MPH = 25.0
 PORT_AUX_KW = 18.0
