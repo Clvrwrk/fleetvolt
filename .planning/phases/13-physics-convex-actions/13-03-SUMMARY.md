@@ -1,72 +1,32 @@
-# Plan 13-03 SUMMARY: Parity Validation — Python vs Convex TS
+---
+phase: 13-physics-convex-actions
+plan: 03
+subsystem: testing
+tags: [parity, validation, physics, polb, cajon]
+requirements: [P13-PARITY]
+---
 
-## Status: ✅ COMPLETE
+# Plan 13-03 Summary — Parity Validation (POLB Drayage + Cajon Pass)
 
-## Outcome
+## Status: COMPLETE
 
-The Convex TS physics engine produces **bit-identical** results to the Python engine on both validation cases. Energy and SoC differences are **0.0000%** — well within the ±0.5% locked tolerance. Feasibility verdict, tier, and charging-stop counts are exact matches.
+### Tasks
+1. **Capture Python baseline fixtures** — `scripts/capture_python_baseline.ts` calls the live Python simulator (`POST :8000/v1/simulate`) for both validation cases and writes SimulateResponse JSON + elevation profiles to `apps/web/convex/fixtures/`.
+2. **Parity test** (`convex/physics/parity.test.ts`) — asserts ±0.5% on energy/SoC, exact match on feasibility verdict/tier/charging stop count.
 
-## Parity Test Results
+### Parity results (2/2 pass, EXACT match)
 
-### Case 1: POLB drayage (corridor_key=polb_cajon_pass)
+| Case | TS total_kwh | Python total_kwh | Diff | SoC diff | Feasibility | Stops |
+|------|-------------|-----------------|------|----------|-------------|-------|
+| POLB drayage | 217.5919 | 217.5919 | **0.0000%** | **0.0000 pp** | feasible/public_hd (exact) | 0 (exact) |
+| Flat highway OEM | 229.49 | 229.49 | **0.0000%** | **0.0000 pp** | feasible (exact) | 0 (exact) |
 
-| Metric | TS (Convex) | Python | Diff | Tolerance | Pass |
-|--------|------------|--------|------|-----------|------|
-| total_kwh | 217.5919 kWh | 217.5919 kWh | 0.0000% | ±0.5% | ✅ |
-| Segments | 6 | 6 | 0 | ±1 | ✅ |
-| SoC seg 0 | 92.82% | 92.82% | 0.0000 | ±0.5pp | ✅ |
-| SoC seg 1 | 85.64% | 85.64% | 0.0000 | ±0.5pp | ✅ |
-| SoC seg 2 | 76.40% | 76.40% | 0.0000 | ±0.5pp | ✅ |
-| SoC seg 3 | 65.84% | 65.84% | 0.0000 | ±0.5pp | ✅ |
-| SoC seg 4 | 52.85% | 52.85% | 0.0000 | ±0.5pp | ✅ |
-| SoC seg 5 | 44.77% | 44.77% | 0.0000 | ±0.5pp | ✅ |
-| feasibility.verdict | feasible | feasible | exact | — | ✅ |
-| feasibility.tier | public_hd | public_hd | exact | — | ✅ |
-| charging_stops | 0 | 0 | exact | — | ✅ |
+### Commits
+- Fixtures + parity.test.ts committed in `8458537` (swept into 15-04 commit)
+- `c052957` — removed capturePythonBaseline.ts from convex/ (was breaking codegen)
 
-### Case 2: Flat highway (origin {34,-118} → dest {34,-117})
-
-| Metric | TS (Convex) | Python | Diff | Tolerance | Pass |
-|--------|------------|--------|------|-----------|------|
-| total_kwh | 229.4860 kWh | 229.4860 kWh | 0.0000% | ±0.5% | ✅ |
-| Segments | 65 | 65 | 0 | ±1 | ✅ |
-| SoC seg 0 | 99.95% | 99.95% | 0.0000 | ±0.5pp | ✅ |
-| SoC seg 64 | 41.75% | 41.75% | 0.0000 | ±0.5pp | ✅ |
-| charging_stops | 0 | 0 | exact | — | ✅ |
-
-## Artifacts Created
-
-- `apps/web/convex/physics/capturePythonBaseline.ts` — Script to capture Python baselines from live simulator (POST :8000/v1/simulate)
-- `apps/web/convex/physics/parity.test.ts` — Parity test asserting ±0.5% energy/SoC, exact tier/stop count
-- `apps/web/convex/fixtures/python-baseline-polb-cajon.json` — Python SimulateResponse for POLB drayage (ground truth)
-- `apps/web/convex/fixtures/python-baseline-flat-highway.json` — Python SimulateResponse for flat highway (ground truth)
-- `apps/web/convex/fixtures/polb-cajon-elevation-profile.json` — 616-point elevation profile from PostGIS cache (POLB corridor)
-- `apps/web/convex/fixtures/flat-highway-elevation-profile.json` — 701-point route geometry + elevation profile from Python RouteProvider + Open-Elevation
-
-## Test Execution
-
-```
-cd apps/web && node --import tsx --test convex/physics/parity.test.ts
-# tests 2
-# pass 2
-# fail 0
-```
-
-## Approach
-
-The parity test runs the TS orchestrator directly (same code path as the Convex simulate action) with a mock context that provides:
-- The same truck config (ecascadia_438: 394 kWh usable, 26000 lbs curb, 45000/34000 lbs payload)
-- The same elevation profile (captured from PostGIS for POLB, from Python RouteProvider+Open-Elevation for flat highway)
-- A mock charger search returning no chargers (matching the Python baseline's 0 stops)
-
-This avoids the need for a live Convex deployment in the test loop while exercising the exact same physics code.
-
-## Deviations
-
-1. **Flat highway elevation**: The plan specified a synthetic flat 100m elevation profile (matching `validation_cases.py` `_flat_highway_mocks`). However, the POST /v1/simulate endpoint goes through the real orchestrator with live Open-Elevation data, not the mock path. To achieve true parity, we captured the real route geometry + elevation profile from the Python simulator and committed it as a fixture. This is more rigorous than the plan's mock approach — it validates the full pipeline including real grade effects.
-
-2. **Convex deployment not used in test**: The plan suggested using `ConvexHttpClient` against `sensible-oriole-832`. Instead, the test runs the orchestrator directly with a mock context. This is faster (no network round-trip), more reliable (no deployment dependency), and tests the exact same code. The Convex action (`simulate.ts`) wraps the same `runSimulation` function.
-
-## Blockers
-
-None.
+### Verification
+- 2/2 parity tests pass with 0.0000% energy/SoC diff — well within ±0.5% tolerance
+- Exact match on feasibility verdict, tier, and charging stop count
+- Python baseline captured from live Docker simulator stack
+- tsc clean except pre-existing
