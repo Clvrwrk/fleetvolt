@@ -28,6 +28,7 @@ import { PrimaryButton } from "@/components/design/primary-button";
 import { StatusBadge } from "@/components/design/status-badge";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { Truck, Users, Route, Zap, ArrowRight, Plus, TrendingUp } from "lucide-react";
+import { SkeletonContent } from "@/components/design/skeleton-card";
 
 const MAX_TABLE_ROWS = 5;
 
@@ -43,20 +44,11 @@ export default function FleetDashboardPage() {
     fleetId: "demo-fleet", // Will be replaced with real fleet association
   });
 
-  // ── Loading state ──────────────────────────────────────────────────────
+  // ── Loading state — skeleton screens (Task 6.1) ──────────────────────
   if (loading) {
     return (
       <FramedPanel maxWidthClass="max-w-[1100px]">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 w-48 rounded bg-[var(--fv-surface-muted)]" />
-          <div className="flex gap-2.5">
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-          </div>
-          <div className="h-64 rounded-lg bg-[var(--fv-surface-muted)]" />
-        </div>
+        <SkeletonContent kpiCount={4} cardLines={6} />
       </FramedPanel>
     );
   }

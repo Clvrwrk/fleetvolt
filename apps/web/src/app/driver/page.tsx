@@ -26,22 +26,18 @@ import { SecondaryButton } from "@/components/design/secondary-button";
 import { StatusBadge } from "@/components/design/status-badge";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { Route, Zap, Truck, Navigation } from "lucide-react";
+import { SkeletonContent } from "@/components/design/skeleton-card";
 
 export default function DriverDashboardPage() {
   const { displayName, loading } = useWorkOSAuth();
 
   const greeting = displayName ? `Welcome, ${displayName}` : "Driver Dashboard";
 
-  // ── Loading state ──────────────────────────────────────────────────────
+  // ── Loading state — skeleton screens (Task 6.1) ──────────────────────
   if (loading) {
     return (
       <FramedPanel maxWidthClass="max-w-[800px]">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 w-48 rounded bg-[var(--fv-surface-muted)]" />
-          <div className="h-32 rounded-lg bg-[var(--fv-surface-muted)]" />
-          <div className="h-32 rounded-lg bg-[var(--fv-surface-muted)]" />
-          <div className="h-32 rounded-lg bg-[var(--fv-surface-muted)]" />
-        </div>
+        <SkeletonContent kpiCount={3} cardLines={4} />
       </FramedPanel>
     );
   }

@@ -20,6 +20,7 @@ import { KpiCell } from "@/components/design/kpi-cell";
 import { PrimaryButton } from "@/components/design/primary-button";
 import { StatusBadge } from "@/components/design/status-badge";
 import { ArrowRight, Zap } from "lucide-react";
+import { SkeletonContent } from "@/components/design/skeleton-card";
 
 export default function CaasPage() {
   const { displayName, loading } = useWorkOSAuth();
@@ -43,20 +44,11 @@ export default function CaasPage() {
     ? (corridorCounties.reduce((sum, c) => sum + (c.aggregateScore ?? 0), 0) / corridorCounties.length).toFixed(3)
     : "—";
 
-  // ── Loading state ──────────────────────────────────────────────────────
+  // ── Loading state — skeleton screens (Task 6.1) ──────────────────────
   if (loading) {
     return (
       <FramedPanel maxWidthClass="max-w-[1100px]">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 w-48 rounded bg-[var(--fv-surface-muted)]" />
-          <div className="flex gap-2.5">
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-            <div className="h-20 flex-1 rounded-lg bg-[var(--fv-surface-muted)]" />
-          </div>
-          <div className="h-48 rounded-lg bg-[var(--fv-surface-muted)]" />
-        </div>
+        <SkeletonContent kpiCount={4} cardLines={6} />
       </FramedPanel>
     );
   }
