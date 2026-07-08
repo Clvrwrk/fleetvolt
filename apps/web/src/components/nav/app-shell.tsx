@@ -45,6 +45,7 @@ function isPublicRoute(pathname: string): boolean {
 /** Map pathname to a human-readable page title for the top bar. */
 function getPageTitle(pathname: string): string {
   const map: Record<string, string> = {
+    "/workbench": "Map Workbench",
     "/planner": "Route Planner",
     "/driver": "Driver Dashboard",
     "/fleet": "Fleet Dashboard",
@@ -107,7 +108,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
       {/* Content shifts right to accommodate sidebar width */}
       <div className="md:pl-[260px] pl-14">
         <TopBar pageTitle={pageTitle} />
-        <main className="min-h-[calc(100vh-3.5rem)] pb-14 md:pb-0">{children}</main>
+        <main className="min-h-[calc(100dvh-3.5rem)] min-w-0 pb-14 md:pb-0">{children}</main>
       </div>
       {/* Bottom tab bar for mobile */}
       <MobileTabBar />
