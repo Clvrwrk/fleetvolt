@@ -76,6 +76,11 @@ export default defineSchema({
       v.literal("congestion"),
       v.literal("truckingHQ"),
       v.literal("solarCharger"),
+      // P12-11/P12-12 (12-08): MODELED truck-dwell/demand hotspots. The score
+      // is a composite proxy (parking capacity + 5-axle truckAADT + FAF flow +
+      // carrier concentration) — never observed dwell. Additive to the Phase-7
+      // kind union.
+      v.literal("modeledDwell"),
     ),
     location: v.object({ lat: v.number(), lng: v.number() }),
     title: v.string(),
@@ -83,8 +88,15 @@ export default defineSchema({
       v.object({ label: v.string(), value: v.string() }),
     ),
     meta: v.optional(v.any()),
+    // P12-12 (12-08): the MODELED composite demand score in [0,1] (optional so
+    // Phase-7 hotspots stay valid) + the per-proxy normalized components that
+    // produced it (audit trail). provenance.method:"modeled" + inputs[] label
+    // it honestly; overclaiming observed dwell is prohibited.
+    score: v.optional(v.number()),
+    scoreInputs: v.optional(v.any()),
     provenance,
-  }).index("by_kind", ["kind"]),
+  })
+    .index("by_kind", ["kind"]),
 
   // Seeded in P7, rendered P9. provenance.source MUST be "ESTIMATE" — these
   // figures are estimates with a methodology basis, never measured (PITFALLS #9).
