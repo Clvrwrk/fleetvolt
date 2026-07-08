@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, ChevronRight, Clock, Info, Route, XCircle } from "lucide-react";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,37 @@ const initialCards: WorkbenchResultCard[] = [
     mode: "driver_day_plan",
     severity: "info",
     layerId: "parking",
+  },
+];
+
+const fleetInitialCards: WorkbenchResultCard[] = [
+  {
+    id: "fleet-awaiting-capacity",
+    title: "Contract capacity formula",
+    summary: "Choose port/origin, inland destination, schedule, containers/day, dwell, shift, yard return, and truck profile to calculate trucks and drivers.",
+    mode: "fleet_contract_plan",
+    severity: "info",
+    layerId: "route",
+    metrics: {
+      formula: "trucks = ceil(containers/day ÷ trips/truck/day)",
+      assumption: "one container turn per trip",
+    },
+  },
+  {
+    id: "fleet-awaiting-charging",
+    title: "Charging and downtime",
+    summary: "Charge events and downtime are derived from FleetVolt physics simulation stops when available, with route/provider assumptions labeled.",
+    mode: "fleet_contract_plan",
+    severity: "info",
+    layerId: "chargers",
+  },
+  {
+    id: "fleet-awaiting-gap",
+    title: "Gap and mobile CaaS recommendation",
+    summary: "Class 8 gap classification uses sampled route points; true gaps produce a mobile support point/time recommendation instead of opaque prose.",
+    mode: "fleet_contract_plan",
+    severity: "info",
+    layerId: "class8-gaps",
   },
 ];
 
@@ -75,11 +107,20 @@ function ResultMetricList({ metrics }: { metrics?: WorkbenchResultCard["metrics"
   );
 }
 
+function resolveResultMode(storeMode: string, rawMode: string | null) {
+  if (rawMode === "fleet_contract_plan" || rawMode === "caas_gap_map" || rawMode === "driver_day_plan") return rawMode;
+  return storeMode;
+}
+
 export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
+  const searchParams = useSearchParams();
   const resultCards = useMapWorkbenchStore((state) => state.resultCards);
   const providerWarnings = useMapWorkbenchStore((state) => state.providerWarnings);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
-  const cards = resultCards.length > 0 ? resultCards : initialCards;
+  const storeMode = useMapWorkbenchStore((state) => state.mode);
+  const mode = resolveResultMode(storeMode, searchParams.get("mode"));
+  const emptyCards = mode === "fleet_contract_plan" ? fleetInitialCards : initialCards;
+  const cards = resultCards.length > 0 ? resultCards : emptyCards;
 
   return (
     <aside
@@ -91,9 +132,9 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
       aria-label="Workbench results"
     >
       <div className="border-b border-black/10 px-4 py-3">
-        <TechnicalLabel>Driver result cards</TechnicalLabel>
+        <TechnicalLabel>{mode === "fleet_contract_plan" ? "Fleet result cards" : "Driver result cards"}</TechnicalLabel>
         <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
-          Day-plan summary
+          {mode === "fleet_contract_plan" ? "Contract-plan summary" : "Day-plan summary"}
         </h2>
       </div>
 

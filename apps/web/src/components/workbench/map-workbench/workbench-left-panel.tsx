@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAction } from "convex/react";
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2, Route, SlidersHorizontal, Zap } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import type { WorkbenchLayerId, WorkbenchMode, WorkbenchResultCard } from "./types";
+import { ContractConstraints, getFleetContractDefaults } from "./inputs/contract-constraints";
 import { RouteBuilder } from "./inputs/route-builder";
 import { DRIVER_TRUCK_PROFILES, TruckProfileSelect } from "./inputs/truck-profile-select";
 import { WorkdayConstraints, getDriverConstraintDefaults } from "./inputs/workday-constraints";
@@ -50,17 +52,30 @@ const layerToggles: Array<{ id: WorkbenchLayerId; label: string }> = [
   { id: "freight-flow", label: "Freight flow" },
 ];
 
-export function WorkbenchLeftPanel({ mode = "driver_day_plan", className }: WorkbenchLeftPanelProps) {
+function resolvePanelMode(mode: WorkbenchMode | undefined, rawMode: string | null): WorkbenchMode {
+  if (mode) return mode;
+  if (rawMode === "fleet_contract_plan" || rawMode === "caas_gap_map" || rawMode === "driver_day_plan") return rawMode;
+  return "driver_day_plan";
+}
+
+export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftPanelProps) {
+  const searchParams = useSearchParams();
+  const mode = resolvePanelMode(modeProp, searchParams.get("mode"));
   const [runError, setRunError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const storeMode = useMapWorkbenchStore((state) => state.mode);
   const draft = useMapWorkbenchStore((state) => state.draft);
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const applyDraftPatch = useMapWorkbenchStore((state) => state.applyDraftPatch);
   const toggleLayer = useMapWorkbenchStore((state) => state.toggleLayer);
-  const setRouteGeometry = useMapWorkbenchStore((state) => state.setRouteGeometry);
-  const setResultCards = useMapWorkbenchStore((state) => state.setResultCards);
-  const setProviderWarnings = useMapWorkbenchStore((state) => state.setProviderWarnings);
   const runDriverDayPlan = useAction(api.workbench.actions.driverDayPlan);
+  const runFleetContractPlan = useAction(api.workbench.actions.fleetContractPlan);
+
+  useEffect(() => {
+    if (storeMode !== mode) {
+      useMapWorkbenchStore.getState().reset(mode);
+    }
+  }, [mode, storeMode]);
 
   function applyQuickRoute(route: (typeof quickRoutes)[number]) {
     applyDraftPatch({ origin: route.origin, destination: route.destination });
@@ -90,25 +105,87 @@ export function WorkbenchLeftPanel({ mode = "driver_day_plan", className }: Work
         breakMinutes: defaults.breakMinutes,
         includePortDrayage: draft.origin.kind === "port" || draft.destination.kind === "port",
       });
-      setRouteGeometry(result.routeGeometry);
-      setResultCards(result.resultCards as WorkbenchResultCard[]);
-      setProviderWarnings(result.providerWarnings ?? []);
+      useMapWorkbenchStore.setState({
+        routeGeometry: result.routeGeometry,
+        resultCards: result.resultCards as WorkbenchResultCard[],
+        providerWarnings: result.providerWarnings ?? [],
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setRunError(message);
-      setResultCards([
-        {
-          id: "driver-run-error",
-          title: "Driver plan unavailable",
-          summary: message,
-          mode: "driver_day_plan",
-          severity: "critical",
-        },
-      ]);
+      useMapWorkbenchStore.setState({
+        resultCards: [
+          {
+            id: "driver-run-error",
+            title: "Driver plan unavailable",
+            summary: message,
+            mode: "driver_day_plan",
+            severity: "critical",
+          },
+        ],
+      });
     } finally {
       setIsRunning(false);
     }
   }
+
+  async function calculateFleetContractPlan() {
+    setRunError(null);
+    if (!draft.origin || !draft.destination) {
+      setRunError("Choose a port/origin and inland destination before running the fleet contract plan.");
+      return;
+    }
+
+    const defaults = getFleetContractDefaults();
+    const metadata = useMapWorkbenchStore.getState().draft.metadata ?? {};
+    const truckSlug = typeof metadata.truckSlug === "string" ? metadata.truckSlug : DRIVER_TRUCK_PROFILES[0].slug;
+    const weatherPreset = typeof metadata.weatherPreset === "string" ? metadata.weatherPreset : "ideal";
+    const payloadLbs = typeof metadata.payloadLbs === "number" ? metadata.payloadLbs : 34_000;
+
+    setIsRunning(true);
+    try {
+      const result = await runFleetContractPlan({
+        origin: draft.origin,
+        destination: draft.destination,
+        truckSlug,
+        payloadLbs,
+        weatherPreset: weatherPreset as "ideal" | "hot" | "cold" | "headwind",
+        serviceDate: defaults.serviceDate,
+        scheduleWindow: defaults.scheduleWindow,
+        containersPerDay: defaults.containersPerDay,
+        gateStartHour: defaults.gateStartHour,
+        gateEndHour: defaults.gateEndHour,
+        portDwellMinutes: defaults.portDwellMinutes,
+        destinationDwellMinutes: defaults.destinationDwellMinutes,
+        shiftHours: defaults.shiftHours,
+        yardReturn: defaults.yardReturn,
+      });
+      useMapWorkbenchStore.setState({
+        routeGeometry: result.routeGeometry,
+        resultCards: result.resultCards as WorkbenchResultCard[],
+        providerWarnings: result.providerWarnings ?? [],
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setRunError(message);
+      useMapWorkbenchStore.setState({
+        resultCards: [
+          {
+            id: "fleet-run-error",
+            title: "Fleet contract plan unavailable",
+            summary: message,
+            mode: "fleet_contract_plan",
+            severity: "critical",
+          },
+        ],
+      });
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
+  const calculatePlan = mode === "fleet_contract_plan" ? calculateFleetContractPlan : calculateDriverPlan;
+  const canRunPlan = mode === "driver_day_plan" || mode === "fleet_contract_plan";
 
   return (
     <aside
@@ -120,9 +197,9 @@ export function WorkbenchLeftPanel({ mode = "driver_day_plan", className }: Work
       aria-label="Workbench tools"
     >
       <div className="border-b border-black/10 px-4 py-3">
-        <TechnicalLabel>{mode === "driver_day_plan" ? "Driver mode" : "Workbench tools"}</TechnicalLabel>
+        <TechnicalLabel>{mode === "driver_day_plan" ? "Driver mode" : mode === "fleet_contract_plan" ? "Fleet mode" : "Workbench tools"}</TechnicalLabel>
         <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
-          {mode === "driver_day_plan" ? "Day-plan inputs" : "Plan inputs"}
+          {mode === "driver_day_plan" ? "Day-plan inputs" : mode === "fleet_contract_plan" ? "Contract inputs" : "Plan inputs"}
         </h2>
       </div>
 
@@ -148,6 +225,23 @@ export function WorkbenchLeftPanel({ mode = "driver_day_plan", className }: Work
                 <TechnicalLabel>Workday constraints</TechnicalLabel>
               </div>
               <WorkdayConstraints />
+            </section>
+          </>
+        ) : null}
+
+        {mode === "fleet_contract_plan" ? (
+          <>
+            <section className="space-y-2" aria-labelledby="fleet-truck-heading">
+              <div id="fleet-truck-heading">
+                <TechnicalLabel>Contract truck profile</TechnicalLabel>
+              </div>
+              <TruckProfileSelect />
+            </section>
+            <section className="space-y-2" aria-labelledby="fleet-constraints-heading">
+              <div id="fleet-constraints-heading">
+                <TechnicalLabel>Schedule and contract constraints</TechnicalLabel>
+              </div>
+              <ContractConstraints />
             </section>
           </>
         ) : null}
@@ -210,12 +304,18 @@ export function WorkbenchLeftPanel({ mode = "driver_day_plan", className }: Work
       <div className="border-t border-black/10 p-4">
         <button
           type="button"
-          onClick={calculateDriverPlan}
-          disabled={isRunning || mode !== "driver_day_plan"}
+          onClick={calculatePlan}
+          disabled={isRunning || !canRunPlan}
           className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--fv-accent)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isRunning ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-          {isRunning ? "Running day plan" : "Calculate day plan"}
+          {isRunning
+            ? mode === "fleet_contract_plan"
+              ? "Running contract plan"
+              : "Running day plan"
+            : mode === "fleet_contract_plan"
+              ? "Calculate contract plan"
+              : "Calculate day plan"}
         </button>
       </div>
     </aside>

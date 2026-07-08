@@ -141,7 +141,7 @@ type DriverPlanCard = {
   id: string;
   title: string;
   summary: string;
-  mode: "driver_day_plan";
+  mode: "driver_day_plan" | "fleet_contract_plan";
   severity: "info" | "success" | "warning" | "critical";
   layerId?: "route" | "chargers" | "parking" | "pois" | "class8-gaps";
   metrics?: Record<string, number | string | null>;
@@ -150,7 +150,7 @@ type DriverPlanCard = {
 
 type DriverDayPlanResult = {
   id: string;
-  mode: "driver_day_plan";
+  mode: "driver_day_plan" | "fleet_contract_plan";
   routeGeometry: RouteGeometryResult;
   simulation: unknown;
   gapAnalysis: unknown;
@@ -161,6 +161,10 @@ type DriverDayPlanResult = {
   resultCards: DriverPlanCard[];
   providerWarnings: string[];
   assumptions: string[];
+};
+
+type FleetContractPlanResult = DriverDayPlanResult & {
+  mode: "fleet_contract_plan";
 };
 
 type GoogleRouteResponse = {
@@ -573,6 +577,312 @@ export const driverDayPlan = action({
         "Google route geometry is not truck-restriction-certified.",
         "Physics simulation uses available FleetVolt truck config and synthetic flat elevation when route elevation is not cached.",
         "Detour drive time and site driveway/trailer sweep access are unavailable unless explicitly returned by a provider/data source.",
+      ],
+    };
+  },
+});
+
+
+export const fleetContractPlan = action({
+  args: {
+    origin: placeValidator,
+    destination: placeValidator,
+    truckSlug: v.string(),
+    payloadLbs: v.number(),
+    weatherPreset: v.union(
+      v.literal("ideal"),
+      v.literal("hot"),
+      v.literal("cold"),
+      v.literal("headwind"),
+    ),
+    serviceDate: v.string(),
+    scheduleWindow: v.string(),
+    containersPerDay: v.number(),
+    gateStartHour: v.number(),
+    gateEndHour: v.number(),
+    portDwellMinutes: v.number(),
+    destinationDwellMinutes: v.number(),
+    shiftHours: v.number(),
+    yardReturn: v.boolean(),
+  },
+  handler: async (ctx, args): Promise<FleetContractPlanResult> => {
+    const containersPerDay = Math.max(1, Math.min(500, Math.round(args.containersPerDay)));
+    const gateStartHour = Math.max(0, Math.min(23.5, args.gateStartHour));
+    const gateEndHour = Math.max(gateStartHour + 0.5, Math.min(24, args.gateEndHour));
+    const gateHours = Math.max(0.5, gateEndHour - gateStartHour);
+    const portDwellMinutes = Math.max(0, Math.min(360, args.portDwellMinutes));
+    const destinationDwellMinutes = Math.max(0, Math.min(360, args.destinationDwellMinutes));
+    const shiftHours = Math.max(4, Math.min(16, args.shiftHours));
+
+    const routeRequest = normalizeRequest({
+      origin: coordinateFromPlace(args.origin),
+      destination: coordinateFromPlace(args.destination),
+      provider: "google" as const,
+    });
+    const routeHash = await getRouteRequestHash(routeRequest);
+    let route = routeGeometryFallback(
+      routeRequest,
+      "Route provider result unavailable inside fleet aggregate action; using endpoint geometry and labeled provider warning.",
+      { requestHash: routeHash },
+    );
+    try {
+      route = await ctx.runAction(api.workbench.actions.routeGeometry, routeRequest);
+    } catch {
+      // Keep the labeled fallback above. The provider warning card makes the assumption visible.
+    }
+
+    const routeCoordinates =
+      route.coordinates.length > 0
+        ? route.coordinates
+        : fallbackRouteCoordinates(args.origin, args.destination);
+    const corridorPoints = sampleRoutePoints(routeCoordinates);
+    const providerWarnings = Array.from(new Set([...(route.warnings ?? []), TRUCK_ROUTE_WARNING]));
+
+    let simulation: unknown = null;
+    let simulationError: string | null = null;
+    try {
+      simulation = await ctx.runAction(api.physics.simulate.simulate, {
+        request: {
+          route: {
+            origin: { lat: args.origin.latitude, lon: args.origin.longitude },
+            dest: { lat: args.destination.latitude, lon: args.destination.longitude },
+          },
+          truck: { slug: args.truckSlug },
+          conditions: {
+            weather_preset: args.weatherPreset,
+            payload_lbs: args.payloadLbs,
+            port_drayage_enabled: args.origin.kind === "port" || args.destination.kind === "port",
+          },
+          options: { include_charging: true },
+        },
+      });
+    } catch (error) {
+      simulationError = error instanceof Error ? error.message : String(error);
+    }
+
+    const sim = simulation as
+      | {
+          kpis?: { total_kwh?: number; total_time_s?: number; wh_per_mi?: number };
+          charging_stops?: unknown[] | null;
+          feasibility?: {
+            verdict?: "feasible" | "critical" | "infeasible";
+            tier?: string;
+            stop_count?: number;
+            blocking_reason?: string | null;
+            soc_deficit_kwh?: number | null;
+          } | null;
+          disclaimer?: string;
+        }
+      | null;
+
+    const gapAnalysis = (await ctx.runQuery(api.workbench.queries.analyzeClass8GapAlongRoute, {
+      corridorPoints,
+      radiusM: CLASS8_GAP_RADIUS_M,
+    })) as {
+      gap: {
+        class8WithinCorridor: number;
+        closestClass8DistanceM: number | null;
+        class8Chargers: unknown[];
+        fiveClosestAnyClass: unknown[];
+      } | null;
+    };
+    const gap = gapAnalysis.gap;
+
+    const destinationNearestClass8 = (await ctx.runQuery(api.chargers.queries.nearestClass8, {
+      lat: args.destination.latitude,
+      lng: args.destination.longitude,
+      radiusM: 50_000,
+      limit: 5,
+    })) as unknown[];
+    const destinationFiveClosest = (await ctx.runQuery(api.chargers.queries.fiveClosest, {
+      lat: args.destination.latitude,
+      lng: args.destination.longitude,
+      limit: 5,
+    })) as unknown[];
+
+    const stopPoints =
+      sim?.charging_stops?.map(stopPointFromChargingStop).filter((point): point is { lat: number; lng: number } => Boolean(point)) ?? [];
+    const midpoint = corridorPoints[Math.floor(corridorPoints.length / 2)] ?? {
+      lat: args.destination.latitude,
+      lng: args.destination.longitude,
+    };
+    const accessProbePoint = stopPoints[0] ?? midpoint;
+    const [parking, pois] = (await Promise.all([
+      ctx.runQuery(api.pois.queries.parkingInRadius, {
+        ...accessProbePoint,
+        radiusM: NEAR_STOP_RADIUS_M,
+        limit: 5,
+      }),
+      ctx.runQuery(api.pois.queries.poisInRadius, {
+        ...accessProbePoint,
+        radiusM: NEAR_STOP_RADIUS_M,
+        types: ["fuel", "food", "rest_area", "truck_stop", "repair"],
+        limit: 5,
+      }),
+    ])) as [
+      { count: number; totalSpotsWithinRadius: number; parking: unknown[] },
+      { total: number; pois: unknown[]; byType: Record<string, unknown[]> },
+    ];
+
+    const oneWaySeconds = route.durationSeconds ?? sim?.kpis?.total_time_s ?? null;
+    const dwellSeconds = (portDwellMinutes + destinationDwellMinutes) * 60;
+    const yardReturnSeconds = args.yardReturn ? 30 * 60 : 0;
+    const chargingSeconds: number =
+      sim?.charging_stops?.reduce<number>((sum, stop) => {
+        const dwell = (stop as { dwell_s?: unknown }).dwell_s;
+        return sum + (typeof dwell === "number" ? dwell : 0);
+      }, 0) ?? 0;
+    const roundTripDriveSeconds = typeof oneWaySeconds === "number" ? oneWaySeconds * 2 : null;
+    const roundTripSeconds =
+      roundTripDriveSeconds === null
+        ? null
+        : roundTripDriveSeconds + dwellSeconds + chargingSeconds + yardReturnSeconds;
+    const effectiveShiftSeconds = Math.min(shiftHours, gateHours) * 3600;
+    const tripsPerTruckDay =
+      roundTripSeconds && roundTripSeconds > 0
+        ? Math.max(0, Math.floor(effectiveShiftSeconds / roundTripSeconds))
+        : 0;
+    const trucksRequired = tripsPerTruckDay > 0 ? Math.ceil(containersPerDay / tripsPerTruckDay) : null;
+    const driversRequired = trucksRequired === null ? null : Math.ceil(trucksRequired * (shiftHours > 10 ? 1.2 : 1));
+    const chargeEventsPerTrip = sim?.charging_stops?.length ?? 0;
+    const dailyChargeEvents = chargeEventsPerTrip * containersPerDay;
+    const dailyChargingDowntimeSeconds = chargingSeconds * containersPerDay;
+    const class8Count = gap?.class8WithinCorridor ?? 0;
+    const hasSimulationBlocker = sim?.feasibility?.verdict === "critical" || sim?.feasibility?.verdict === "infeasible";
+    const trueGap = class8Count === 0 && (gap?.closestClass8DistanceM === null || (gap?.closestClass8DistanceM ?? 0) > CLASS8_GAP_RADIUS_M * 2);
+    const gapClassification = trueGap
+      ? "true gap"
+      : class8Count === 0
+        ? "detour-solvable / nearest-charger review"
+        : hasSimulationBlocker
+          ? "energy-constrained despite Class 8 coverage"
+          : "covered";
+    const supportTime = gateStartHour + Math.min(2, Math.max(0, gateHours / 3));
+    const supportHour = Math.floor(supportTime);
+    const supportMinutes = Math.round((supportTime - supportHour) * 60);
+    const supportTimeLabel = `${String(supportHour).padStart(2, "0")}:${String(supportMinutes).padStart(2, "0")}`;
+    const supportPointLabel = `${round(midpoint.lat, 3)}, ${round(midpoint.lng, 3)}`;
+
+    const cards: DriverPlanCard[] = [
+      {
+        id: "fleet-capacity-formula",
+        title: trucksRequired === null ? "Capacity formula blocked" : "Contract capacity formula",
+        summary:
+          trucksRequired === null
+            ? "Round-trip duration is unavailable or exceeds the shift window; route/simulation assumptions need review before sizing the contract."
+            : `Formula: ${containersPerDay} containers/day ÷ ${tripsPerTruckDay} trips/truck/day = ${trucksRequired} truck(s).`,
+        mode: "fleet_contract_plan",
+        severity: trucksRequired === null ? "critical" : "success",
+        layerId: "route",
+        metrics: {
+          containersPerDay,
+          roundTripDuration: formatDuration(roundTripSeconds),
+          tripsPerTruckDay,
+          trucksRequired,
+          driversRequired,
+          formula: "ceil(containers/day ÷ trips/truck/day)",
+        },
+      },
+      {
+        id: "fleet-shift-assumptions",
+        title: "Schedule and dwell assumptions",
+        summary: `Assumption labels: ${args.scheduleWindow} on ${args.serviceDate}; gate ${gateStartHour}:00-${gateEndHour}:00; port dwell ${portDwellMinutes} min; destination dwell ${destinationDwellMinutes} min; yard return ${args.yardReturn ? "included" : "excluded"}.`,
+        mode: "fleet_contract_plan",
+        severity: tripsPerTruckDay > 0 ? "info" : "warning",
+        layerId: "route",
+        metrics: {
+          effectiveWindow: `${round(Math.min(shiftHours, gateHours), 1)} h`,
+          gateHours: round(gateHours, 1),
+          shiftHours,
+          dwellPerTurn: formatDuration(dwellSeconds),
+          yardReturn: args.yardReturn ? "30 min modeled" : "not modeled",
+          oneContainerPerTrip: "assumed",
+        },
+      },
+      {
+        id: "fleet-charging-operations",
+        title: "Charging operations",
+        summary: simulationError
+          ? `Physics simulation unavailable: ${simulationError}. Charging counts are labeled unavailable until simulation returns.`
+          : chargeEventsPerTrip > 0
+            ? `Formula: ${chargeEventsPerTrip} charge event(s)/turn × ${containersPerDay} turns/day = ${dailyChargeEvents} daily event(s).`
+            : "No simulated charge stop was returned; nearest Class 8 chargers remain candidates, not committed stops.",
+        mode: "fleet_contract_plan",
+        severity: simulationError ? "warning" : chargeEventsPerTrip > 0 ? "info" : "warning",
+        layerId: "chargers",
+        metrics: {
+          chargeEventsPerTrip,
+          dailyChargeEvents,
+          chargingDowntimePerTrip: formatDuration(chargingSeconds),
+          dailyChargingDowntime: formatDuration(dailyChargingDowntimeSeconds),
+          nearestClass8Count: destinationNearestClass8.length,
+          energyKwhOneWay: round(sim?.kpis?.total_kwh, 1),
+        },
+      },
+      {
+        id: "fleet-route-amenities",
+        title: "Route amenities near operating point",
+        summary: [
+          parking.parking?.length ? `Parking: ${parking.parking.slice(0, 2).map(parkingSummary).join("; ")}` : "Parking: no in-radius truck parking returned.",
+          pois.pois?.length ? `POIs: ${pois.pois.slice(0, 3).map(poiSummary).join("; ")}` : "POIs: no driver-service POIs returned.",
+        ].join(" "),
+        mode: "fleet_contract_plan",
+        severity: parking.parking?.length || pois.pois?.length ? "info" : "warning",
+        layerId: "parking",
+        metrics: {
+          parkingCount: parking.count ?? 0,
+          parkingSpots: parking.totalSpotsWithinRadius ?? null,
+          poiCount: pois.total ?? 0,
+          amenityProbe: stopPoints.length > 0 ? "first simulated charge stop" : "route midpoint fallback",
+        },
+      },
+      {
+        id: "fleet-gap-classification",
+        title: trueGap ? "True Class 8 gap" : "Class 8 gap classification",
+        summary: trueGap
+          ? `No on-corridor Class 8 charger was found; recommend mobile CaaS support near ${supportPointLabel} around ${supportTimeLabel}.`
+          : class8Count > 0
+            ? `${class8Count} Class 8-capable charger(s) were found within ${formatMiles(CLASS8_GAP_RADIUS_M)} of sampled route points.`
+            : `No on-corridor Class 8 charger was found, but nearest distance ${formatMiles(gap?.closestClass8DistanceM)} is in detour review range.`,
+        mode: "fleet_contract_plan",
+        severity: trueGap ? "critical" : class8Count > 0 ? "success" : "warning",
+        layerId: "class8-gaps",
+        metrics: {
+          gapClassification,
+          class8WithinCorridor: class8Count,
+          closestClass8Miles: round(metersToMiles(gap?.closestClass8DistanceM ?? null), 1),
+          sampledRoutePoints: corridorPoints.length,
+          caasSupportPoint: trueGap ? supportPointLabel : "not recommended",
+          caasSupportTime: trueGap ? supportTimeLabel : "not recommended",
+        },
+        actions: [
+          {
+            id: trueGap ? "stage-mobile-caas" : "review-gap-inputs",
+            label: trueGap ? "Stage mobile CaaS support" : "Review gap evidence",
+            kind: trueGap ? "primary" : "secondary",
+          },
+        ],
+      },
+    ];
+
+    return {
+      id: `fleet-contract-plan-${String(route.metadata?.requestHash ?? Date.now())}`,
+      mode: "fleet_contract_plan" as const,
+      routeGeometry: route,
+      simulation,
+      gapAnalysis,
+      nearestClass8: destinationNearestClass8,
+      fiveClosestChargers: destinationFiveClosest,
+      parking,
+      pois,
+      resultCards: cards,
+      providerWarnings,
+      assumptions: [
+        "Fleet contract sizing assumes one container turn per round trip.",
+        "Trips/truck/day = floor(min(shift hours, gate hours) / modeled round-trip duration).",
+        "Drivers required equals trucks required, with a 20% relief factor only when shift length exceeds 10 hours.",
+        "Mobile CaaS support point uses route midpoint and early gate-window timing until stop-specific demand timing is available.",
+        "Google route geometry is not truck-restriction-certified.",
       ],
     };
   },
