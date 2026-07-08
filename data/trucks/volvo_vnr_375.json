@@ -1,0 +1,42 @@
+{
+  "name": "Volvo VNR Electric 375 kWh",
+  "nameplate_kwh": 375,
+  "usable_kwh": 300,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 25500,
+  "drag_coefficient": 0.65,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0068,
+  "regen_efficiency": 0.72,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 350 },
+    { "soc_pct": 40, "max_kw": 300 },
+    { "soc_pct": 70, "max_kw": 175 },
+    { "soc_pct": 90, "max_kw": 75 }
+  ],
+  "source_notes": "Volvo VNR Electric public specs (375 kWh 4-battery pack, CCS up to 350 kW). Same drivetrain as 565 kWh variant. Usable kWh ~80% nameplate (OEM derates more aggressively on smaller pack).",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x2",
+    "batteryNameplateKwh": 375,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 1.9, "max": 2.3, "typical": 2.05 },
+    "ratedRangeMiles": { "typical": 150, "max": 175 },
+    "recommendedMilesPerCharge": { "healthMin": 80, "healthMax": 150 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Same efficiency as 565 kWh variant (1.9-2.3 kWh/mi). 375 kWh pack supports 150 mi typical port/drayage shift, 175 mi max."
+    },
+    "streetDataSources": [
+      "NFI/4Gen Logistics 240mi/shift",
+      "EU test 1.77 kWh/mi",
+      "CARB 2.1 kWh/mi avg"
+    ],
+    "streetDataConfidence": "medium"
+  }
+}

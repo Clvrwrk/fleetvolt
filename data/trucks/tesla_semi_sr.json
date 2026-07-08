@@ -1,0 +1,45 @@
+{
+  "name": "Tesla Semi Standard Range",
+  "nameplate_kwh": 548,
+  "usable_kwh": 493,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 27000,
+  "drag_coefficient": 0.36,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0065,
+  "regen_efficiency": 0.80,
+  "aux_kw_base": 8,
+  "drivetrain_efficiency": 0.93,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 750 },
+    { "soc_pct": 30, "max_kw": 700 },
+    { "soc_pct": 50, "max_kw": 600 },
+    { "soc_pct": 70, "max_kw": 400 },
+    { "soc_pct": 85, "max_kw": 200 },
+    { "soc_pct": 95, "max_kw": 100 }
+  ],
+  "source_notes": "Tesla Semi public specs (548 kWh SR pack, MCS up to 750 kW). Same aero/drivetrain as LR variant. Usable kWh ~90% nameplate minus BMS reserve.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 548,
+    "batteryChemistry": "LFP",
+    "streetEfficiencyKwhPerMi": { "min": 1.55, "max": 1.73, "typical": 1.65 },
+    "ratedRangeMiles": { "typical": 300, "max": 350 },
+    "recommendedMilesPerCharge": { "healthMin": 120, "healthMax": 300 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Same efficiency as LR variant (1.55-1.73 kWh/mi). SR pack is smaller (548 kWh) so conservative cycling recommended. LFP chemistry tolerates deeper discharge than NMC but 20-80% window preserves calendar life."
+    },
+    "streetDataSources": [
+      "ABF pilot 1.55 kWh/mi over 4494mi",
+      "PepsiCo ~1.7 kWh/mi",
+      "DHL/NFI/Saia 1.64-1.73 kWh/mi",
+      "official Tesla 1.7 kWh/mi at 82k lbs"
+    ],
+    "streetDataConfidence": "high"
+  }
+}

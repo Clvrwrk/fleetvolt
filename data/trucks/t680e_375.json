@@ -16,5 +16,26 @@
     { "soc_pct": 70, "max_kw": 130 },
     { "soc_pct": 90, "max_kw": 65 }
   ],
-  "source_notes": "Kenworth T680E public spec sheet (375 kWh pack, CCS charging). Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve. Charge curve breakpoints from OEM CCS taper documentation (D-11)."
+  "source_notes": "Kenworth T680E public spec sheet (375 kWh pack, CCS charging). Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve. Charge curve breakpoints from OEM CCS taper documentation (D-11).",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 375,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 2.2, "max": 2.6, "typical": 2.4 },
+    "ratedRangeMiles": { "typical": 150, "max": 180 },
+    "recommendedMilesPerCharge": { "healthMin": 80, "healthMax": 180 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Shared PACCAR platform with Peterbilt 579EV. BEDT range 2.1-2.5 kWh/mi. 375 kWh pack supports 150 mi typical port/drayage."
+    },
+    "streetDataSources": [
+      "shared PACCAR platform with Peterbilt",
+      "BEDT range 2.1-2.5 kWh/mi"
+    ],
+    "streetDataConfidence": "medium"
+  }
 }

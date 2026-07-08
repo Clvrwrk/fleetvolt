@@ -1,0 +1,42 @@
+{
+  "name": "Volvo VNR Electric 565 kWh",
+  "nameplate_kwh": 565,
+  "usable_kwh": 452,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 25500,
+  "drag_coefficient": 0.65,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0068,
+  "regen_efficiency": 0.72,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 350 },
+    { "soc_pct": 40, "max_kw": 300 },
+    { "soc_pct": 70, "max_kw": 175 },
+    { "soc_pct": 90, "max_kw": 75 }
+  ],
+  "source_notes": "Volvo VNR Electric public specs (565 kWh 6-battery pack, 452 kWh usable, CCS up to 350 kW). Usable kWh per OEM spec sheet.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x2",
+    "batteryNameplateKwh": 565,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 1.9, "max": 2.3, "typical": 2.05 },
+    "ratedRangeMiles": { "typical": 220, "max": 275 },
+    "recommendedMilesPerCharge": { "healthMin": 110, "healthMax": 220 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "NFI/4Gen Logistics: 240 mi/shift. EU test 1.77 kWh/mi. CARB avg 2.1 kWh/mi. 565 kWh pack (452 usable) supports 220 mi typical with 275 mi max range."
+    },
+    "streetDataSources": [
+      "NFI/4Gen Logistics 240mi/shift",
+      "EU test 1.77 kWh/mi",
+      "CARB 2.1 kWh/mi avg"
+    ],
+    "streetDataConfidence": "medium"
+  }
+}

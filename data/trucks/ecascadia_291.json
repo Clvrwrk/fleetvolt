@@ -1,0 +1,41 @@
+{
+  "name": "Freightliner eCascadia 291 kWh",
+  "nameplate_kwh": 291,
+  "usable_kwh": 262,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 26000,
+  "drag_coefficient": 0.65,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0065,
+  "regen_efficiency": 0.70,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 350 },
+    { "soc_pct": 40, "max_kw": 320 },
+    { "soc_pct": 70, "max_kw": 180 },
+    { "soc_pct": 90, "max_kw": 80 }
+  ],
+  "source_notes": "Freightliner eCascadia public spec sheet (291 kWh pack, CCS up to 350 kW). Same drivetrain as 438 kWh variant, smaller battery. Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "4x2",
+    "batteryNameplateKwh": 291,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 2.0, "max": 2.3, "typical": 2.165 },
+    "ratedRangeMiles": { "typical": 155, "max": 155 },
+    "recommendedMilesPerCharge": { "healthMin": 70, "healthMax": 140 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Same efficiency as 438 kWh variant (2.0-2.3 kWh/mi). Smaller pack → more conservative cycling recommended. 291 kWh pack supports ~155 mi typical port/drayage shift."
+    },
+    "streetDataSources": [
+      "DTNA demo 2.165 kWh/mi at 80k lbs",
+      "CARB BEDT avg 2.1 kWh/mi"
+    ],
+    "streetDataConfidence": "medium"
+  }
+}

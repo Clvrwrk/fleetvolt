@@ -1,0 +1,41 @@
+{
+  "name": "Peterbilt 579EV",
+  "nameplate_kwh": 500,
+  "usable_kwh": 450,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 25500,
+  "drag_coefficient": 0.67,
+  "frontal_area_m2": 9.6,
+  "C_rr": 0.0068,
+  "regen_efficiency": 0.68,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.91,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 250 },
+    { "soc_pct": 40, "max_kw": 220 },
+    { "soc_pct": 70, "max_kw": 130 },
+    { "soc_pct": 90, "max_kw": 65 }
+  ],
+  "source_notes": "Peterbilt 579EV public specs (500 kWh pack, CCS up to 250 kW). PACCAR platform shared with Kenworth T680E. Usable kWh ~90% nameplate minus BMS reserve.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 500,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 2.2, "max": 2.6, "typical": 2.4 },
+    "ratedRangeMiles": { "typical": 150, "max": 250 },
+    "recommendedMilesPerCharge": { "healthMin": 80, "healthMax": 200 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Vancouver/Oakland port pilots. BEDT range 2.1-2.5 kWh/mi. 500 kWh pack supports 150-250 mi depending on duty cycle."
+    },
+    "streetDataSources": [
+      "Vancouver/Oakland port pilots",
+      "BEDT 2.1-2.5 kWh/mi range"
+    ],
+    "streetDataConfidence": "medium"
+  }
+}

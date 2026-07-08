@@ -16,5 +16,27 @@
     { "soc_pct": 70, "max_kw": 180 },
     { "soc_pct": 90, "max_kw": 80 }
   ],
-  "source_notes": "Freightliner eCascadia public spec sheet (438 kWh pack, CCS up to 350 kW). Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve. Charge curve breakpoints from OEM CCS taper documentation (D-11)."
+  "source_notes": "Freightliner eCascadia public spec sheet (438 kWh pack, CCS up to 350 kW). Usable kWh per D-10: ~90% nameplate minus 0.5 kWh BMS reserve. Charge curve breakpoints from OEM CCS taper documentation (D-11).",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "4x2",
+    "batteryNameplateKwh": 438,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 2.0, "max": 2.3, "typical": 2.165 },
+    "ratedRangeMiles": { "typical": 220, "max": 250 },
+    "recommendedMilesPerCharge": { "healthMin": 100, "healthMax": 200 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "DTNA demo fleet: 1M+ test miles at 2.165 kWh/mi avg at 80k lbs GCW. CARB BEDT avg 2.1 kWh/mi. 438 kWh pack supports 220-230 mi typical port/drayage shifts."
+    },
+    "streetDataSources": [
+      "DTNA demo 2.165 kWh/mi at 80k lbs",
+      "CARB BEDT avg 2.1 kWh/mi",
+      "1M+ test miles"
+    ],
+    "streetDataConfidence": "medium"
+  }
 }

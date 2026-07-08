@@ -1,0 +1,43 @@
+{
+  "name": "Nikola Tre BEV",
+  "nameplate_kwh": 733,
+  "usable_kwh": 660,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 27000,
+  "drag_coefficient": 0.63,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0067,
+  "regen_efficiency": 0.72,
+  "aux_kw_base": 9,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 350 },
+    { "soc_pct": 35, "max_kw": 320 },
+    { "soc_pct": 60, "max_kw": 240 },
+    { "soc_pct": 80, "max_kw": 150 },
+    { "soc_pct": 90, "max_kw": 80 }
+  ],
+  "source_notes": "Nikola Tre BEV public specs (733 kWh pack, CCS up to 350 kW). Usable kWh ~90% nameplate minus BMS reserve.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 733,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": { "min": 2.1, "max": 2.3, "typical": 2.2 },
+    "ratedRangeMiles": { "typical": 330, "max": 350 },
+    "recommendedMilesPerCharge": { "healthMin": 130, "healthMax": 290 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Range-derived: early claim 2.25 kWh/mi at 80k lbs. Multi-truck tests confirm 2.1-2.3 kWh/mi. 733 kWh pack supports 330-350 mi typical."
+    },
+    "streetDataSources": [
+      "range-derived 2.2 kWh/mi",
+      "early claim 2.25 kWh/mi at 80k lbs",
+      "multi-truck tests"
+    ],
+    "streetDataConfidence": "medium"
+  }
+}

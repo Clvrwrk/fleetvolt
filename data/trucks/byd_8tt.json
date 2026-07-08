@@ -1,0 +1,41 @@
+{
+  "name": "BYD 8TT",
+  "nameplate_kwh": 435,
+  "usable_kwh": 392,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 27000,
+  "drag_coefficient": 0.70,
+  "frontal_area_m2": 10.0,
+  "C_rr": 0.0070,
+  "regen_efficiency": 0.68,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.91,
+  "charge_curve": [
+    { "soc_pct": 10, "max_kw": 150 },
+    { "soc_pct": 40, "max_kw": 140 },
+    { "soc_pct": 70, "max_kw": 100 },
+    { "soc_pct": 90, "max_kw": 50 }
+  ],
+  "source_notes": "BYD 8TT public specs (435 kWh pack, CCS up to 150 kW dual-gun). LFP chemistry. Heavier/less aerodynamic than competitors. Usable kWh ~90% nameplate minus BMS reserve.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 435,
+    "batteryChemistry": "LFP",
+    "streetEfficiencyKwhPerMi": { "min": 2.4, "max": 2.8, "typical": 2.6 },
+    "ratedRangeMiles": { "typical": 124, "max": 200 },
+    "recommendedMilesPerCharge": { "healthMin": 70, "healthMax": 150 },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "Port deployments common. Heavier/less aero than competitors: 2.4-2.8 kWh/mi typical. LFP pack tolerates deeper cycling. 435 kWh pack supports 124-150 mi typical, 200 mi max at lower GCW."
+    },
+    "streetDataSources": [
+      "port deployments common",
+      "heavier/less aero platform"
+    ],
+    "streetDataConfidence": "medium"
+  }
+}
