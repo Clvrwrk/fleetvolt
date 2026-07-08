@@ -386,7 +386,8 @@ export default defineSchema({
   }).index("by_sctg2", ["sctg2"]),
 
   // Geo rollup: US -> State -> County (P12-13, Census FIPS/TIGER). SCAFFOLD —
-  // populated in 12-08.
+  // populated in 12-08. P-ROLES: airDistrict + zipCodes added for CaaS
+  // deployment-zone geographic context (additive — existing rows stay valid).
   geoRegions: defineTable({
     level: v.union(
       v.literal("nation"),
@@ -406,6 +407,8 @@ export default defineSchema({
       }),
     ),
     aggregateScore: v.optional(v.number()),
+    airDistrict: v.optional(v.string()),
+    zipCodes: v.optional(v.array(v.string())),
     provenance,
   })
     .index("by_level", ["level"])
@@ -469,4 +472,145 @@ export default defineSchema({
   })
     .index("by_driverId", ["driverId"])
     .index("by_email", ["email"]),
+
+  // ── Three-user-role platform (P-ROLES) ─────────────────────────────────────
+  //
+  // userAccounts unifies all three role types (driver, fleet_manager, caas).
+  // userId is a stable anonymous ID (localStorage UUID or WorkOS subject once
+  // Phase 10 lands). For drivers, this links to driverProfiles.driverId. For
+  // fleet managers and CaaS companies, it links to fleetCompanies/caasCompanies
+  // via the role-specific tables.
+  userAccounts: defineTable({
+    userId: v.string(),
+    role: v.union(
+      v.literal("driver"),
+      v.literal("fleet_manager"),
+      v.literal("caas"),
+    ),
+    email: v.optional(v.string()),
+    displayName: v.string(),
+    companyName: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_email", ["email"])
+    .index("by_role", ["role"]),
+
+  // ── Fleet Manager tables (P-ROLES) ────────────────────────────────────────
+
+  fleetCompanies: defineTable({
+    fleetId: v.string(),
+    name: v.string(),
+    dotNumber: v.optional(v.string()),
+    address: v.optional(v.string()),
+    location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_fleetId", ["fleetId"])
+    .index("by_name", ["name"]),
+
+  fleetDrivers: defineTable({
+    fleetId: v.string(),
+    driverId: v.string(),
+    driverName: v.string(),
+    assignedTruckSlug: v.optional(v.string()),
+    assignedLotId: v.optional(v.string()),
+    status: v.union(v.literal("active"), v.literal("inactive")),
+    createdAt: v.number(),
+  })
+    .index("by_fleetId", ["fleetId"])
+    .index("by_driverId", ["driverId"]),
+
+  fleetParkingLots: defineTable({
+    lotId: v.string(),
+    fleetId: v.string(),
+    name: v.string(),
+    address: v.optional(v.string()),
+    location: v.object({ lat: v.number(), lng: v.number() }),
+    amenities: v.array(v.string()),
+    capacityTrucks: v.number(),
+    existingChargers: v.optional(v.number()),
+    chargerKw: v.optional(v.number()),
+    powerAvailable: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_fleetId", ["fleetId"])
+    .index("by_lotId", ["lotId"]),
+
+  fleetRoutes: defineTable({
+    routeId: v.string(),
+    fleetId: v.string(),
+    name: v.string(),
+    originLotId: v.optional(v.string()),
+    destLotId: v.optional(v.string()),
+    waypoints: v.array(v.object({ lat: v.number(), lng: v.number() })),
+    distanceMiles: v.optional(v.number()),
+    assignedDriverIds: v.array(v.string()),
+    assignedTruckSlugs: v.array(v.string()),
+    schedule: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_fleetId", ["fleetId"])
+    .index("by_routeId", ["routeId"]),
+
+  // ── CaaS (Charging-as-a-Service) tables (P-ROLES) ──────────────────────────
+
+  caasCompanies: defineTable({
+    caasId: v.string(),
+    name: v.string(),
+    serviceArea: v.optional(
+      v.object({
+        states: v.array(v.string()),
+        counties: v.array(v.string()),
+      }),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_caasId", ["caasId"])
+    .index("by_name", ["name"]),
+
+  caasDeploymentZones: defineTable({
+    zoneId: v.string(),
+    caasId: v.string(),
+    name: v.string(),
+    level: v.union(
+      v.literal("nation"),
+      v.literal("state"),
+      v.literal("county"),
+      v.literal("air_district"),
+      v.literal("zip"),
+    ),
+    fips: v.optional(v.string()),
+    airDistrict: v.optional(v.string()),
+    zipCode: v.optional(v.string()),
+    centroid: v.object({ lat: v.number(), lng: v.number() }),
+    radiusM: v.number(),
+    modeledDwellScore: v.optional(v.number()),
+    freightFlowKtons: v.optional(v.number()),
+    carrierCount: v.optional(v.number()),
+    parkingCapacity: v.optional(v.number()),
+    existingChargers: v.optional(v.number()),
+    class8ChargerGap: v.optional(v.boolean()),
+    recommendedPowerKw: v.optional(v.number()),
+    priority: v.optional(
+      v.union(
+        v.literal("high"),
+        v.literal("medium"),
+        v.literal("low"),
+      ),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_caasId", ["caasId"])
+    .index("by_zoneId", ["zoneId"])
+    .index("by_level", ["level"])
+    .index("by_priority", ["caasId", "priority"]),
+
+  // ── Geo enrichment: air districts + zip codes on geoRegions (P-ROLES) ──────
+  // geoRegions gains optional airDistrict + zipCodes fields so CaaS deployment
+  // zones can reference finer-grained geographic context than nation/state/county.
+  // All additive — existing rows stay valid.
 });
