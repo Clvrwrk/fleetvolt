@@ -250,6 +250,13 @@ export default defineSchema({
   }).index("by_routeHash", ["routeHash"]),
 
   // Truck configs (from truck_configs; eCascadia/T680E presets).
+  //
+  // P14-TRUCKS: enriched with real-world STREET metadata for every Class 6-8 EV
+  // truck — street efficiency (kWh/mi, fully laden ~80k+ lbs GCW port/drayage),
+  // rated range, battery-health-optimized miles-per-charge, battery-health
+  // operating guidance, and the street-data provenance/confidence. All new
+  // fields are OPTIONAL and ADDITIVE — the existing physics fields stay intact
+  // so the simulator's energy model is unaffected.
   truckConfigs: defineTable({
     name: v.string(),
     oemModel: v.optional(v.string()),
@@ -262,12 +269,48 @@ export default defineSchema({
     auxKwBase: v.optional(v.number()),
     maxChargeRateKw: v.optional(v.number()),
     params: v.optional(v.any()),
+    // ── P14-TRUCKS street metadata (additive, all optional) ─────────────────
+    vehicleClass: v.optional(
+      v.union(v.literal(6), v.literal(7), v.literal(8)),
+    ),
+    axleConfig: v.optional(v.string()), // "4x2", "6x4", "6x2"
+    batteryNameplateKwh: v.optional(v.number()),
+    batteryChemistry: v.optional(v.string()), // "LFP", "NMC", etc.
+    // Fully laden (~80k+ lbs GCW) port/drayage street efficiency in kWh/mi.
+    streetEfficiencyKwhPerMi: v.optional(
+      v.object({ min: v.number(), max: v.number(), typical: v.number() }),
+    ),
+    // OEM-rated range envelope (miles) under typical/max conditions.
+    ratedRangeMiles: v.optional(
+      v.object({ typical: v.number(), max: v.number() }),
+    ),
+    // Battery-health-optimized recommended miles per charge cycle.
+    recommendedMilesPerCharge: v.optional(
+      v.object({ healthMin: v.number(), healthMax: v.number() }),
+    ),
+    // Battery-health operating guidance: daily charge target, operating SoC
+    // window, max depth-of-discharge, and notes.
+    batteryHealthGuidance: v.optional(
+      v.object({
+        dailyChargeTargetPct: v.number(),
+        operatingWindowMinPct: v.number(),
+        operatingWindowMaxPct: v.number(),
+        dodMaxPct: v.number(),
+        notes: v.string(),
+      }),
+    ),
+    // Street-data source labels (e.g. "PepsiCo pilot", "CARB BEDT avg").
+    streetDataSources: v.optional(v.array(v.string())),
+    // Confidence in the street data: high/medium/low.
+    streetDataConfidence: v.optional(
+      v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+    ),
     provenance,
   }).index("by_name", ["name"]),
 
-  // Simulations — METADATA ONLY (RESEARCH §5). inputsHash is the dedup/cache
-  // key. NO outputs/results field: the physics engine + a results table land
-  // in Phase 13; results stay single-sourced in Postgres until then.
+  // Simulations — results now live in Convex (Phase 13 fulfilled the Phase-12
+  // metadata-only split). inputsHash is the dedup/cache key. The `results`
+  // field holds the full SimulateResponse JSON.
   simulations: defineTable({
     inputsHash: v.string(),
     status: v.union(
@@ -281,6 +324,7 @@ export default defineSchema({
     physicsVersion: v.optional(v.string()),
     chargerVersion: v.optional(v.string()),
     inputs: v.optional(v.any()),
+    results: v.optional(v.any()),
     durationMs: v.optional(v.number()),
     provenance,
   })
