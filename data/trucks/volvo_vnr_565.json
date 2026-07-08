@@ -11,10 +11,22 @@
   "aux_kw_base": 10,
   "drivetrain_efficiency": 0.92,
   "charge_curve": [
-    { "soc_pct": 10, "max_kw": 350 },
-    { "soc_pct": 40, "max_kw": 300 },
-    { "soc_pct": 70, "max_kw": 175 },
-    { "soc_pct": 90, "max_kw": 75 }
+    {
+      "soc_pct": 10,
+      "max_kw": 350
+    },
+    {
+      "soc_pct": 40,
+      "max_kw": 300
+    },
+    {
+      "soc_pct": 70,
+      "max_kw": 175
+    },
+    {
+      "soc_pct": 90,
+      "max_kw": 75
+    }
   ],
   "source_notes": "Volvo VNR Electric public specs (565 kWh 6-battery pack, 452 kWh usable, CCS up to 350 kW). Usable kWh per OEM spec sheet.",
   "street_metadata": {
@@ -22,9 +34,19 @@
     "axleConfig": "6x2",
     "batteryNameplateKwh": 565,
     "batteryChemistry": "NMC",
-    "streetEfficiencyKwhPerMi": { "min": 1.9, "max": 2.3, "typical": 2.05 },
-    "ratedRangeMiles": { "typical": 220, "max": 275 },
-    "recommendedMilesPerCharge": { "healthMin": 110, "healthMax": 220 },
+    "streetEfficiencyKwhPerMi": {
+      "min": 1.9,
+      "max": 2.3,
+      "typical": 2.05
+    },
+    "ratedRangeMiles": {
+      "typical": 220,
+      "max": 275
+    },
+    "recommendedMilesPerCharge": {
+      "healthMin": 110,
+      "healthMax": 220
+    },
     "batteryHealthGuidance": {
       "dailyChargeTargetPct": 80,
       "operatingWindowMinPct": 20,
@@ -38,5 +60,46 @@
       "CARB 2.1 kWh/mi avg"
     ],
     "streetDataConfidence": "medium"
+  },
+  "hvip": {
+    "eligible": true,
+    "incentiveAmount": "$120,000",
+    "category": "Tractor",
+    "gvwr": "Class 8: $120,000",
+    "modelYear": "2024, 2026",
+    "dealers": "Affinity Truck Center, Dobbs Peterbilt, TEC Equipment, Inc., Vanguard Truck Center, Watsonville Fleet Group",
+    "vehicleType": "Drayage $ Eligible*, Tractor",
+    "url": "https://californiahvip.org/vehicles/volvo-vnre-battery-electric-tractor/",
+    "batteryOptions": [
+      "375 kWh",
+      "565 kWh"
+    ]
+  },
+  "carbValidation": {
+    "source": "CARB 180124hdbevefficiency (May 2018)",
+    "testVehicle": "TransPower Class 8 drayage prototype @ 72,000 lbs GCW",
+    "eerRange": {
+      "min": 3.2,
+      "max": 5.5
+    },
+    "mpdgeRange": {
+      "min": 15.5,
+      "max": 19.2
+    },
+    "derivedKwhPerMi": {
+      "min": 1.76,
+      "max": 2.17,
+      "typical": 2.0
+    },
+    "testCycles": [
+      "near-dock drayage",
+      "local drayage",
+      "delivery drayage",
+      "regional drayage",
+      "UDDS",
+      "cruise",
+      "7% grade"
+    ],
+    "notes": "UCR chassis dynamometer + in-use study at POLB. Loaded to 72,000 lbs (average fully loaded drayage weight). EER = battery electric efficiency vs diesel."
   }
 }

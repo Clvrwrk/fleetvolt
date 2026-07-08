@@ -1,0 +1,103 @@
+{
+  "name": "Windrose WDR4B0EV 705 kWh",
+  "nameplate_kwh": 705,
+  "usable_kwh": 634.5,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 26000,
+  "drag_coefficient": 0.6,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0065,
+  "regen_efficiency": 0.72,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    {
+      "soc_pct": 10,
+      "max_kw": 350
+    },
+    {
+      "soc_pct": 40,
+      "max_kw": 320
+    },
+    {
+      "soc_pct": 70,
+      "max_kw": 200
+    },
+    {
+      "soc_pct": 90,
+      "max_kw": 100
+    }
+  ],
+  "source_notes": "Windrose WDR4B0EV (705 kWh pack). Class 8 tractor. Chinese OEM, long-range BEV.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 705,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": {
+      "min": 1.9,
+      "max": 2.3,
+      "typical": 2.1
+    },
+    "ratedRangeMiles": {
+      "typical": 300,
+      "max": 360
+    },
+    "recommendedMilesPerCharge": {
+      "healthMin": 120,
+      "healthMax": 300
+    },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "No fleet pilot data. Efficiency estimated from same-class averages."
+    },
+    "streetDataSources": [
+      "same-class average",
+      "OEM range claim derived"
+    ],
+    "streetDataConfidence": "low"
+  },
+  "hvip": {
+    "eligible": true,
+    "incentiveAmount": "$120,000",
+    "category": "Tractor",
+    "gvwr": "Class 8: $120,000",
+    "modelYear": "2025",
+    "dealers": "XOS Services",
+    "vehicleType": "Tractor",
+    "url": "https://californiahvip.org/vehicles/windrose-wdr4b0ev-battery-electric-tractor/",
+    "batteryOptions": [
+      "705 kWh"
+    ]
+  },
+  "carbValidation": {
+    "source": "CARB 180124hdbevefficiency (May 2018)",
+    "testVehicle": "TransPower Class 8 drayage prototype @ 72,000 lbs GCW",
+    "eerRange": {
+      "min": 3.2,
+      "max": 5.5
+    },
+    "mpdgeRange": {
+      "min": 15.5,
+      "max": 19.2
+    },
+    "derivedKwhPerMi": {
+      "min": 1.76,
+      "max": 2.17,
+      "typical": 2.0
+    },
+    "testCycles": [
+      "near-dock drayage",
+      "local drayage",
+      "delivery drayage",
+      "regional drayage",
+      "UDDS",
+      "cruise",
+      "7% grade"
+    ],
+    "notes": "UCR chassis dynamometer + in-use study at POLB. Loaded to 72,000 lbs (average fully loaded drayage weight). EER = battery electric efficiency vs diesel."
+  }
+}

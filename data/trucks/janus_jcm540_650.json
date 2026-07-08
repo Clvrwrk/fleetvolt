@@ -1,0 +1,102 @@
+{
+  "name": "Janus Electric JCM 540 650 kWh",
+  "nameplate_kwh": 650,
+  "usable_kwh": 572.0,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 28000,
+  "drag_coefficient": 0.68,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.007,
+  "regen_efficiency": 0.7,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.91,
+  "charge_curve": [
+    {
+      "soc_pct": 10,
+      "max_kw": 150
+    },
+    {
+      "soc_pct": 40,
+      "max_kw": 140
+    },
+    {
+      "soc_pct": 70,
+      "max_kw": 100
+    },
+    {
+      "soc_pct": 90,
+      "max_kw": 50
+    }
+  ],
+  "source_notes": "Janus Electric JCM 540 conversion kit (650 kWh pack). Class 8 drayage conversion. Battery electric repower of existing diesel tractor.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 650,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": {
+      "min": 2.2,
+      "max": 2.6,
+      "typical": 2.4
+    },
+    "ratedRangeMiles": {
+      "typical": 250,
+      "max": 300
+    },
+    "recommendedMilesPerCharge": {
+      "healthMin": 100,
+      "healthMax": 250
+    },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "No fleet pilot data. Efficiency estimated from same-class averages."
+    },
+    "streetDataSources": [
+      "same-class average (CARB 2.0-2.4 kWh/mi)"
+    ],
+    "streetDataConfidence": "low"
+  },
+  "hvip": {
+    "eligible": true,
+    "incentiveAmount": "$90,000",
+    "category": "Conversion, Tractor",
+    "gvwr": "Class 8: $90,000",
+    "modelYear": "2016",
+    "dealers": "Electric Vehicle Choice",
+    "vehicleType": "Conversion, Drayage $ Eligible*, Tractor",
+    "url": "https://californiahvip.org/vehicles/jcm-540-battery-electric-conversion-kit/",
+    "batteryOptions": [
+      "650 kWh"
+    ]
+  },
+  "carbValidation": {
+    "source": "CARB 180124hdbevefficiency (May 2018)",
+    "testVehicle": "TransPower Class 8 drayage prototype @ 72,000 lbs GCW",
+    "eerRange": {
+      "min": 3.2,
+      "max": 5.5
+    },
+    "mpdgeRange": {
+      "min": 15.5,
+      "max": 19.2
+    },
+    "derivedKwhPerMi": {
+      "min": 1.76,
+      "max": 2.17,
+      "typical": 2.0
+    },
+    "testCycles": [
+      "near-dock drayage",
+      "local drayage",
+      "delivery drayage",
+      "regional drayage",
+      "UDDS",
+      "cruise",
+      "7% grade"
+    ],
+    "notes": "UCR chassis dynamometer + in-use study at POLB. Loaded to 72,000 lbs (average fully loaded drayage weight). EER = battery electric efficiency vs diesel."
+  }
+}

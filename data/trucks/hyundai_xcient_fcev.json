@@ -1,0 +1,100 @@
+{
+  "name": "Hyundai Xcient Fuel Cell",
+  "nameplate_kwh": 72,
+  "usable_kwh": 64.8,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 26000,
+  "drag_coefficient": 0.67,
+  "frontal_area_m2": 9.8,
+  "C_rr": 0.0068,
+  "regen_efficiency": 0.0,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.92,
+  "charge_curve": [
+    {
+      "soc_pct": 10,
+      "max_kw": 0
+    },
+    {
+      "soc_pct": 50,
+      "max_kw": 0
+    },
+    {
+      "soc_pct": 90,
+      "max_kw": 0
+    }
+  ],
+  "source_notes": "Hyundai Xcient Fuel Cell tractor (72 kWh battery + hydrogen fuel cell). FCEV, not BEV. Hydrogen refueling, not battery charging. HVIP eligible at $240,000.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 72,
+    "batteryChemistry": "Hydrogen Fuel Cell",
+    "streetEfficiencyKwhPerMi": {
+      "min": 1.8,
+      "max": 2.2,
+      "typical": 2.0
+    },
+    "ratedRangeMiles": {
+      "typical": 120,
+      "max": 160
+    },
+    "recommendedMilesPerCharge": {
+      "healthMin": 60,
+      "healthMax": 120
+    },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "FCEV: fuel cell efficiency ~50%, H2 consumption ~8 kg/100mi. Battery buffer 72 kWh for regen/peak. No fleet pilot data."
+    },
+    "streetDataSources": [
+      "OEM spec-derived",
+      "same-class FCEV estimates"
+    ],
+    "streetDataConfidence": "low"
+  },
+  "hvip": {
+    "eligible": true,
+    "incentiveAmount": "$240,000",
+    "category": "Tractor (FCEV)",
+    "gvwr": "Class 8 Fuel Cell: $240,000",
+    "modelYear": "2025, 2026",
+    "dealers": "Hyundai Translead, Tom's Truck Center",
+    "vehicleType": "Drayage $ Eligible*",
+    "url": "https://californiahvip.org/vehicles/hyundai-xcient-fuel-cell-electric-truck/",
+    "batteryOptions": [
+      "72 kWh"
+    ],
+    "technologyType": "Hydrogen Fuel Cell"
+  },
+  "carbValidation": {
+    "source": "CARB 180124hdbevefficiency (May 2018)",
+    "testVehicle": "TransPower Class 8 drayage prototype @ 72,000 lbs GCW",
+    "eerRange": {
+      "min": 3.2,
+      "max": 5.5
+    },
+    "mpdgeRange": {
+      "min": 15.5,
+      "max": 19.2
+    },
+    "derivedKwhPerMi": {
+      "min": 1.76,
+      "max": 2.17,
+      "typical": 2.0
+    },
+    "testCycles": [
+      "near-dock drayage",
+      "local drayage",
+      "delivery drayage",
+      "regional drayage",
+      "UDDS",
+      "cruise",
+      "7% grade"
+    ],
+    "notes": "CARB efficiency data is for BEV drayage (TransPower). Hyundai Xcient is FCEV; efficiency characteristics differ. Included for reference only."
+  }
+}

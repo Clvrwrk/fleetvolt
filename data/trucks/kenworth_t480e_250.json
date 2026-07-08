@@ -1,0 +1,104 @@
+{
+  "name": "Kenworth T480E 250 kWh",
+  "nameplate_kwh": 250,
+  "usable_kwh": 225.0,
+  "bms_reserve_kwh": 0.5,
+  "curb_weight_lbs": 25500,
+  "drag_coefficient": 0.67,
+  "frontal_area_m2": 9.6,
+  "C_rr": 0.0068,
+  "regen_efficiency": 0.68,
+  "aux_kw_base": 10,
+  "drivetrain_efficiency": 0.91,
+  "charge_curve": [
+    {
+      "soc_pct": 10,
+      "max_kw": 250
+    },
+    {
+      "soc_pct": 40,
+      "max_kw": 220
+    },
+    {
+      "soc_pct": 70,
+      "max_kw": 130
+    },
+    {
+      "soc_pct": 90,
+      "max_kw": 65
+    }
+  ],
+  "source_notes": "Kenworth T480E (250 kWh pack). Class 8 straight truck/tractor. PACCAR platform.",
+  "street_metadata": {
+    "vehicleClass": 8,
+    "axleConfig": "6x4",
+    "batteryNameplateKwh": 250,
+    "batteryChemistry": "NMC",
+    "streetEfficiencyKwhPerMi": {
+      "min": 2.2,
+      "max": 2.6,
+      "typical": 2.4
+    },
+    "ratedRangeMiles": {
+      "typical": 150,
+      "max": 180
+    },
+    "recommendedMilesPerCharge": {
+      "healthMin": 80,
+      "healthMax": 150
+    },
+    "batteryHealthGuidance": {
+      "dailyChargeTargetPct": 80,
+      "operatingWindowMinPct": 20,
+      "operatingWindowMaxPct": 80,
+      "dodMaxPct": 60,
+      "notes": "PACCAR platform (shared Kenworth/Peterbilt). BEDT range 2.1-2.5 kWh/mi. No fleet pilot data for this variant."
+    },
+    "streetDataSources": [
+      "PACCAR platform shared with T680E/579EV",
+      "BEDT 2.1-2.5 kWh/mi range"
+    ],
+    "streetDataConfidence": "low"
+  },
+  "hvip": {
+    "eligible": true,
+    "incentiveAmount": "$120,000",
+    "category": "Straight Truck, Tractor",
+    "gvwr": "Class 8: $120,000",
+    "modelYear": "2026",
+    "dealers": "Inland Kenworth US, Kenworth Sales Company, Pape Kenworth",
+    "vehicleType": "Drayage $ Eligible*, Tractor",
+    "url": "https://californiahvip.org/vehicles/kenworth-t480e-battery-electric-truck/",
+    "batteryOptions": [
+      "250 kWh",
+      "375 kWh"
+    ]
+  },
+  "carbValidation": {
+    "source": "CARB 180124hdbevefficiency (May 2018)",
+    "testVehicle": "TransPower Class 8 drayage prototype @ 72,000 lbs GCW",
+    "eerRange": {
+      "min": 3.2,
+      "max": 5.5
+    },
+    "mpdgeRange": {
+      "min": 15.5,
+      "max": 19.2
+    },
+    "derivedKwhPerMi": {
+      "min": 1.76,
+      "max": 2.17,
+      "typical": 2.0
+    },
+    "testCycles": [
+      "near-dock drayage",
+      "local drayage",
+      "delivery drayage",
+      "regional drayage",
+      "UDDS",
+      "cruise",
+      "7% grade"
+    ],
+    "notes": "UCR chassis dynamometer + in-use study at POLB. Loaded to 72,000 lbs (average fully loaded drayage weight). EER = battery electric efficiency vs diesel."
+  }
+}

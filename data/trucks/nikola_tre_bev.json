@@ -11,11 +11,26 @@
   "aux_kw_base": 9,
   "drivetrain_efficiency": 0.92,
   "charge_curve": [
-    { "soc_pct": 10, "max_kw": 350 },
-    { "soc_pct": 35, "max_kw": 320 },
-    { "soc_pct": 60, "max_kw": 240 },
-    { "soc_pct": 80, "max_kw": 150 },
-    { "soc_pct": 90, "max_kw": 80 }
+    {
+      "soc_pct": 10,
+      "max_kw": 350
+    },
+    {
+      "soc_pct": 35,
+      "max_kw": 320
+    },
+    {
+      "soc_pct": 60,
+      "max_kw": 240
+    },
+    {
+      "soc_pct": 80,
+      "max_kw": 150
+    },
+    {
+      "soc_pct": 90,
+      "max_kw": 80
+    }
   ],
   "source_notes": "Nikola Tre BEV public specs (733 kWh pack, CCS up to 350 kW). Usable kWh ~90% nameplate minus BMS reserve.",
   "street_metadata": {
@@ -23,9 +38,19 @@
     "axleConfig": "6x4",
     "batteryNameplateKwh": 733,
     "batteryChemistry": "NMC",
-    "streetEfficiencyKwhPerMi": { "min": 2.1, "max": 2.3, "typical": 2.2 },
-    "ratedRangeMiles": { "typical": 330, "max": 350 },
-    "recommendedMilesPerCharge": { "healthMin": 130, "healthMax": 290 },
+    "streetEfficiencyKwhPerMi": {
+      "min": 2.1,
+      "max": 2.3,
+      "typical": 2.2
+    },
+    "ratedRangeMiles": {
+      "typical": 330,
+      "max": 350
+    },
+    "recommendedMilesPerCharge": {
+      "healthMin": 130,
+      "healthMax": 290
+    },
     "batteryHealthGuidance": {
       "dailyChargeTargetPct": 80,
       "operatingWindowMinPct": 20,
@@ -39,5 +64,36 @@
       "multi-truck tests"
     ],
     "streetDataConfidence": "medium"
+  },
+  "hvip": {
+    "eligible": false,
+    "notes": "Nikola Tre BEV not found in HVIP eligible vehicles list as of 2026-07-08. Nikola not listed as an HVIP-eligible OEM."
+  },
+  "carbValidation": {
+    "source": "CARB 180124hdbevefficiency (May 2018)",
+    "testVehicle": "TransPower Class 8 drayage prototype @ 72,000 lbs GCW",
+    "eerRange": {
+      "min": 3.2,
+      "max": 5.5
+    },
+    "mpdgeRange": {
+      "min": 15.5,
+      "max": 19.2
+    },
+    "derivedKwhPerMi": {
+      "min": 1.76,
+      "max": 2.17,
+      "typical": 2.0
+    },
+    "testCycles": [
+      "near-dock drayage",
+      "local drayage",
+      "delivery drayage",
+      "regional drayage",
+      "UDDS",
+      "cruise",
+      "7% grade"
+    ],
+    "notes": "UCR chassis dynamometer + in-use study at POLB. Loaded to 72,000 lbs (average fully loaded drayage weight). EER = battery electric efficiency vs diesel."
   }
 }
