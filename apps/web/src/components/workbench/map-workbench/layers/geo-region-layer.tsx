@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils";
 export type WorkbenchGeoRegion = {
   id: string;
   name: string;
-  level: "nation" | "state" | "county" | "air-district" | "zip" | "city" | "custom";
+  level: "nation" | "state" | "county" | "air-district" | "zip" | "city" | "address" | "custom";
   centroid?: { latitude: number; longitude: number } | null;
   bbox?: google.maps.LatLngBoundsLiteral | [number, number, number, number] | null;
   score?: number | null;
   metadata?: Record<string, unknown>;
+  availableLevels?: string[];
+  deferredLevels?: Array<{ level: string; label: string; enabled: boolean; reason: string }>;
 };
 
 export type GeoRegionLayerProps = {
@@ -62,6 +64,8 @@ function regionToSelection(region: WorkbenchGeoRegion): WorkbenchSelection {
       ...region.metadata,
       level: region.level,
       score: region.score,
+      availableLevels: region.availableLevels ?? null,
+      deferredLevels: region.deferredLevels ?? null,
     },
   };
 }
@@ -133,7 +137,7 @@ export function GeoRegionLayer({
           <AdvancedMarker
             key={region.id}
             position={{ lat: region.centroid.latitude, lng: region.centroid.longitude }}
-            title={`${region.name} — ${region.level}${typeof region.score === "number" ? ` score ${region.score.toFixed(2)} (modeled)` : ""}`}
+            title={`${region.name} — ${region.level}${typeof region.score === "number" ? ` score ${region.score.toFixed(2)} (modeled)` : ""}${region.deferredLevels?.length ? " · deferred drilldowns labeled" : ""}`}
             onClick={() => onSelectRegion?.(regionToSelection(region))}
           >
             <button

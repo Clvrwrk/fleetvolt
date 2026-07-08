@@ -69,6 +69,37 @@ const fleetInitialCards: WorkbenchResultCard[] = [
   },
 ];
 
+const caasInitialCards: WorkbenchResultCard[] = [
+  {
+    id: "caas-awaiting-us-map",
+    title: "US-wide opportunity map",
+    summary: "Start from the national centroid/bbox view, drill into available geoRegions (US/state/county), and keep air district/ZIP/city/address as labeled disabled steps until those rows exist.",
+    mode: "caas_gap_map",
+    severity: "info",
+    layerId: "geo-regions",
+    metrics: {
+      available: "US / state / county",
+      deferred: "air district / ZIP / city / address",
+    },
+  },
+  {
+    id: "caas-awaiting-gap",
+    title: "Route Class 8 gap analysis",
+    summary: "Select or autocomplete an origin plus destination to classify true Class 8 gaps versus detour-solvable gaps when detour evidence is available.",
+    mode: "caas_gap_map",
+    severity: "info",
+    layerId: "class8-gaps",
+  },
+  {
+    id: "caas-awaiting-targets",
+    title: "Carrier, freight, hotspot, and mobile-positioning cards",
+    summary: "CaaS route cards will show target carriers/fleets, hotspot/report context, FAF freight context, and mobile charger staging recommendations with assumptions labeled.",
+    mode: "caas_gap_map",
+    severity: "info",
+    layerId: "caas-zones",
+  },
+];
+
 function severityStyles(severity: WorkbenchResultCard["severity"]): string {
   switch (severity) {
     case "success":
@@ -119,7 +150,7 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
   const storeMode = useMapWorkbenchStore((state) => state.mode);
   const mode = resolveResultMode(storeMode, searchParams.get("mode"));
-  const emptyCards = mode === "fleet_contract_plan" ? fleetInitialCards : initialCards;
+  const emptyCards = mode === "caas_gap_map" ? caasInitialCards : mode === "fleet_contract_plan" ? fleetInitialCards : initialCards;
   const cards = resultCards.length > 0 ? resultCards : emptyCards;
 
   return (
@@ -132,9 +163,9 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
       aria-label="Workbench results"
     >
       <div className="border-b border-black/10 px-4 py-3">
-        <TechnicalLabel>{mode === "fleet_contract_plan" ? "Fleet result cards" : "Driver result cards"}</TechnicalLabel>
+        <TechnicalLabel>{mode === "caas_gap_map" ? "CaaS opportunity cards" : mode === "fleet_contract_plan" ? "Fleet result cards" : "Driver result cards"}</TechnicalLabel>
         <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
-          {mode === "fleet_contract_plan" ? "Contract-plan summary" : "Day-plan summary"}
+          {mode === "caas_gap_map" ? "Gap-map summary" : mode === "fleet_contract_plan" ? "Contract-plan summary" : "Day-plan summary"}
         </h2>
       </div>
 
@@ -182,7 +213,7 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
               <p className="mt-1 text-xs leading-5 text-[var(--fv-steel)]">
                 {routeGeometry
                   ? `${routeGeometry.provider.toUpperCase()} geometry · ${routeGeometry.coordinates.length} points · ${routeGeometry.distanceMeters ? `${Math.round(routeGeometry.distanceMeters / 1609.344)} mi` : "distance unavailable"}`
-                  : "Awaiting route geometry from the driver day-plan run."}
+                  : mode === "caas_gap_map" ? "Awaiting CaaS route endpoints or region selection." : "Awaiting route geometry from the planning run."}
               </p>
             </div>
           </div>
@@ -204,7 +235,7 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
       <div className="border-t border-black/10 p-4">
         <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 text-sm font-bold text-[var(--fv-graphite)] shadow-sm transition hover:border-[var(--fv-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]">
           <Clock size={16} />
-          Export day-plan card
+          {mode === "caas_gap_map" ? "Export opportunity card" : mode === "fleet_contract_plan" ? "Export contract card" : "Export day-plan card"}
         </button>
       </div>
     </aside>

@@ -9,6 +9,10 @@ const MAX_LAYER_LIMIT = 200;
 const MAX_HIGHWAY_RESULTS = 120;
 const MAX_GEO_REGION_RESULTS = 100;
 const MAX_ROUTE_POINTS = 80;
+const CAAS_ROUTE_RADIUS_M = 8_047;
+const CAAS_NEARBY_RADIUS_M = 50_000;
+const CAAS_HOTSPOT_RADIUS_M = 25_000;
+const FAF_YEAR = 2023;
 
 type AssetKind = "port" | "charger" | "carrier" | "parking" | "poi" | "fleet-yard";
 
@@ -51,6 +55,28 @@ type WorkbenchSelectionType =
   | "carrier"
   | "freight-flow"
   | "caas-zone";
+
+type CaaSGeoRegionLevel =
+  | "nation"
+  | "state"
+  | "county"
+  | "air-district"
+  | "zip"
+  | "city"
+  | "address";
+
+const CAAS_DRILLDOWN_STEPS: Array<{ level: CaaSGeoRegionLevel; label: string }> = [
+  { level: "nation", label: "US" },
+  { level: "state", label: "State" },
+  { level: "county", label: "County" },
+  { level: "air-district", label: "Air district" },
+  { level: "zip", label: "ZIP" },
+  { level: "city", label: "City" },
+  { level: "address", label: "Address" },
+];
+
+const US_BBOX = { minLat: 24.4, minLng: -125, maxLat: 49.5, maxLng: -66.5 };
+const US_CENTROID = { lat: 39.5, lng: -98.35 };
 
 type Bbox = {
   minLat: number;
@@ -281,6 +307,53 @@ function bboxCentroid(bbox: Bbox) {
     lat: (bbox.minLat + bbox.maxLat) / 2,
     lng: (bbox.minLng + bbox.maxLng) / 2,
   };
+}
+
+function haversineM(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const earthRadiusM = 6_371_000;
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * earthRadiusM * Math.asin(Math.sqrt(h));
+}
+
+function routeMidpoint(points: Array<{ lat: number; lng: number }>) {
+  if (points.length === 0) return US_CENTROID;
+  return points[Math.floor(points.length / 2)]!;
+}
+
+function sampleCaaSRoutePoints(points: Array<{ lat: number; lng: number }>) {
+  if (points.length <= 24) return points;
+  const lastIndex = points.length - 1;
+  const sampled: Array<{ lat: number; lng: number }> = [];
+  for (let i = 0; i < 24; i += 1) {
+    sampled.push(points[Math.round((i / 23) * lastIndex)]!);
+  }
+  return sampled;
+}
+
+function formatMilesFromMeters(meters: number | null | undefined) {
+  if (typeof meters !== "number" || !Number.isFinite(meters)) return "unavailable";
+  const miles = meters / 1609.344;
+  return `${Math.round(miles < 10 ? miles * 10 : miles) / (miles < 10 ? 10 : 1)} mi`;
+}
+
+function formatKtons(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "unavailable";
+  if (value >= 1_000) return `${Math.round(value / 100) / 10}M ktons`;
+  return `${Math.round(value)} ktons`;
+}
+
+function formatUsdMillions(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "unavailable";
+  if (value >= 1_000_000) return `$${Math.round(value / 100_000) / 10}T`;
+  if (value >= 1_000) return `$${Math.round(value / 100) / 10}B`;
+  return `$${Math.round(value)}M`;
 }
 
 function bboxAsWestSouthEastNorth(bbox: Bbox): [number, number, number, number] {
@@ -625,6 +698,21 @@ function geoRegionPayload(region: {
   };
 }
 
+function caasGeoRegionPayload(region: Doc<"geoRegions">) {
+  const payload = geoRegionPayload(region);
+  return {
+    ...payload,
+    availableLevels: ["nation", "state", "county"] as CaaSGeoRegionLevel[],
+    deferredLevels: CAAS_DRILLDOWN_STEPS.filter(
+      (step) => !["nation", "state", "county"].includes(step.level),
+    ).map((step) => ({
+      ...step,
+      enabled: false,
+      reason: `${step.label} rows are not present in geoRegions yet; shown as a labeled disabled drilldown step.`,
+    })),
+  };
+}
+
 function highwayAsset(segment: {
   segmentId: string;
   route: string;
@@ -891,7 +979,7 @@ export const visibleLayers = query({
     const geoRegionPayloads = geoRegionDocs
       .filter((doc) => bboxOverlaps(doc.bbox ?? null, bbox) || pointInBbox(doc.centroid ?? null, bbox))
       .slice(0, capLimit(limit, MAX_GEO_REGION_RESULTS, MAX_GEO_REGION_RESULTS))
-      .map(geoRegionPayload);
+      .map((doc) => (mode === "caas_gap_map" ? caasGeoRegionPayload(doc) : geoRegionPayload(doc)));
 
     const caasZoneAssets = caasZoneDocs
       .filter((doc) => pointInBbox(doc.centroid, bbox))
@@ -1179,6 +1267,269 @@ export const analyzeClass8GapAlongRoute = query({
         co2Kg: "deferred — requires physics/emissions computation",
         demandTime: "deferred — no time-series demand model in this query",
       },
+    };
+  },
+});
+
+export const caasOpportunityMap = query({
+  args: {
+    parentFips: v.optional(v.string()),
+    level: v.optional(v.union(v.literal("nation"), v.literal("state"), v.literal("county"))),
+    bbox: v.optional(bboxValidator),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { parentFips, level, bbox: rawBbox, limit }) => {
+    const allRegions = (await ctx.db.query("geoRegions").collect()) as Doc<"geoRegions">[];
+    const bbox = rawBbox ? normalizeBbox(rawBbox) : US_BBOX;
+    const availableLevels = Array.from(new Set(allRegions.map((region) => region.level))) as Array<"nation" | "state" | "county">;
+    const targetLevel = level ?? (parentFips ? "county" : "nation");
+    let regions = allRegions.filter((region) => region.level === targetLevel);
+
+    if (parentFips) {
+      regions = regions.filter((region) => region.parentFips === parentFips);
+    }
+    if (rawBbox) {
+      regions = regions.filter((region) => bboxOverlaps(region.bbox ?? null, bbox) || pointInBbox(region.centroid ?? null, bbox));
+    }
+    if (regions.length === 0 && !parentFips && targetLevel === "nation") {
+      const states = allRegions.filter((region) => region.level === "state");
+      regions = states.length > 0 ? states : allRegions;
+    }
+
+    const capped = regions
+      .sort((a, b) => (b.aggregateScore ?? 0) - (a.aggregateScore ?? 0))
+      .slice(0, capLimit(limit, MAX_GEO_REGION_RESULTS, MAX_GEO_REGION_RESULTS));
+
+    const hotspots = (await ctx.db.query("hotspots").withIndex("by_kind", (q) => q.eq("kind", "modeledDwell")).collect())
+      .filter((hotspot) => pointInBbox(hotspot.location, bbox))
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, 8)
+      .map((hotspot) => ({
+        id: String(hotspot._id),
+        type: "class8-gap" as const,
+        layerId: "class8-gaps" as const,
+        label: hotspot.title,
+        latitude: hotspot.location.lat,
+        longitude: hotspot.location.lng,
+        subtitle: "Modeled dwell/freight hotspot",
+        metric: typeof hotspot.score === "number" ? `${Math.round(hotspot.score * 100)} score` : "Hotspot",
+        source: source("hotspots", "_id"),
+        provenance: hotspot.provenance ?? null,
+        metadata: {
+          kind: hotspot.kind,
+          score: hotspot.score ?? null,
+          scoreInputs: hotspot.scoreInputs ?? null,
+          modeledLabel: "modeled demand hotspot score",
+        },
+      }));
+
+    return {
+      status: "available" as const,
+      bbox,
+      selectedParentFips: parentFips ?? null,
+      requestedLevel: targetLevel,
+      regions: capped.map(caasGeoRegionPayload),
+      hotspotAssets: hotspots,
+      drilldown: CAAS_DRILLDOWN_STEPS.map((step) => {
+        const enabled = availableLevels.includes(step.level as "nation" | "state" | "county") || step.level === "address";
+        return {
+          ...step,
+          enabled,
+          reason: enabled
+            ? step.level === "address"
+              ? "Address drilldown uses autocomplete/manual point selection."
+              : "geoRegions data is available for this level."
+            : `${step.label} rows are not present in geoRegions yet.`,
+        };
+      }),
+      cards: [
+        {
+          id: "caas-us-opportunity-map",
+          title: "US-wide CaaS opportunity map",
+          summary: `${capped.length} region(s) available for CaaS drilldown. Air district, ZIP, city, and address levels are shown as disabled steps until those rows exist or an address is selected.`,
+          mode: "caas_gap_map" as const,
+          severity: "info" as const,
+          layerId: "geo-regions" as const,
+          metrics: {
+            regions: capped.length,
+            modeledHotspots: hotspots.length,
+            availableLevels: availableLevels.join(", "),
+          },
+        },
+      ],
+      source: { kind: "fleetvolt" as const, function: "workbench/queries:caasOpportunityMap" },
+    };
+  },
+});
+
+export const analyzeCaasRouteOpportunity = query({
+  args: {
+    origin: pointValidator,
+    destination: pointValidator,
+    corridorPoints: v.optional(v.array(pointValidator)),
+    radiusM: v.optional(v.number()),
+    fafYear: v.optional(v.number()),
+  },
+  handler: async (ctx, { origin, destination, corridorPoints, radiusM, fafYear }) => {
+    const routePoints = sampleCaaSRoutePoints(corridorPoints && corridorPoints.length > 0 ? corridorPoints : [origin, destination]);
+    const midpoint = routeMidpoint(routePoints);
+    const radius = radiusM ?? CAAS_ROUTE_RADIUS_M;
+    const gap = (await ctx.runQuery(api.chargers.queries.class8Gap, {
+      corridorPoints: routePoints,
+      radiusM: radius,
+    })) as Class8GapPayload;
+    const carriers = (await ctx.runQuery(api.carriers.queries.topCarriersNear, {
+      ...midpoint,
+      radiusM: CAAS_NEARBY_RADIUS_M,
+      limit: 8,
+    })) as Array<{ name: string; city: string | null; corridorCity: string | null; distanceM: number }>;
+    const density = (await ctx.runQuery(api.carriers.queries.carrierDensityByCorridorCity, {})) as { clusters: Array<{ corridorCity: string; count: number }>; totalInCorridor: number };
+    const freight = (await ctx.runQuery(api.faf.queries.freightContext, {
+      year: fafYear ?? FAF_YEAR,
+      topN: 5,
+    })) as {
+      origin: string;
+      year: number;
+      rowCount: number;
+      totalKtons: number;
+      totalValueUSD: number;
+      truckKtons: number;
+      truckValueUSD: number;
+      topDestinations: Array<{ key: string; ktons: number }>;
+      topCommodities: Array<{ key: string; ktons: number }>;
+    };
+
+    let hotspot: HotspotReportPayload | null = null;
+    try {
+      hotspot = (await ctx.runQuery(api.report.hotspotReport, {
+        lat: midpoint.lat,
+        lng: midpoint.lng,
+        radiusM: CAAS_HOTSPOT_RADIUS_M,
+        fafYear: fafYear ?? FAF_YEAR,
+      })) as HotspotReportPayload;
+    } catch {
+      hotspot = null;
+    }
+
+    const class8Count = gap.class8WithinCorridor;
+    const closestDistanceM = gap.closestClass8DistanceM;
+    const detourSolvable = class8Count === 0 && typeof closestDistanceM === "number" && closestDistanceM <= radius * 3;
+    const trueGap = class8Count === 0 && !detourSolvable;
+    const gapClassification = class8Count > 0 ? "covered" : detourSolvable ? "detour-solvable" : "true-gap";
+    const routeMiles = routePoints.length > 1
+      ? routePoints.slice(1).reduce((sum, point, index) => sum + haversineM(routePoints[index]!, point), 0) / 1609.344
+      : null;
+    const mobilePoint = trueGap || detourSolvable ? midpoint : null;
+    const recommendedPowerKw = hotspot?.whatsMissing.mobileEnergyOpportunity || trueGap ? 1000 : detourSolvable ? 500 : 0;
+
+    return {
+      status: "available" as const,
+      route: {
+        origin,
+        destination,
+        sampledPoints: routePoints.length,
+        approximateMiles: typeof routeMiles === "number" ? Math.round(routeMiles) : null,
+        midpoint,
+      },
+      gap: {
+        ...gap,
+        classification: gapClassification,
+        trueGap,
+        detourSolvable,
+        nearestClass8DistanceLabel: formatMilesFromMeters(closestDistanceM),
+        detourDataAvailable: false,
+        detourNote: "Detour distance/time requires provider detour routing; nearest charger distance is used only to label review urgency.",
+      },
+      carriers: {
+        topNearMidpoint: carriers,
+        densityClusters: density.clusters.slice(0, 6),
+        totalInCorridor: density.totalInCorridor,
+      },
+      hotspot,
+      freight,
+      mobilePositioning: {
+        recommended: trueGap || detourSolvable || hotspot?.whatsMissing.mobileEnergyOpportunity === true,
+        priority: trueGap || hotspot?.whatsMissing.mobileEnergyOpportunity ? "high" : detourSolvable ? "medium" : "low",
+        point: mobilePoint,
+        recommendedPowerKw,
+        summary: mobilePoint
+          ? `Stage mobile charging near ${Math.round(mobilePoint.lat * 1000) / 1000}, ${Math.round(mobilePoint.lng * 1000) / 1000}; ${trueGap ? "true Class 8 gap" : "detour-solvable gap review"}.`
+          : "On-corridor Class 8 coverage found; keep mobile assets on standby unless carrier demand timing changes.",
+        assumptions: [
+          "Centroid/midpoint positioning only; polygon/site parcel analysis is deferred.",
+          "Detour route time is unavailable unless route-provider detour data is connected.",
+          "Demand-by-time is unavailable; FAF freight context is annual aggregate.",
+        ],
+      },
+      cards: [
+        {
+          id: "caas-route-gap",
+          title: trueGap ? "True Class 8 gap" : detourSolvable ? "Detour-solvable Class 8 gap" : "Class 8 coverage on corridor",
+          summary: class8Count > 0
+            ? `${class8Count} Class 8-capable charger(s) found within ${formatMilesFromMeters(radius)} of sampled corridor points.`
+            : detourSolvable
+              ? `No on-corridor Class 8 charger found, but nearest Class 8 is ${formatMilesFromMeters(closestDistanceM)} away; detour route/time remains unavailable.`
+              : `No Class 8 charger found within corridor radius; nearest Class 8 is ${formatMilesFromMeters(closestDistanceM)}.`,
+          mode: "caas_gap_map" as const,
+          severity: trueGap ? "critical" as const : detourSolvable ? "warning" as const : "success" as const,
+          layerId: "class8-gaps" as const,
+          metrics: {
+            gapClassification,
+            class8WithinCorridor: class8Count,
+            nearestClass8: formatMilesFromMeters(closestDistanceM),
+            sampledRoutePoints: routePoints.length,
+            detourData: "unavailable",
+          },
+        },
+        {
+          id: "caas-carrier-targets",
+          title: "Top carriers/fleets to target",
+          summary: carriers.length > 0
+            ? carriers.slice(0, 4).map((carrier) => `${carrier.name}${carrier.city ? ` (${carrier.city})` : ""}`).join("; ")
+            : `No geocoded carriers found within ${formatMilesFromMeters(CAAS_NEARBY_RADIUS_M)} of the route midpoint; use corridor-city density clusters instead.`,
+          mode: "caas_gap_map" as const,
+          severity: carriers.length > 0 ? "info" as const : "warning" as const,
+          layerId: "carriers" as const,
+          metrics: {
+            nearbyCarriers: carriers.length,
+            corridorCarrierUniverse: density.totalInCorridor,
+            topCluster: density.clusters[0]?.corridorCity ?? null,
+          },
+        },
+        {
+          id: "caas-hotspot-freight",
+          title: "Hotspot and freight context",
+          summary: hotspot
+            ? `Hotspot score ${Math.round(hotspot.score.score * 100)}; freight context ${formatKtons(freight.truckKtons)} truck freight / ${formatUsdMillions(freight.truckValueUSD)} truck value (FAF ${freight.year}).`
+            : `Freight context ${formatKtons(freight.truckKtons)} truck freight / ${formatUsdMillions(freight.truckValueUSD)} truck value (FAF ${freight.year}); hotspot report unavailable for midpoint.`,
+          mode: "caas_gap_map" as const,
+          severity: hotspot?.whatsMissing.mobileEnergyOpportunity ? "warning" as const : "info" as const,
+          layerId: "freight-flow" as const,
+          metrics: {
+            hotspotScore: hotspot?.score.score ?? null,
+            carrierCount: hotspot?.carriers.length ?? carriers.length,
+            parkingSpots: hotspot?.parking.totalSpots ?? null,
+            truckKtons: Math.round(freight.truckKtons),
+            truckValue: formatUsdMillions(freight.truckValueUSD),
+          },
+        },
+        {
+          id: "caas-mobile-positioning",
+          title: "Mobile charger positioning",
+          summary: mobilePoint
+            ? `Recommended ${recommendedPowerKw} kW mobile deployment near ${Math.round(mobilePoint.lat * 1000) / 1000}, ${Math.round(mobilePoint.lng * 1000) / 1000}; validate parcel access before dispatch.`
+            : "No mobile deployment recommended from this slice because on-corridor Class 8 coverage exists.",
+          mode: "caas_gap_map" as const,
+          severity: trueGap ? "critical" as const : detourSolvable ? "warning" as const : "success" as const,
+          layerId: "caas-zones" as const,
+          metrics: {
+            priority: trueGap || hotspot?.whatsMissing.mobileEnergyOpportunity ? "high" : detourSolvable ? "medium" : "low",
+            recommendedPowerKw,
+            positionSource: "route midpoint centroid MVP",
+          },
+        },
+      ],
+      source: { kind: "fleetvolt" as const, function: "workbench/queries:analyzeCaasRouteOpportunity" },
     };
   },
 });

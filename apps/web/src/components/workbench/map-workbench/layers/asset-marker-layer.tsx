@@ -44,6 +44,16 @@ const ASSET_STYLE: Record<
   "caas-zone": { fill: "bg-lime-700", ring: "ring-lime-200", shortLabel: "CaaS" },
 };
 
+function markerTone(asset: WorkbenchMapAsset) {
+  if (asset.type === "class8-gap" && asset.metadata?.classification === "detour-solvable") {
+    return { fill: "bg-amber-600", ring: "ring-amber-200", shortLabel: "DTR" };
+  }
+  if (asset.type === "caas-zone" && asset.metadata?.priority === "high") {
+    return { fill: "bg-rose-700", ring: "ring-rose-200", shortLabel: "MOB" };
+  }
+  return ASSET_STYLE[asset.type];
+}
+
 function assetToSelection(asset: WorkbenchMapAsset): WorkbenchSelection {
   return {
     id: asset.id,
@@ -73,7 +83,7 @@ export function AssetMarkerLayer({
   return (
     <>
       {assets.map((asset) => {
-        const style = ASSET_STYLE[asset.type];
+        const style = markerTone(asset);
         const isSelected = selectedAsset?.id === asset.id && selectedAsset.type === asset.type;
 
         return (

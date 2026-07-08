@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, Loader2, Route, SlidersHorizontal, Zap } from "lucide-react";
+import { AlertTriangle, Loader2, MapPinned, Route, SlidersHorizontal, Zap } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,22 @@ function resolvePanelMode(mode: WorkbenchMode | undefined, rawMode: string | nul
   return "driver_day_plan";
 }
 
+function routePointsForCaaS(
+  origin: { latitude: number; longitude: number },
+  destination: { latitude: number; longitude: number },
+) {
+  return [
+    { lat: origin.latitude, lng: origin.longitude },
+    {
+      lat: (origin.latitude + destination.latitude) / 2,
+      lng: (origin.longitude + destination.longitude) / 2,
+    },
+    { lat: destination.latitude, lng: destination.longitude },
+  ];
+}
+
+const caasDrilldownLabels = ["US", "State", "County", "Air district", "ZIP", "City", "Address"];
+
 export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftPanelProps) {
   const searchParams = useSearchParams();
   const mode = resolvePanelMode(modeProp, searchParams.get("mode"));
@@ -70,12 +86,62 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
   const toggleLayer = useMapWorkbenchStore((state) => state.toggleLayer);
   const runDriverDayPlan = useAction(api.workbench.actions.driverDayPlan);
   const runFleetContractPlan = useAction(api.workbench.actions.fleetContractPlan);
+  const caasOpportunity = useQuery(api.workbench.queries.caasOpportunityMap, mode === "caas_gap_map" ? { limit: 12 } : "skip");
+  const caasRouteOpportunity = useQuery(
+    api.workbench.queries.analyzeCaasRouteOpportunity,
+    mode === "caas_gap_map" && draft.origin && draft.destination
+      ? {
+          origin: { lat: draft.origin.latitude, lng: draft.origin.longitude },
+          destination: { lat: draft.destination.latitude, lng: draft.destination.longitude },
+          corridorPoints: routePointsForCaaS(draft.origin, draft.destination),
+        }
+      : "skip",
+  );
 
   useEffect(() => {
     if (storeMode !== mode) {
       useMapWorkbenchStore.getState().reset(mode);
     }
   }, [mode, storeMode]);
+
+  useEffect(() => {
+    if (mode !== "caas_gap_map") return;
+
+    if (caasRouteOpportunity) {
+      useMapWorkbenchStore.setState({
+        routeGeometry: draft.origin && draft.destination
+          ? {
+              provider: "mock",
+              coordinates: [
+                { latitude: draft.origin.latitude, longitude: draft.origin.longitude },
+                {
+                  latitude: caasRouteOpportunity.route.midpoint.lat,
+                  longitude: caasRouteOpportunity.route.midpoint.lng,
+                },
+                { latitude: draft.destination.latitude, longitude: draft.destination.longitude },
+              ],
+              distanceMeters: caasRouteOpportunity.route.approximateMiles
+                ? caasRouteOpportunity.route.approximateMiles * 1609.344
+                : undefined,
+              warnings: ["CaaS MVP route uses centroid/midpoint geometry unless Google Routes output is already present."],
+              metadata: { source: "workbench/queries:analyzeCaasRouteOpportunity" },
+            }
+          : null,
+        resultCards: caasRouteOpportunity.cards as unknown as WorkbenchResultCard[],
+        providerWarnings: [
+          "True vs detour-solvable gap classification uses Class 8 radius plus nearest-charger distance; detour route time remains unavailable unless provider data is connected.",
+        ],
+      });
+      return;
+    }
+
+    if (caasOpportunity) {
+      useMapWorkbenchStore.setState({
+        resultCards: caasOpportunity.cards as WorkbenchResultCard[],
+        providerWarnings: ["US-wide CaaS map uses geoRegion centroid/bbox MVP; polygon geometries are deferred."],
+      });
+    }
+  }, [caasOpportunity, caasRouteOpportunity, draft.destination, draft.origin, mode]);
 
   function applyQuickRoute(route: (typeof quickRoutes)[number]) {
     applyDraftPatch({ origin: route.origin, destination: route.destination });
@@ -186,6 +252,11 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
 
   const calculatePlan = mode === "fleet_contract_plan" ? calculateFleetContractPlan : calculateDriverPlan;
   const canRunPlan = mode === "driver_day_plan" || mode === "fleet_contract_plan";
+  const caasDrilldown = caasOpportunity?.drilldown ?? caasDrilldownLabels.map((label, index) => ({
+    label,
+    enabled: index <= 2,
+    reason: index <= 2 ? "geoRegions level available when data loads." : "Awaiting future geoRegion rows for this level.",
+  }));
 
   return (
     <aside
@@ -197,9 +268,9 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
       aria-label="Workbench tools"
     >
       <div className="border-b border-black/10 px-4 py-3">
-        <TechnicalLabel>{mode === "driver_day_plan" ? "Driver mode" : mode === "fleet_contract_plan" ? "Fleet mode" : "Workbench tools"}</TechnicalLabel>
+        <TechnicalLabel>{mode === "driver_day_plan" ? "Driver mode" : mode === "fleet_contract_plan" ? "Fleet mode" : "CaaS mode"}</TechnicalLabel>
         <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
-          {mode === "driver_day_plan" ? "Day-plan inputs" : mode === "fleet_contract_plan" ? "Contract inputs" : "Plan inputs"}
+          {mode === "driver_day_plan" ? "Day-plan inputs" : mode === "fleet_contract_plan" ? "Contract inputs" : "Gap / opportunity map"}
         </h2>
       </div>
 
@@ -244,6 +315,38 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
               <ContractConstraints />
             </section>
           </>
+        ) : null}
+
+        {mode === "caas_gap_map" ? (
+          <section className="space-y-3 rounded-2xl border border-black/10 bg-white/70 p-3" aria-labelledby="caas-drilldown-heading">
+            <div className="flex items-center gap-2" id="caas-drilldown-heading">
+              <MapPinned size={16} className="text-[var(--fv-accent)]" />
+              <TechnicalLabel>US opportunity drilldown</TechnicalLabel>
+            </div>
+            <p className="text-xs leading-5 text-[var(--fv-steel)]">
+              Start US-wide, click a centroid/bbox region, then choose a route origin and destination. Missing levels remain visible as disabled labeled steps.
+            </p>
+            <div className="space-y-1.5">
+              {caasDrilldown.map((step) => (
+                <div
+                  key={step.label}
+                  className={cn(
+                    "flex items-center justify-between rounded-xl border px-3 py-2 text-xs",
+                    step.enabled
+                      ? "border-[var(--fv-accent)]/30 bg-[var(--fv-accent)]/10 text-[var(--fv-graphite)]"
+                      : "border-black/10 bg-slate-50 text-[var(--fv-steel)] opacity-70",
+                  )}
+                  title={step.reason}
+                >
+                  <span className="font-bold">{step.label}</span>
+                  <span className="font-mono uppercase tracking-[0.12em]">{step.enabled ? "available" : "deferred"}</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-2 text-[11px] leading-4 text-amber-950">
+              Route gap cards auto-run when origin and destination are both selected; detour time stays labeled unavailable unless provider detour data exists.
+            </div>
+          </section>
         ) : null}
 
         <section className="space-y-2" aria-labelledby="quick-routes-heading">
@@ -309,13 +412,19 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
           className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--fv-accent)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isRunning ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-          {isRunning
-            ? mode === "fleet_contract_plan"
-              ? "Running contract plan"
-              : "Running day plan"
-            : mode === "fleet_contract_plan"
-              ? "Calculate contract plan"
-              : "Calculate day plan"}
+          {mode === "caas_gap_map"
+            ? caasRouteOpportunity
+              ? "Route gap analysis ready"
+              : draft.origin && draft.destination
+                ? "Analyzing CaaS gap"
+                : "Select origin + destination"
+            : isRunning
+              ? mode === "fleet_contract_plan"
+                ? "Running contract plan"
+                : "Running day plan"
+              : mode === "fleet_contract_plan"
+                ? "Calculate contract plan"
+                : "Calculate day plan"}
         </button>
       </div>
     </aside>
