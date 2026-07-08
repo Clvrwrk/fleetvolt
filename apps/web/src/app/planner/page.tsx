@@ -1,22 +1,11 @@
-import { WorkspaceLayout } from "@/components/workspace/workspace-layout";
-import { fetchCorridorPresets, fetchTrucks } from "@/lib/server-catalog";
+import { ChatPanel } from "@/components/planner/chat-panel";
 
-type PlannerPageProps = {
-  searchParams: Promise<{ corridor?: string }>;
-};
-
-export default async function PlannerPage({ searchParams }: PlannerPageProps) {
-  const { corridor } = await searchParams;
-  const [trucks, corridors] = await Promise.all([
-    fetchTrucks(),
-    fetchCorridorPresets(),
-  ]);
-
+export default function PlannerPage() {
   return (
-    <WorkspaceLayout
-      trucks={trucks}
-      corridors={corridors}
-      initialCorridorKey={corridor}
-    />
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className="flex-1 max-w-5xl w-full mx-auto px-4 py-4">
+        <ChatPanel defaultRole="caas" />
+      </div>
+    </div>
   );
 }
