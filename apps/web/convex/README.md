@@ -85,3 +85,30 @@ hardcoded catalog assumption. Simulated/estimated values carry
 - `ports.ts` — `list`, `getByCode` queries (no auth)
 - `userFilters.ts` — `get` (by anonymous filterKey), `upsert` (no auth)
 - `_generated/` — Convex codegen output (do not edit by hand)
+
+## Production Deployment
+
+The dev deployment is `sensible-oriole-832` (NEXT_PUBLIC_CONVEX_URL + CONVEX_DEPLOYMENT
+in `.env.local`). A **separate** production deployment must be created — the dev URL is
+NOT the prod URL.
+
+### Steps
+
+1. **Create the prod deployment:** Run `npx convex deploy` from `apps/web`. This pushes
+   schema + functions to a production Convex URL (e.g. `https://fleetvolt-<hash>.convex.cloud`).
+   Record the prod URL returned.
+
+2. **Set the prod deploy key:** The `CONVEX_DEPLOY_KEY` env var (from Convex dashboard →
+   Settings → Deploy Keys) is needed for CI/CD pushes. Set it in the Vercel dashboard
+   (server-side only — not browser-visible).
+
+3. **Set NEXT_PUBLIC_CONVEX_URL (prod):** In the Vercel dashboard, set this to the
+   **production** Convex URL from step 1 — NOT the dev `sensible-oriole-832` URL.
+
+4. **Data migration:** Data from the dev deployment is **NOT auto-migrated**. Phase 12 data
+   (chargers, corridors, carriers, hotspots, geoRegions, etc.) must be re-ingested or
+   exported from dev and imported to prod. Run the ingest scripts against the prod
+   deployment after creating it.
+
+> ⚠️ **Manual gate:** `npx convex deploy` and data ingest to prod are human steps.
+> The dev deployment holds all current data; verify prod has data before going live.

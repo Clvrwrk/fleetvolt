@@ -1,16 +1,15 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+const monorepoRoot = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `${apiUrl}/v1/:path*`,
-      },
-    ];
+  turbopack: {
+    root: monorepoRoot,
   },
 };
 
