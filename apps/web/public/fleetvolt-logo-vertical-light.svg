@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  
+  <g transform="translate(66,8)">
+    <circle cx="54" cy="56" r="42" fill="none" stroke="#8A8A93" stroke-width="0.75" opacity="0.3"></circle>
+    <path d="M14,12 L14,24 M14,12 L26,12" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
+    <path d="M94,12 L94,24 M94,12 L82,12" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
+    <path d="M14,100 L14,88 M14,100 L26,100" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
+    <path d="M94,100 L94,88 M94,100 L82,100" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
+    <path d="M61,13 L33,60 L50,60 L44,99 L75,46 L56,46 Z" fill="#4C8FB8"></path>
+  </g>
+  <text x="120" y="172" text-anchor="middle" font-family="Inter, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="2.5" fill="#141416">FLEET<tspan fill="#4C8FB8">VOLT</tspan></text>
+  <text x="120" y="198" text-anchor="middle" font-family="&#39;JetBrains Mono&#39;, &#39;Courier New&#39;, monospace" font-size="9" letter-spacing="3.2" fill="#8A8A93">EV FREIGHT INTELLIGENCE</text>
+</svg>
