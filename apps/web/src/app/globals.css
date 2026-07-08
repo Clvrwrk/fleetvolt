@@ -29,18 +29,31 @@
 }
 
 :root {
-  --fv-bg: #efeff5;
+  /* ── FleetVolt Brand Bible Tokens (§03 Color) ── */
+  --fv-graphite: #141416; /* Primary text, dark surfaces, primary buttons */
+  --fv-slate: #4a4a52; /* Secondary text */
+  --fv-steel: #8a8a93; /* Construction lines, muted labels */
+  --fv-fog: #dedee6; /* Canvas background */
+  --fv-paper: #efeff5; /* Panels, cards */
+  --fv-blueprint-blue: #4c8fb8; /* Brand accent, energy data, active states */
+  --fv-signal-green: #3f9b6b; /* Positive status */
+  --fv-caution-amber: #b8874c; /* Warnings */
+  --fv-alert-red: #c0392b; /* Limit exceeded */
+
+  /* ── Semantic aliases (keep existing --fv-* names for backward compat) ── */
+  --fv-bg: var(--fv-fog);
   --fv-surface: #fbfbfd;
   --fv-surface-muted: #e5e5eb;
   --fv-surface-viz: #ececf2;
-  --fv-accent: #4c8fb8;
-  --fv-accent-green: #3f9b6b;
-  --fv-text: #111116;
-  --fv-text-secondary: #2a2a2e;
+  --fv-accent: var(--fv-blueprint-blue);
+  --fv-accent-green: var(--fv-signal-green);
+  --fv-text: var(--fv-graphite);
+  --fv-text-secondary: var(--fv-slate);
   --fv-text-muted: #9a9aa2;
-  --fv-text-dim: #4a4a52;
-  --fv-stroke: #8a8a93;
-  --fv-destructive: #c0392b;
+  --fv-text-dim: var(--fv-slate);
+  --fv-stroke: var(--fv-steel);
+  --fv-destructive: var(--fv-alert-red);
+  --fv-warning: var(--fv-caution-amber);
 
   --background: var(--fv-bg);
   --foreground: var(--fv-text);
@@ -62,12 +75,12 @@
   --ring: var(--fv-accent);
   --radius: 0.625rem;
 
-  --bg: var(--fv-bg);
+  --bg: var(--fv-fog);
   --surface: var(--fv-surface);
-  --text: var(--fv-text);
-  --muted: var(--fv-text-muted);
-  --ok: #16a34a;
-  --bad: var(--fv-destructive);
+  --text: var(--fv-graphite);
+  --fv-muted: var(--fv-text-muted);
+  --ok: var(--fv-signal-green);
+  --bad: var(--fv-alert-red);
 
   /* ── Technical Brand Geometry CAD tokens (Phase 7 / 07-UI-SPEC § Color + Design MD §2.1/§2.4/§2.5) ──
      Light technical blueprint palette. Additive — does NOT alter the --fv-* Phase 4 tokens above. */
@@ -168,8 +181,8 @@
 body {
   margin: 0;
   min-width: 1024px;
-  background: #dedee6;
-  color: var(--fv-text);
+  background: var(--fv-fog);
+  color: var(--fv-graphite);
   line-height: 1.5;
   font-family: var(--font-sans);
 }
@@ -783,4 +796,266 @@ th {
   right: 20px;
   border-bottom: 1px solid;
   border-right: 1px solid;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FleetVolt Design Bible — Utility Classes (Brand Guide §05–§07)
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── .fv-frame — the Framed Instrument (§05) ── */
+.fv-frame {
+  position: relative;
+  background: var(--fv-paper);
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 30%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.02) 75%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.02) 75%);
+  background-size: 100% 100%, 22px 22px, 22px 22px;
+  background-position: 0 0, 0 0, 11px 11px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1),
+    0 2.8px 2.2px rgba(0, 0, 0, 0.034),
+    0 12.5px 10px rgba(0, 0, 0, 0.06),
+    0 41.8px 33.4px rgba(0, 0, 0, 0.086),
+    0 100px 80px rgba(0, 0, 0, 0.12);
+  padding: 28px;
+  overflow: hidden;
+}
+
+/* ── .fv-card — Skeuomorphic card/panel (§06 Component Library) ── */
+.fv-card {
+  position: relative;
+  background: linear-gradient(180deg, #fbfbfd, #ededf2);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  padding: 14px;
+}
+
+/* ── .fv-corner-bracket — 14px L-shapes for framed containers ── */
+.fv-corner-bracket {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 3;
+}
+.fv-corner-bracket.tl { top: 18px; left: 18px; border-top: 1px solid rgba(0,0,0,0.25); border-left: 1px solid rgba(0,0,0,0.25); }
+.fv-corner-bracket.tr { top: 18px; right: 18px; border-top: 1px solid rgba(0,0,0,0.25); border-right: 1px solid rgba(0,0,0,0.25); }
+.fv-corner-bracket.bl { bottom: 18px; left: 18px; border-bottom: 1px solid rgba(0,0,0,0.25); border-left: 1px solid rgba(0,0,0,0.25); }
+.fv-corner-bracket.br { bottom: 18px; right: 18px; border-bottom: 1px solid rgba(0,0,0,0.25); border-right: 1px solid rgba(0,0,0,0.25); }
+
+/* ── .fv-mono-label — JetBrains Mono caps technical label (§04 Typography) ── */
+.fv-mono-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fv-steel);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* ── .fv-mono-value — JetBrains Mono data value (§04 Typography) ── */
+.fv-mono-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fv-graphite);
+  letter-spacing: 0;
+}
+
+/* ── .fv-kpi-cell — dimensioned KPI card (§06 KPI cell) ── */
+.fv-kpi-cell {
+  background: linear-gradient(180deg, #fbfbfd, #ececf1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 9px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  padding: 9px 12px;
+}
+.fv-kpi-cell-label {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--fv-text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.fv-kpi-cell-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fv-graphite);
+  margin-top: 2px;
+}
+.fv-kpi-cell-unit {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--fv-steel);
+  font-weight: 400;
+}
+
+/* ── .fv-status-badge — dot + Mono text status pill (§06 Status badge) ── */
+.fv-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fv-slate);
+  background: linear-gradient(180deg, #fbfbfd, #ececf1);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 9999px;
+  padding: 5px 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.fv-status-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+}
+.fv-status-badge-dot.ok { color: var(--fv-signal-green); background: var(--fv-signal-green); }
+.fv-status-badge-dot.warn { color: var(--fv-caution-amber); background: var(--fv-caution-amber); }
+.fv-status-badge-dot.alert { color: var(--fv-alert-red); background: var(--fv-alert-red); }
+
+/* ── .fv-segmented — segmented control track + thumb (§06) ── */
+.fv-segmented {
+  display: inline-flex;
+  background: #e4e4ea;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  gap: 0;
+}
+.fv-segmented button {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  transition: all 0.15s ease;
+  background: transparent;
+  color: var(--fv-steel);
+}
+.fv-segmented button[data-active="true"] {
+  background: linear-gradient(180deg, #fbfbfd, #e4e4ea);
+  color: var(--fv-graphite);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* ── .fv-table — technical data table (§06 Table) ── */
+.fv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+}
+.fv-table th {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--fv-steel);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+.fv-table td {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fv-slate);
+  padding: 7px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.fv-table tr:hover td {
+  background: rgba(76, 143, 184, 0.06);
+}
+
+/* ── .fv-slider — skeuomorphic range input (§06 Slider) ── */
+.fv-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--fv-steel), #c9c9d1);
+  outline: none;
+}
+.fv-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fbfbfd, #d4d4da);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.fv-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fbfbfd;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+/* ── .fv-dimension-line — 0.5px dashed leader for callouts ── */
+.fv-dimension-line {
+  stroke: var(--fv-steel);
+  stroke-width: 0.5;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+
+/* ── .fv-nav-header — skeuomorphic pill nav for layout.tsx header ── */
+.fv-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(180deg, #fbfbfd, #ececf1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.fv-nav-header-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fv-slate);
+  text-decoration: none;
+  padding: 6px 11px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.fv-nav-header-link:hover {
+  background: linear-gradient(180deg, #fbfbfd, #e4e4ea);
+  color: var(--fv-graphite);
+}
+.fv-nav-header-link[data-active="true"] {
+  background: linear-gradient(180deg, #2a2a2e, #141416);
+  color: #f5f5f7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* ── Page backdrop for framed screens ── */
+.fv-page {
+  min-height: calc(100vh - 57px);
+  background: radial-gradient(120% 90% at 50% 0%, #e7e7ee 0%, #d8d8e0 100%);
+  padding: 40px 32px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
