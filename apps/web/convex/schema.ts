@@ -411,4 +411,62 @@ export default defineSchema({
     .index("by_level", ["level"])
     .index("by_fips", ["fips"])
     .index("by_parent", ["parentFips"]),
+
+  // ── Driver profiles (P-DRIVER) ──────────────────────────────────────────────
+  //
+  // Captures the FULL set of preferences a driver uses for physics calculations:
+  // truck slug (→ truckConfigs), payload, weather preset, port drayage, charging
+  // SoC targets, and optional physics overrides (±20% OEM bounds enforced in
+  // convex/physics/overrides.ts). Also captures carrier association (→ carriers
+  // by carrierKey) and home terminal location for carrier-finder queries.
+  //
+  // No auth yet — driverId is a stable anonymous ID (localStorage UUID or
+  // WorkOS subject once Phase 10 lands). No provenance — this is user
+  // preference state, not ingested data.
+  driverProfiles: defineTable({
+    driverId: v.string(),
+    displayName: v.string(),
+    email: v.optional(v.string()),
+    associatedCarrierKey: v.optional(v.string()),
+    preferredTruckSlug: v.optional(v.string()),
+    defaultPayloadLbs: v.optional(v.number()),
+    defaultWeatherPreset: v.optional(
+      v.union(
+        v.literal("ideal"),
+        v.literal("hot"),
+        v.literal("cold"),
+        v.literal("headwind"),
+      ),
+    ),
+    portDrayageEnabled: v.optional(v.boolean()),
+    chargingPreferences: v.optional(
+      v.object({
+        soc_trigger_pct: v.number(),
+        soc_floor_pct: v.number(),
+        target_soc_pct: v.number(),
+        min_arrival_soc_pct: v.number(),
+      }),
+    ),
+    physicsOverrides: v.optional(
+      v.object({
+        C_rr: v.optional(v.number()),
+        drag_coefficient: v.optional(v.number()),
+        usable_kwh: v.optional(v.number()),
+        aux_kw_base: v.optional(v.number()),
+        regen_efficiency: v.optional(v.number()),
+      }),
+    ),
+    homeTerminal: v.optional(
+      v.object({
+        lat: v.number(),
+        lng: v.number(),
+        label: v.optional(v.string()),
+      }),
+    ),
+    preferredCorridorKey: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_driverId", ["driverId"])
+    .index("by_email", ["email"]),
 });
