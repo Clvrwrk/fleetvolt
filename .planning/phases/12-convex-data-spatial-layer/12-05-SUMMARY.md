@@ -38,19 +38,36 @@ key-files:
     - scripts/carriers_load.mjs (Task 4)
   modified: []
 
-requirements-completed: [CVX-CARRIER-01]
-requirements-partial: [INGEST-04]
+requirements-completed: [INGEST-04, CVX-CARRIER-01]
 ---
 
 # Plan 12-05 Summary — POLB Carrier Ingest + Corridor-City Targeting
 
-## Status: COMPLETE (with one documented deferral — geocoding/spatial half)
+## Status: COMPLETE
 
-All 5 tasks executed and committed atomically (hooks ran, no `--no-verify`). The
-corridor-city "companies to target" flagship answer is fully delivered. The
-coordinate-geocoding + spatial-radius half of INGEST-04 is **deferred** because the
-only Google key in the environment is a GenAI/Gemini key, not a Maps Geocoding
-key — no coords were fabricated and no calls were billed.
+All 5 tasks executed and committed atomically (hooks ran, no `--no-verify`). Both
+the corridor-city "companies to target" answer AND the coordinate-geocoding +
+spatial-radius half of INGEST-04 are now delivered. The geocoding deferral (below)
+was resolved 2026-07-07 once a valid Maps Geocoding key was provisioned.
+
+## Geocoding + spatial resolution (2026-07-07, post-initial-execution)
+
+The initial run deferred geocoding because the only Google key in env was a
+Gemini/GenAI key. A dedicated **Maps Platform server key** (`GOOGLE_MAPS_SERVER_KEY`
+from the CleverWork central creds, `AIza…` prefix, Geocoding API enabled) was
+verified (`status:OK` probe on POLB) and wired into `~/.hermes/.env` as
+`GOOGLE_GEOCODING_API_KEY`. Then:
+- Re-ran `data/ingest/carriers/geocode.py` (isolated venv): **1,823/1,823 OK
+  (100%)**, 1,806 billed calls + 17 cache hits, 0 FAILED / 0 ZERO. Results cached
+  to `out/geocode_cache.json` (idempotent — free on re-run). Key never written to
+  cache/logs.
+- Re-ran `scripts/carriers_load.mjs`: **1,823 patched, 1,823 LOCATED** (was 0
+  located), spatial index built at write via `spatial.insertPoint`. Corridor
+  clusters unchanged & byte-exact vs flagship.
+- **Spatial queries now live** (were returning `[]`): `carriersInRadius` @ POLB
+  30km returns real distance-sorted carriers (CFR Heavy Haul 2231m, Kee
+  Transportation 2397m, …); `topCarriersNear` @ POLB returns Pacifica Trucks
+  1835m first; San Bernardino probe returns VFR Transport 3658m / Red Lion 4906m.
 
 ## Commits
 
@@ -89,13 +106,11 @@ key — no coords were fabricated and no calls were billed.
 
 ## Deviations / deferrals / blockers (honest)
 
-- **DEFERRAL (INGEST-04 spatial half):** Geocoding + spatial indexing deferred —
-  env key is not a Maps/Geocoding key. **Requires a valid `GOOGLE_MAPS_API_KEY` /
-  `GOOGLE_GEOCODING_API_KEY` (an `AIza…` key with the Geocoding API enabled).**
-  Once available, re-run `data/ingest/carriers/geocode.py` then
-  `scripts/carriers_load.mjs` — the disk cache makes it free/idempotent and will
-  populate coords + spatial index so `carriersInRadius`/`topCarriersNear` return
-  real results. This is a credentials/manual step for Chris, not a code gap.
+- **RESOLVED (INGEST-04 spatial half):** Initially deferred (env key was a
+  Gemini key, not a Maps key). Resolved 2026-07-07 — provisioned
+  `GOOGLE_MAPS_SERVER_KEY` (Geocoding API enabled), geocoded 1,823/1,823 (100%),
+  re-ingested with coords + spatial index; `carriersInRadius`/`topCarriersNear`
+  now return real results. See the "Geocoding + spatial resolution" section above.
 - **totalInCorridor:** 560 over the 12 canonical cities vs the flagship's ~685
   (the flagship spans a broader corridor gateway set); the 8 named headline
   clusters reproduce byte-exact.
