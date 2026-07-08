@@ -138,7 +138,7 @@ Architecture decision: **hybrid route architecture**.
 
 <task type="auto" id="17-03">
 <name>Full-viewport workbench shell and responsive panel slots</name>
-<files>apps/web/src/components/workbench/map-workbench/map-workbench-shell.tsx; apps/web/src/components/workbench/map-workbench/workbench-left-panel.tsx; apps/web/src/components/workbench/map-workbench/workbench-right-panel.tsx; apps/web/src/components/workbench/map-workbench/mobile-workbench-sheet.tsx</files>
+<files>apps/web/src/components/workbench/map-workbench/map-workbench-shell.tsx; apps/web/src/components/workbench/map-workbench/workbench-left-panel.tsx; apps/web/src/components/workbench/map-workbench/workbench-right-panel.tsx; apps/web/src/components/workbench/map-workbench/mobile-workbench-sheet.tsx; apps/web/src/components/nav/app-shell.tsx</files>
 <action>Build a shell that uses the AppShell content area but avoids `FramedPanel`, `max-w-*`, and page-centered padding. Desktop layout should be `h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden` with grid columns for left tools, map, and collapsible right cards. Mobile layout should make the map the primary visual surface and collapse tools/results into a bottom sheet or stepper with 44px+ touch targets. Include `data-testid` hooks: `map-workbench-shell`, `workbench-left-panel`, `fleetvolt-map-canvas-slot`, `workbench-right-panel`, `mobile-workbench-sheet`.</action>
 <verify><automated>cd apps/web && pnpm typecheck</automated></verify>
 <done>Desktop screenshots show map work surface dominates the viewport; mobile screenshots show map plus collapsed tools, not a three-column squeeze. Covers WB-02 and WB-03.</done>
@@ -158,7 +158,7 @@ Architecture decision: **hybrid route architecture**.
 <name>Google Routes provider with honest truck-routing seam</name>
 <files>apps/web/src/lib/maps/google-routes.ts; apps/web/src/lib/maps/google-routes.test.ts; apps/web/convex/workbench/actions.ts</files>
 <action>Implement a route geometry provider behind a small interface returning provider name, decoded coordinates, distance, duration, encoded polyline when available, and warnings. Use Google Routes for MVP geometry through a server/Convex action so API keys are not leaked. Add explicit warnings such as `Google route geometry is not truck-restriction-certified`; leave provider enum/seam for future `ptv`. Cache or hash requests to avoid repeated paid calls. Unit tests must mock fetch and verify decoding, warning propagation, empty/error fallback, and no secret leakage.</action>
-<verify><automated>cd apps/web && pnpm test -- src/lib/maps/google-routes.test.ts</automated></verify>
+<verify><automated>cd apps/web && pnpm test -- src/lib/maps/google-routes.test.ts && CONVEX_TMPDIR="$PWD/.convex-tmp" npx convex codegen && pnpm typecheck</automated></verify>
 <done>Origin/destination can produce real route geometry when configured; tests pass without live Google calls; UI can display provider assumptions. Covers WB-05, WB-06, WB-07, WB-09.</done>
 </task>
 
@@ -170,7 +170,7 @@ Architecture decision: **hybrid route architecture**.
 <done>Driver/Fleet/CaaS panels can pick origin/destination from addresses, ports, yards, chargers, or known FleetVolt assets; selected values contain label, lat/lng, kind, and source metadata. Covers WB-04.</done>
 </task>
 
-<task type="auto" id="17-07" depends_on="17-02">
+<task type="auto" id="17-07" depends_on="17-02,17-06">
 <name>Workbench Convex aggregation for visible layers and metadata cards</name>
 <files>apps/web/convex/workbench/queries.ts</files>
 <action>Add thin aggregation queries that wrap existing Convex surfaces: visible chargers/carriers/parking/POIs/geoRegions/highways by bbox/mode/layers with payload caps; `getAssetMetadataCard({type,id})`; `analyzeClass8GapAlongRoute({corridorPoints,radiusM})` delegating to `chargers/queries:class8Gap`; `hotspotReport` pass-through for CaaS selected points. Preserve modeled labels and source/provenance fields. Never fabricate missing route, detour, CO2, or demand-time values; return unavailable/deferred cards instead.</action>
@@ -188,7 +188,7 @@ Architecture decision: **hybrid route architecture**.
 <done>Driver can answer: can I complete N round trips, where do I charge, which stops are Class 8 friendly, and what detour/gap warning exists. Covers WB-06.</done>
 </task>
 
-<task type="auto" id="17-09" depends_on="17-04,17-05,17-06,17-07">
+<task type="auto" id="17-09" depends_on="17-04,17-05,17-06,17-07,17-08">
 <name>Fleet contract-plan vertical slice</name>
 <files>apps/web/src/components/workbench/map-workbench/inputs/contract-constraints.tsx; apps/web/src/components/workbench/map-workbench/workbench-left-panel.tsx; apps/web/src/components/workbench/map-workbench/workbench-right-panel.tsx; apps/web/convex/workbench/actions.ts</files>
 <action>Implement fleet mode controls: port/origin, inland destination, date/schedule, containers/day, gate hours, dwell, shift length, yard return, truck profile. Use route geometry and simulation to derive v1 operational summary: round-trip duration, trips/truck/day, trucks required, drivers required, charge events, charging downtime, route amenities, gap classification, and mobile CaaS support point/time recommendation when true gap exists. Show formula cards and assumption labels rather than opaque prose.</action>
@@ -196,7 +196,7 @@ Architecture decision: **hybrid route architecture**.
 <done>Fleet user can produce a contract plan summary with trucks, drivers, charge events, downtime, amenities, true gaps, and CaaS support recommendation. Covers WB-07.</done>
 </task>
 
-<task type="auto" id="17-10" depends_on="17-04,17-05,17-06,17-07">
+<task type="auto" id="17-10" depends_on="17-04,17-05,17-06,17-07,17-08,17-09">
 <name>CaaS gap/opportunity map vertical slice</name>
 <files>apps/web/src/components/workbench/map-workbench/workbench-left-panel.tsx; apps/web/src/components/workbench/map-workbench/workbench-right-panel.tsx; apps/web/src/components/workbench/map-workbench/layers/geo-region-layer.tsx; apps/web/src/components/workbench/map-workbench/layers/asset-marker-layer.tsx; apps/web/convex/workbench/queries.ts</files>
 <action>Implement CaaS mode starting from a US-wide geo/opportunity view. Support drilldown through available `geoRegions` levels (US/state/county now, air district/zip/city/address when data exists; if missing, show disabled labeled steps rather than blocking). On click or autocomplete origin plus destination, run route/gap analysis, show true Class 8 gaps versus detour-solvable gaps when detour data is available, top carriers/fleets to target, hotspot/report cards, freight context, and mobile charger positioning recommendations. Use centroid/bbox regions for MVP; polygon geometries can be deferred.</action>
@@ -218,7 +218,7 @@ Architecture decision: **hybrid route architecture**.
 <name>Local, screenshot, and UX audit verification</name>
 <files>apps/web/tests/map-workbench.spec.ts; apps/web/tests/map-workbench-screenshots.spec.ts; existing screenshots/test-results artifacts only as generated outputs</files>
 <action>Add Playwright coverage for role launcher CTAs, `/workbench` mode parsing, desktop full-viewport layout, mobile bottom sheet behavior, layer toggles, marker-card interaction, and AI map-action smoke. Add screenshot tests for Driver, Fleet, and CaaS workbench initial states and one planned-result state each. Tests should gracefully skip live tile assertions if Google env/referrer allowlist is unavailable, but still verify DOM/layout/testids. Run the `fleetvolt-ux-audit` skill criteria manually or through its documented checklist: one dominant action per dashboard, map-first workbench, no centered card primary surface, role-filtered nav, human-readable errors, mobile touch targets, and WCAG contrast spot checks.</action>
-<verify><automated>cd apps/web && pnpm typecheck && pnpm test && pnpm test:e2e -- map-workbench.spec.ts</automated></verify>
+<verify><automated>cd apps/web && pnpm typecheck && pnpm test && pnpm test:e2e -- map-workbench.spec.ts && pnpm test:e2e -- map-workbench-screenshots.spec.ts</automated><note>Screenshot spec may skip live Google tile assertions when Google env/referrer blocks maps, but it must still verify DOM layout/testids and write/compare screenshot artifacts where possible.</note></verify>
 <done>Local tests pass; screenshot artifacts demonstrate map-first desktop and mobile; UX audit criteria pass at 95%+ or failures are documented with fixes. Covers all WB requirements.</done>
 </task>
 
