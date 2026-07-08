@@ -24,3 +24,16 @@ venv/
 data/valhalla/custom_files/socal.osm.pbf
 data/valhalla/custom_files/*.osm.pbf
 data/valhalla/custom_files/valhalla_tiles/
+data/valhalla/custom_files/valhalla_tiles.tar
+data/valhalla/custom_files/valhalla.json
+data/valhalla/custom_files/duplicateways.txt
+data/valhalla/custom_files/file_hashes.txt
+data/ingest/**/out/
+.vercel
+.pnpm-store/
+.memsearch/
+.DS_Store
+**/.DS_Store
+apps/web/test-results/
+apps/web/tsconfig.tsbuildinfo
+Grok_Chat
