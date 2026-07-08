@@ -1,26 +1,26 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode, CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 type SkeuomorphicCardProps = {
   children: ReactNode;
-  /** Internal padding: p-6 (default) or p-8. */
-  padding?: "6" | "8";
   className?: string;
   style?: CSSProperties;
+  padding?: "sm" | "md" | "lg";
   "data-testid"?: string;
 };
 
 /**
- * SkeuomorphicCard — secondary CAD container (Design MD §3.5).
+ * SkeuomorphicCard — secondary container card (Brand Guide §06).
  *
- * Lighter gradient border (.cad-card-gradient-border) + inner emboss shadow,
- * rounded-2xl, generous p-6/p-8. Used for the control panel and drawer shells.
+ * Light gradient surface #FBFBFD→#EDEDF2, 1px border, 12px radius,
+ * inset top highlight + soft drop shadow.
+ * Uses .fv-card utility class from globals.css.
  */
 export function SkeuomorphicCard({
   children,
-  padding = "6",
   className,
   style,
+  padding = "md",
   "data-testid": dataTestId,
 }: SkeuomorphicCardProps) {
   return (
@@ -28,13 +28,12 @@ export function SkeuomorphicCard({
       data-testid={dataTestId}
       style={style}
       className={cn(
-        "cad-card-gradient-border cad-inner-emboss relative overflow-hidden bg-[var(--color-surface)]",
-        "rounded-2xl",
-        padding === "8" ? "p-8" : "p-6",
+        "fv-card",
+        padding === "sm" ? "p-3" : padding === "lg" ? "p-6" : "p-3.5",
         className,
       )}
     >
-      <div className="relative z-[2]">{children}</div>
+      {children}
     </div>
   );
 }
