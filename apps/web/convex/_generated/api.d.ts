@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as brief from "../brief.js";
 import type * as carriers_corridorCity from "../carriers/corridorCity.js";
 import type * as carriers_ingest from "../carriers/ingest.js";
 import type * as carriers_mutations from "../carriers/mutations.js";
@@ -16,6 +17,10 @@ import type * as chargers_classify from "../chargers/classify.js";
 import type * as chargers_ingest from "../chargers/ingest.js";
 import type * as chargers_mutations from "../chargers/mutations.js";
 import type * as chargers_queries from "../chargers/queries.js";
+import type * as exports_exportCsv from "../exports/exportCsv.js";
+import type * as exports_exportJson from "../exports/exportJson.js";
+import type * as exports_exportTemplate from "../exports/exportTemplate.js";
+import type * as exports_exports from "../exports/exports.js";
 import type * as faf_ingestActuals from "../faf/ingestActuals.js";
 import type * as faf_lookups from "../faf/lookups.js";
 import type * as faf_mutations from "../faf/mutations.js";
@@ -37,6 +42,23 @@ import type * as lib_provenance from "../lib/provenance.js";
 import type * as lib_spatial from "../lib/spatial.js";
 import type * as parking_ingest from "../parking/ingest.js";
 import type * as parking_mutations from "../parking/mutations.js";
+import type * as physics_chargeCurve from "../physics/chargeCurve.js";
+import type * as physics_chargingPlanner from "../physics/chargingPlanner.js";
+import type * as physics_constants from "../physics/constants.js";
+import type * as physics_detourValidator from "../physics/detourValidator.js";
+import type * as physics_feasibility from "../physics/feasibility.js";
+import type * as physics_inputsHash from "../physics/inputsHash.js";
+import type * as physics_kpiAggregator from "../physics/kpiAggregator.js";
+import type * as physics_orchestrator from "../physics/orchestrator.js";
+import type * as physics_overrides from "../physics/overrides.js";
+import type * as physics_physicsEngine from "../physics/physicsEngine.js";
+import type * as physics_portDrayage from "../physics/portDrayage.js";
+import type * as physics_segmentBuilder from "../physics/segmentBuilder.js";
+import type * as physics_simulate from "../physics/simulate.js";
+import type * as physics_socIntegrator from "../physics/socIntegrator.js";
+import type * as physics_speedResolver from "../physics/speedResolver.js";
+import type * as physics_types from "../physics/types.js";
+import type * as physics_weather from "../physics/weather.js";
 import type * as pois_classify from "../pois/classify.js";
 import type * as pois_ingest from "../pois/ingest.js";
 import type * as pois_mutations from "../pois/mutations.js";
@@ -54,6 +76,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  brief: typeof brief;
   "carriers/corridorCity": typeof carriers_corridorCity;
   "carriers/ingest": typeof carriers_ingest;
   "carriers/mutations": typeof carriers_mutations;
@@ -62,6 +85,10 @@ declare const fullApi: ApiFromModules<{
   "chargers/ingest": typeof chargers_ingest;
   "chargers/mutations": typeof chargers_mutations;
   "chargers/queries": typeof chargers_queries;
+  "exports/exportCsv": typeof exports_exportCsv;
+  "exports/exportJson": typeof exports_exportJson;
+  "exports/exportTemplate": typeof exports_exportTemplate;
+  "exports/exports": typeof exports_exports;
   "faf/ingestActuals": typeof faf_ingestActuals;
   "faf/lookups": typeof faf_lookups;
   "faf/mutations": typeof faf_mutations;
@@ -83,6 +110,23 @@ declare const fullApi: ApiFromModules<{
   "lib/spatial": typeof lib_spatial;
   "parking/ingest": typeof parking_ingest;
   "parking/mutations": typeof parking_mutations;
+  "physics/chargeCurve": typeof physics_chargeCurve;
+  "physics/chargingPlanner": typeof physics_chargingPlanner;
+  "physics/constants": typeof physics_constants;
+  "physics/detourValidator": typeof physics_detourValidator;
+  "physics/feasibility": typeof physics_feasibility;
+  "physics/inputsHash": typeof physics_inputsHash;
+  "physics/kpiAggregator": typeof physics_kpiAggregator;
+  "physics/orchestrator": typeof physics_orchestrator;
+  "physics/overrides": typeof physics_overrides;
+  "physics/physicsEngine": typeof physics_physicsEngine;
+  "physics/portDrayage": typeof physics_portDrayage;
+  "physics/segmentBuilder": typeof physics_segmentBuilder;
+  "physics/simulate": typeof physics_simulate;
+  "physics/socIntegrator": typeof physics_socIntegrator;
+  "physics/speedResolver": typeof physics_speedResolver;
+  "physics/types": typeof physics_types;
+  "physics/weather": typeof physics_weather;
   "pois/classify": typeof pois_classify;
   "pois/ingest": typeof pois_ingest;
   "pois/mutations": typeof pois_mutations;
