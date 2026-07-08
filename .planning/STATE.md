@@ -2,18 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Progress
-current_phase_name: Phase 12 EXECUTING — Waves 0+1 DONE; Wave 2 next
+current_phase: 12
+current_phase_name: convex-data-spatial-layer
 status: executing
-stopped_at: "Phase 12 Waves 0+1 COMPLETE. Wave0 12-01 schema (16 tables). Wave1: 12-02 spatial layer + PostGIS parity gate (22/22 tests, parity 7/7 on BOTH backends; fixture thin=6-row docker seed, 12-04 re-captures after live ingest) + 12-03 FAF zone-061 ingest (105,329 freightOD rows live, verified $1.32T/395M-truck-ktons matches ground truth, freightContext query bounded, prep test 4/4). NOTE: both Wave-1 executors CRASHED mid-run on Anthropic 'credit too low' 400; recovered from atomic commits + finished in-chat (fixed 3 real defects: loader module-resolution, 32k read-limit via by_key index, missing freightContext query). NEXT ACTION = Wave 2 (12-04 chargers ∥ 12-05 carriers ∥ 12-06 CalTrans ∥ 12-07 NATD+OSM). Docker stack UP. Convex dev deploy sensible-oriole-832 live w/ geospatial component + faf/* functions."
-last_updated: "2026-07-07T11:35:00.000Z"
+stopped_at: "Phase 12 Waves 0+1+2 COMPLETE (7/8 plans); only 12-08 (Wave 3) remains. Wave2 ingested ALL live data into Convex sensible-oriole-832: 12-04 chargers (2,867 AFDC CA DC-fast, 13 Class-8; nrel→nlr fixed; parity gate PASS on geodesic clause — NOTE flagship '0 Class-8 on POLB→SB' gap has CLOSED, now 3 HD stations WattEV Pier A 360kW/WattEV SB 360kW/Greenlane 400kW, flagged for 12-08 to reconcile stale FLAGSHIP-QUERY-VERIFIED.md), 12-05 carriers (1,823 POLB; corridor-city targeting 560 in-corridor byte-exact vs flagship; GEOCODING DEFERRED — env GOOGLE_API_KEY is a Gemini AQ. key not a Maps AIza key, so carriersInRadius/topCarriersNear spatial half awaits a real Maps Geocoding key from Chris; re-run geocode.py+carriers_load.mjs once provisioned, cache makes it free), 12-06 CalTrans (6,865 Truck AADT segments; data-driven mostCongestedRoute RTE 5=3.08M 5-axle closed flagship gap #1; corridor parity 825 exact), 12-07 NATD+OSM (83 CA truck-stop parking sites + 12,964 OSM POIs streamed from 1.3GB pbf: fuel 2595/convenience 2124/fast_food 8188/rest_area 53/truck_parking 4). Post-wave gate PASS: 62/62 tests green (34 unit+22 lib+6 charger-live), tsc clean except pre-existing scenario-form.tsx. Docker stack UP. NEXT ACTION = plan+execute 12-08 (Wave 3, report query consuming all layers). Ingest pattern established: local Python prep→Convex action→batched internalMutation upsert (BATCH_SIZE 50 for geospatial 4096-reads limit)→spatial.insertPoint at write, idempotent by stable key."
+last_updated: "2026-07-07T23:15:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Recovered+completed Phase 12 Wave 1 (12-02 spatial parity + 12-03 FAF ingest) after executor billing crash
+last_activity_desc: Phase 12 Wave 2 complete (12-04 chargers, 12-05 carriers, 12-06 CalTrans, 12-07 NATD+OSM); post-wave gate 62/62 green
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 25
+  total_plans: 11
+  completed_plans: 10
+  percent: 30
 ---
 
 # Project State
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
-**Current focus:** v2.0 Freight Pulse Network Visualizer — defining requirements (Phase 7+)
+**Current focus:** Phase 12 — convex-data-spatial-layer
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-07 — Milestone v2.0 started
+Phase: 12 (convex-data-spatial-layer) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 12
+Last activity: 2026-07-07 — Phase 12 execution started
 
 ## Performance Metrics
 
