@@ -82,6 +82,7 @@ import type * as trucks_ingest from "../trucks/ingest.js";
 import type * as trucks_mutations from "../trucks/mutations.js";
 import type * as trucks_queries from "../trucks/queries.js";
 import type * as userFilters from "../userFilters.js";
+import type * as users_queries from "../users/queries.js";
 
 import type {
   ApiFromModules,
@@ -164,6 +165,7 @@ declare const fullApi: ApiFromModules<{
   "trucks/mutations": typeof trucks_mutations;
   "trucks/queries": typeof trucks_queries;
   userFilters: typeof userFilters;
+  "users/queries": typeof users_queries;
 }>;
 
 /**

@@ -40,7 +40,7 @@ export function useWorkOSAuth() {
 
   // Query the WorkOS user from the AuthKit component (null if not authenticated)
   const workosUser = useQuery(
-    api.users.getCurrentUser,
+    api["users/queries"].getCurrentUser,
     {},
     // Skip the query until Convex auth is established
     { skip: !isAuthenticated },
@@ -48,7 +48,7 @@ export function useWorkOSAuth() {
 
   // Query our userAccounts row for role/displayName/companyName
   const userAccount = useQuery(
-    api.users.getUserAccount,
+    api["users/queries"].getUserAccount,
     {},
     { skip: !isAuthenticated },
   );
@@ -137,7 +137,7 @@ export function useWorkOSAuth() {
 export function useUserRole() {
   const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
   const userAccount = useQuery(
-    api.users.getUserAccount,
+    api["users/queries"].getUserAccount,
     {},
     { skip: !isAuthenticated },
   );
