@@ -1,12 +1,10 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { useScenarioStore } from "@/stores/scenario-store";
 
+/** Inline errors below the run button — header shows primary status pill */
 export function JobStatusBar() {
-  const pollStatus = useScenarioStore((s) => s.pollStatus);
   const isPolling = useScenarioStore((s) => s.isPolling);
   const isCacheHit = useScenarioStore((s) => s.isCacheHit);
   const pollResult = useScenarioStore((s) => s.pollResult);
@@ -17,58 +15,43 @@ export function JobStatusBar() {
   const inputsHash = pollResult?.inputs_hash;
   const hashPrefix = inputsHash?.slice(0, 8);
 
-  if (!isPolling && !pollStatus && !error) {
+  if (!isPolling && !error && !isCacheHit) {
     return null;
   }
 
   return (
-    <div
-      data-testid="job-status"
-      aria-live="polite"
-      className="space-y-3 border-t border-[var(--fv-stroke)] pt-4"
-    >
+    <div className="space-y-2 font-mono text-[10px]" aria-live="polite">
       {isPolling && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>
-            {pollStatus === "RUNNING" ? "Simulation running…" : "Submitting…"}
-          </span>
+        <div className="flex items-center gap-2 text-[#8a8a92]">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <span>Physics engine running…</span>
         </div>
       )}
 
-      {isCacheHit && hashPrefix && (
-        <span className="badge badge-ok inline-flex items-center gap-1">
-          Cached result · {hashPrefix}
+      {isCacheHit && hashPrefix ? (
+        <span className="inline-block rounded-full bg-[#3f9b6b]/15 px-2 py-0.5 text-[#3f9b6b]">
+          Cached · {hashPrefix}
         </span>
-      )}
+      ) : null}
 
-      {!isCacheHit && inputsHash && pollStatus === "COMPLETE" && hashPrefix && (
-        <p className="mono text-xs text-muted-foreground">
-          inputs_hash: {inputsHash}
-        </p>
-      )}
-
-      {error && (
-        <Alert>
-          <AlertTitle>Simulation failed</AlertTitle>
-          <AlertDescription>
+      {error ? (
+        <div className="rounded-lg border border-[#c0392b]/30 bg-[#c0392b]/5 p-2 text-[#c0392b]">
+          <p>
             {error.stage ? `[${error.stage}] ` : ""}
             {error.message}
-          </AlertDescription>
-          <Button
+          </p>
+          <button
             type="button"
-            variant="outline"
-            size="sm"
-            className="mt-3"
+            className="fv-btn-secondary mt-2 px-3 py-1 text-[11px]"
             onClick={() => {
               resetError();
               void submitScenario();
             }}
           >
-            Retry simulation
-          </Button>
-        </Alert>
-      )}
+            Retry
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { components } from "@fleetvolt/shared-types";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import {
   payloadLbsFromAdjustmentPercent,
   weatherPresetFromSensitivity,
@@ -92,83 +90,75 @@ export function SensitivitySliders() {
   }
 
   return (
-    <div className="space-y-4 border-t border-[var(--fv-stroke)] pt-4" data-testid="sensitivity-sliders">
-      <div>
-        <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-          Sensitivity
-        </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Adjust on release — re-runs simulation after 500ms debounce.
-        </p>
-      </div>
-
+    <div className="fv-inset-card space-y-3" data-testid="sensitivity-sliders">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="payload-adjust">Payload adjustment</Label>
-          <span className="text-xs text-muted-foreground">
+          <span className="fv-field-label mb-0">Payload adjustment</span>
+          <span className="font-mono text-[10px] text-[#8a8a92]">
             {payloadAdjustPct > 0 ? "+" : ""}
-            {payloadAdjustPct}% → {adjustedPayload.toLocaleString()} lbs
+            {payloadAdjustPct}% → {adjustedPayload.toLocaleString()} lb
           </span>
         </div>
-        <Slider
+        <input
           id="payload-adjust"
+          type="range"
+          className="fv-range"
           min={-20}
           max={20}
           step={1}
-          value={[payloadAdjustPct]}
-          onValueChange={([value]) => setPayloadAdjustPct(value ?? 0)}
-          onValueCommit={scheduleCommit}
+          value={payloadAdjustPct}
+          onChange={(e) => setPayloadAdjustPct(Number(e.target.value))}
+          onMouseUp={scheduleCommit}
+          onTouchEnd={scheduleCommit}
         />
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="temperature-offset">Temperature offset</Label>
-          <span className="text-xs text-muted-foreground">
+          <span className="fv-field-label mb-0">Temperature offset</span>
+          <span className="font-mono text-[10px] text-[#8a8a92]">
             {temperatureOffsetC > 0 ? "+" : ""}
-            {temperatureOffsetC}°C → {temperaturePreset} preset
+            {temperatureOffsetC}°C
           </span>
         </div>
-        <Slider
+        <input
           id="temperature-offset"
+          type="range"
+          className="fv-range"
           min={-20}
           max={20}
           step={1}
-          value={[temperatureOffsetC]}
-          onValueChange={([value]) => setTemperatureOffsetC(value ?? 0)}
-          onValueCommit={scheduleCommit}
+          value={temperatureOffsetC}
+          onChange={(e) => setTemperatureOffsetC(Number(e.target.value))}
+          onMouseUp={scheduleCommit}
+          onTouchEnd={scheduleCommit}
         />
-        <p className="text-xs text-muted-foreground">
-          Maps to weather preset: &lt;−10°C cold, &gt;+10°C hot, else ideal
-          (unless headwind overrides).
-        </p>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="headwind">Headwind</Label>
-          <span className="text-xs text-muted-foreground">
+          <span className="fv-field-label mb-0">Headwind</span>
+          <span className="font-mono text-[10px] text-[#8a8a92]">
             {headwindMs} m/s
-            {headwindMs >= 8 ? " → headwind preset" : ""}
           </span>
         </div>
-        <Slider
+        <input
           id="headwind"
+          type="range"
+          className="fv-range"
           min={0}
           max={15}
           step={1}
-          value={[headwindMs]}
-          onValueChange={([value]) => setHeadwindMs(value ?? 0)}
-          onValueCommit={scheduleCommit}
+          value={headwindMs}
+          onChange={(e) => setHeadwindMs(Number(e.target.value))}
+          onMouseUp={scheduleCommit}
+          onTouchEnd={scheduleCommit}
         />
-        <p className="text-xs text-muted-foreground">
-          At 8 m/s or above, weather preset switches to headwind.
-        </p>
       </div>
 
       {isSensitivityUpdating ? (
         <p
-          className="text-xs font-medium text-[var(--fv-accent)]"
+          className="font-mono text-[10px] text-[#4c8fb8]"
           role="status"
           data-testid="sensitivity-updating"
         >

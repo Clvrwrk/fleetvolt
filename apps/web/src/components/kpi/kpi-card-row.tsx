@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { components } from "@fleetvolt/shared-types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FramedPanel } from "@/components/ui/framed-panel";
 import {
   deriveKpiSummary,
   feasibilityBadgeClasses,
@@ -27,7 +28,9 @@ function KpiCard({ label, value, testId }: KpiCardProps) {
   return (
     <Card className="min-w-[140px] shrink-0" data-testid={testId}>
       <CardHeader className="pb-2">
-        <CardTitle>{label}</CardTitle>
+        <CardTitle className="font-technical text-muted-foreground">
+          {label}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-lg font-medium text-foreground">{value}</div>
@@ -44,10 +47,7 @@ export function KpiCardRow({ outputs }: KpiCardRowProps) {
     : "Unknown";
 
   return (
-    <div
-      className="fv-panel overflow-x-auto p-4"
-      data-testid="kpi-card-row"
-    >
+    <FramedPanel className="overflow-x-auto p-4" data-testid="kpi-card-row">
       <div className="flex min-w-max gap-4 xl:flex-wrap">
         <KpiCard
           label="Total energy"
@@ -102,6 +102,6 @@ export function KpiCardRow({ outputs }: KpiCardRowProps) {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </FramedPanel>
   );
 }
