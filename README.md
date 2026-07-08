@@ -33,72 +33,53 @@
 - Actionable data pipeline + phased roadmap with clear DoD criteria.
 - Designed for your existing agent/VPS patterns and consulting use cases.
 
-## Local development stack (Phase 1)
+## Local development stack (Phase 14+)
+
+The Docker Compose stack is decommissioned (Phase 14). The app now runs on
+Vercel (web) + Convex (data + compute).
+
+### Local dev
 
 From the repository root:
 
 ```bash
-docker compose up --build
+cd apps/web
+pnpm install
+pnpm dev
 ```
 
-Verify the simulation service:
+Open http://localhost:3000 — the app loads with Convex dev data.
+
+Verify the health endpoint:
 
 ```bash
-curl http://localhost:8000/v1/meta/stack
+curl http://localhost:3000/health
+# expect: {"status":"ok","timestamp":"...","services":{"convex":true,"googleMaps":true}}
 ```
-
-Open the stack status page at http://localhost:3000.
 
 See [apps/web/README.md](./apps/web/README.md) for web-specific notes.
 
-### Runtime verification
+### Production Deployment
 
-Verify the two behaviors below before treating Phase 1 foundation as runtime-proven. These steps confirm PLAT-01 (local stack) and PLAT-03 (CI pipeline).
+FleetVolt deploys to Vercel + Convex. See the
+[Production Deploy Checklist](./apps/web/convex/README.md#production-deploy-checklist)
+in `apps/web/convex/README.md` for the full step-by-step guide.
 
-#### 1. Full stack smoke (PLAT-01)
-
-**Prerequisite:** Valhalla needs SoCal tiles. If `data/valhalla/custom_files/socal.osm.pbf` is missing, run `make valhalla-pbf` first (requires osmium-tool and network). First Valhalla tile build can take 30–90 minutes.
-
-```bash
-docker compose up --build
-# or: docker compose up --build -d && docker compose logs -f
-```
-
-Confirm all six services reach running/healthy state (`postgres`, `redis`, `valhalla`, `simulator`, `api`, `web`):
-
-```bash
-docker compose ps
-curl http://localhost:8000/v1/meta/stack   # expect 200 with postgres_version and table_counts
-curl http://localhost:4000/v1/meta/stack   # Fastify proxy returns same metadata
-```
-
-Open http://localhost:3000 — the stack status page should render service badges and non-error PostGIS table counts.
-
-#### 2. CI pipeline (PLAT-03)
-
-Push to `main` or open a PR, then confirm the [GitHub Actions CI workflow](https://github.com/cleverwork/fleetvolt/actions/workflows/ci.yml) completes green:
-
-- Ruff lint
-- `turbo lint` / `turbo typecheck`
-- OpenAPI codegen drift check
-- `pytest -m "not integration"`
-- `turbo test`
-
-Use the [Actions tab](https://github.com/cleverwork/fleetvolt/actions) to inspect the latest `lint-typecheck-test` job on `main`.
+Quick summary:
+1. Set env vars in Vercel dashboard (Google Maps keys, Convex URL, deploy key)
+2. Run `npx convex deploy` to create the Convex production deployment
+3. Run `npx vercel --prod` to deploy the web app
+4. Add `fleetvolt.network` domain in Vercel + point DNS
+5. Verify `https://fleetvolt.network/health` returns 200
 
 ### CI and local verification
 
-GitHub Actions runs lint, typecheck, pytest, and OpenAPI drift checks on every push to `main`. Without Docker/PostGIS locally, DB-backed tests skip gracefully; the unit test `test_filter_bridge_spikes_removes_synthetic_drop` always runs.
+GitHub Actions runs lint, typecheck, and tests on every push to `main`:
 
-With Compose PostGIS available:
+- `turbo lint` / `turbo typecheck`
+- `turbo test`
 
-```bash
-export DATABASE_URL=postgresql+psycopg://fleetvolt:fleetvolt@localhost:5432/fleetvolt_test
-cd services/simulator && alembic upgrade head
-python -m data.ingest.elevation --precompute --fixture
-pytest tests/test_elevation_cache.py -q
-pnpm turbo run lint typecheck test
-```
+Use the [Actions tab](https://github.com/cleverwork/fleetvolt/actions) to inspect the latest CI run.
 
 ## Next Actions
 

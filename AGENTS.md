@@ -10,8 +10,8 @@ FleetVolt Route is a desktop-first web application that models physics-grounded 
 
 ### Constraints
 
-- **Tech stack**: Hybrid Node + Python required for scientific computing; no pure-JS physics engine
-- **Deployment**: Docker Compose on VPS (CleverWork existing patterns); not Vercel+AWS for v1
+- **Tech stack**: TypeScript full-stack (Next.js + Convex); physics engine ported from Python to Convex TS actions in Phase 13
+- **Deployment**: Vercel (web) + Convex (data + compute) — Docker stack decommissioned Phase 14
 - **Timeline**: 14–18 weeks realistic for solid v1 with validation gates
 - **Accuracy**: Target MAPE <8–12% on total energy vs manufacturer claims; document all assumptions
 - **Performance**: Single simulation p95 <10s; map interactions <100ms
@@ -126,7 +126,7 @@ FleetVolt Route is a desktop-first web application that models physics-grounded 
 | **Google Maps Platform as primary** | Cost at corridor scale; project constraint prefers open elevation/routing. | Valhalla + Open-Elevation (self-hosted) + Mapbox GL for viz only | HIGH |
 | **Real-time OCPI integrations (v1)** | Fragmented auth, rate limits, not needed for planning/feasibility MVP. | Static NREL AFDC with freshness timestamp | HIGH |
 | **TensorFlow / PyTorch** | No ML inference in v1; physics is deterministic segment model. | NumPy + SciPy | HIGH |
-| **Vercel + managed AWS for v1** | Project constraint: Docker Compose on VPS (CleverWork pattern). | Docker Compose + Caddy on VPS | HIGH |
+| **~~Vercel + managed AWS for v1~~** | ~~Project constraint: Docker Compose on VPS~~ | **Now ACTIVE** — Vercel (web) + Convex (data) is the production stack as of Phase 14 | HIGH |
 | **1 Hz time-step simulation loop** | US corridor at 1 Hz = hundreds of thousands of steps; violates p95 <10s target. | Segment-based discretization (~500 m or grade/speed breakpoints) | HIGH |
 | **Node 26 (Current) in production** | Not LTS until Oct 2026; unnecessary risk on VPS. | Node 24 LTS | HIGH |
 | **NumPy 2.5 on Python 3.11** | NumPy 2.5 dropped 3.11 support. | Python 3.12 + NumPy 2.5 | HIGH |
@@ -164,16 +164,21 @@ FleetVolt Route is a desktop-first web application that models physics-grounded 
 
 ## Docker Compose Service Baseline
 
-| Service | Image / Build | Port | Notes |
-|---------|---------------|------|-------|
-| `web` | `node:24-alpine` → Next.js standalone | 3000 | `output: 'standalone'` for slim production image |
-| `api` | `node:24-alpine` → Fastify | 4000 | Bind `0.0.0.0:4000` |
-| `simulator` | `python:3.12-slim` → FastAPI | 8000 | Multi-stage; pin NumPy/SciPy wheels |
-| `sim-worker` | same as simulator | — | `celery -A app.worker worker -c 2` |
-| `postgres` | `postgis/postgis:16-3.5` | 5432 | Init PostGIS extension on first run |
-| `redis` | `redis:8-alpine` | 6379 | Persist AOF for job durability |
-| `valhalla` | `ghcr.io/gis-ops/docker-valhalla/valhalla` | 8002 | Pre-built NA extract; truck costing enabled |
-| `caddy` | `caddy:2-alpine` | 443 | TLS termination, reverse proxy |
+> **DECOMMISSIONED (Phase 14, v3.0 — 2026-07-07).** The entire Docker Compose stack
+> (postgres, redis, simulator, sim-worker, api, web, valhalla, caddy) is retired.
+> FleetVolt now runs on Vercel (web) + Convex (data + compute). See README.md for
+> the current deployment workflow. The table below is preserved for historical reference.
+
+| Service | Image / Build | Port | Status |
+|---------|---------------|------|--------|
+| `web` | Vercel (Next.js native) | 3000 | ✅ Active (Vercel) |
+| `api` | — | 4000 | ❌ Decommissioned (Convex replaces) |
+| `simulator` | — | 8000 | ❌ Decommissioned (Convex actions) |
+| `sim-worker` | — | — | ❌ Decommissioned (Phase 13) |
+| `postgres` | — | 5432 | ❌ Decommissioned (Convex replaces) |
+| `redis` | — | 6379 | ❌ Decommissioned (Phase 13) |
+| `valhalla` | — | 8002 | ❌ Decommissioned (Phase 11, Google Routes API) |
+| `caddy` | — | 443 | ❌ Decommissioned (Vercel handles TLS) |
 
 ## Sources
 
