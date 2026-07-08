@@ -59,6 +59,15 @@ function hasAuthCookie(request: NextRequest): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Playwright / local e2e: allow DOM layout tests without a real WorkOS session.
+  // Enabled only when FLEETVOLT_E2E=1 is set on the Next server process.
+  if (
+    process.env.FLEETVOLT_E2E === "1" &&
+    request.cookies.get("fv_e2e")?.value === "1"
+  ) {
+    return NextResponse.next();
+  }
+
   if (!isProtected(pathname)) {
     return NextResponse.next();
   }
