@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@convex-dev/geospatial": "0.2.1",
+    "@convex-dev/workos-authkit": "^0.2.7",
     "@fleetvolt/shared-types": "workspace:*",
     "@gsap/react": "2.1.2",
     "@hookform/resolvers": "5.4.0",

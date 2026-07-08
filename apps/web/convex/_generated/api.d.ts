@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as brief from "../brief.js";
 import type * as caas_mutations from "../caas/mutations.js";
 import type * as caas_queries from "../caas/queries.js";
@@ -44,6 +45,7 @@ import type * as hotspots_compute from "../hotspots/compute.js";
 import type * as hotspots_mutations from "../hotspots/mutations.js";
 import type * as hotspots_queries from "../hotspots/queries.js";
 import type * as hotspots_score from "../hotspots/score.js";
+import type * as http from "../http.js";
 import type * as lib_csvChunk from "../lib/csvChunk.js";
 import type * as lib_haversine from "../lib/haversine.js";
 import type * as lib_provenance from "../lib/provenance.js";
@@ -88,6 +90,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   brief: typeof brief;
   "caas/mutations": typeof caas_mutations;
   "caas/queries": typeof caas_queries;
@@ -124,6 +127,7 @@ declare const fullApi: ApiFromModules<{
   "hotspots/mutations": typeof hotspots_mutations;
   "hotspots/queries": typeof hotspots_queries;
   "hotspots/score": typeof hotspots_score;
+  http: typeof http;
   "lib/csvChunk": typeof lib_csvChunk;
   "lib/haversine": typeof lib_haversine;
   "lib/provenance": typeof lib_provenance;
@@ -189,5 +193,5 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
-  geospatial: import("@convex-dev/geospatial/_generated/component.js").ComponentApi<"geospatial">;
+  workOSAuthKit: import("@convex-dev/workos-authkit/_generated/component.js").ComponentApi<"workOSAuthKit">;
 };
