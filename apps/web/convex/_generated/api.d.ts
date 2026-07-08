@@ -17,8 +17,11 @@ import type * as chargers_classify from "../chargers/classify.js";
 import type * as chargers_ingest from "../chargers/ingest.js";
 import type * as chargers_mutations from "../chargers/mutations.js";
 import type * as chargers_queries from "../chargers/queries.js";
+import type * as driver_mutations from "../driver/mutations.js";
+import type * as driver_queries from "../driver/queries.js";
 import type * as exports_exportCsv from "../exports/exportCsv.js";
 import type * as exports_exportJson from "../exports/exportJson.js";
+import type * as exports_exportPdf from "../exports/exportPdf.js";
 import type * as exports_exportTemplate from "../exports/exportTemplate.js";
 import type * as exports_exports from "../exports/exports.js";
 import type * as faf_ingestActuals from "../faf/ingestActuals.js";
@@ -67,6 +70,9 @@ import type * as ports from "../ports.js";
 import type * as report from "../report.js";
 import type * as seed_ports from "../seed/ports.js";
 import type * as spatial from "../spatial.js";
+import type * as trucks_ingest from "../trucks/ingest.js";
+import type * as trucks_mutations from "../trucks/mutations.js";
+import type * as trucks_queries from "../trucks/queries.js";
 import type * as userFilters from "../userFilters.js";
 
 import type {
@@ -85,8 +91,11 @@ declare const fullApi: ApiFromModules<{
   "chargers/ingest": typeof chargers_ingest;
   "chargers/mutations": typeof chargers_mutations;
   "chargers/queries": typeof chargers_queries;
+  "driver/mutations": typeof driver_mutations;
+  "driver/queries": typeof driver_queries;
   "exports/exportCsv": typeof exports_exportCsv;
   "exports/exportJson": typeof exports_exportJson;
+  "exports/exportPdf": typeof exports_exportPdf;
   "exports/exportTemplate": typeof exports_exportTemplate;
   "exports/exports": typeof exports_exports;
   "faf/ingestActuals": typeof faf_ingestActuals;
@@ -135,6 +144,9 @@ declare const fullApi: ApiFromModules<{
   report: typeof report;
   "seed/ports": typeof seed_ports;
   spatial: typeof spatial;
+  "trucks/ingest": typeof trucks_ingest;
+  "trucks/mutations": typeof trucks_mutations;
+  "trucks/queries": typeof trucks_queries;
   userFilters: typeof userFilters;
 }>;
 
