@@ -1,8 +1,9 @@
 "use client";
 
-import { MapPin, Route, SlidersHorizontal, Zap } from "lucide-react";
+import { Route, SlidersHorizontal, Zap } from "lucide-react";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
+import { RouteBuilder } from "./inputs/route-builder";
 
 type WorkbenchLeftPanelProps = {
   className?: string;
@@ -39,22 +40,7 @@ export function WorkbenchLeftPanel({ className }: WorkbenchLeftPanelProps) {
             <Route size={16} className="text-[var(--fv-accent)]" />
             <TechnicalLabel>Route builder</TechnicalLabel>
           </div>
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-[var(--fv-steel)]">
-              Origin
-              <button className="mt-1 flex min-h-11 w-full items-center justify-between rounded-xl border border-black/10 bg-white px-3 text-left text-sm text-[var(--fv-graphite)] shadow-sm transition hover:border-[var(--fv-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]">
-                <span>Choose port, yard, or address</span>
-                <MapPin size={15} />
-              </button>
-            </label>
-            <label className="block text-xs font-semibold text-[var(--fv-steel)]">
-              Destination
-              <button className="mt-1 flex min-h-11 w-full items-center justify-between rounded-xl border border-black/10 bg-white px-3 text-left text-sm text-[var(--fv-graphite)] shadow-sm transition hover:border-[var(--fv-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]">
-                <span>Choose delivery point</span>
-                <MapPin size={15} />
-              </button>
-            </label>
-          </div>
+          <RouteBuilder />
         </section>
 
         <section className="space-y-2" aria-labelledby="quick-routes-heading">
