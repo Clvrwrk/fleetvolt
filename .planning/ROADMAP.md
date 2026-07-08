@@ -470,3 +470,28 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 | 15. Hotspot Explorer (UI + AI sales brief) | 0/TBD | Scoped (new, 2026-07-07) | - |
 
 **Note:** Requirements (REQ-IDs) to be defined at `/gsd-plan-phase` time per phase. This roadmap is the scoping output of the 2026-07-07 migration discussion + the 2026-07-07 hotspot-feature addition (Phase 15).
+
+---
+
+### Phase 16: UX Navigation Overhaul — Auth Boundary, Sidebar, Role-Based UX
+
+**Goal**: Transform FleetVolt from a public demo tool (28/100 UX score) into an intuitive, role-gated product (95%+ pass rate) with a proper welcome page, WorkOS auth boundary, persistent left sidebar, user identity indicator, role-filtered navigation, role-specific dashboards, and human-readable error/empty states.
+
+**Mode:** mvp
+
+**Depends on**: Phase 14 (deployed), Phase 15 (hotspot explorer UI)
+
+**Success Criteria** (what must be TRUE):
+
+  1. **Auth boundary**: Unauthenticated users visiting any app page (/planner, /driver, /fleet, /caas, /hotspot) are redirected to `/` (welcome page). Only `/`, `/role-select`, `/callback` are public.
+  2. **Welcome page**: `/` shows a clear "What is FleetVolt" message (What/When/Where/How/Why/About), 3 role cards (Driver, Fleet Manager, CaaS), and a single primary CTA "Get Started" → `/role-select`.
+  3. **Role-select flow**: `/role-select` shows 3 large clickable role cards (not a login button). Clicking a role stores it and redirects to WorkOS auth. After auth, user lands on their role-specific home page.
+  4. **User identity**: Avatar + name + role badge visible in top-right on every authenticated page. Clicking avatar reveals dropdown: Settings, Sign Out.
+  5. **Left sidebar nav**: Persistent left sidebar (260px, collapsible to 56px) replaces top-bar nav. Nav items filtered by role.
+  6. **Role-specific home pages**: Driver → /driver (dashboard, not registration form). Fleet Manager → /fleet (dashboard, not wizard). CaaS → /caas (dashboard, not placeholder).
+  7. **Empty states**: Every empty state (no route, no fleet, no data) shows headline + context + next action.
+  8. **Error states**: AI planner errors are human-readable with suggested next steps. No raw API paths.
+  9. **UX audit pass**: Every page scores 95%+ on the fleetvolt-ux-audit skill (15 checks).
+
+**Plans**: TBD
+
