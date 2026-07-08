@@ -495,3 +495,29 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 
 **Plans**: TBD
 
+
+---
+
+### Phase 17: Role-Based Map Workbench — Driver Day Plan, Fleet Contract Plan, CaaS Gap Map
+
+**Goal**: Convert FleetVolt from dashboard/card outputs into a full-viewport, role-specific Google Maps-style planning workbench. Dashboards become launchpads. The workbench is the primary spatial surface for Driver day planning, Fleet contract planning, and CaaS gap/opportunity analysis.
+
+**Mode:** mvp
+
+**Depends on**: Phase 16 (auth + role navigation), Phase 12 (Convex data layers), Phase 13 (physics actions), Phase 15 (hotspot/AI brief)
+
+**Success Criteria** (what must be TRUE):
+
+  1. Role dashboards each expose one dominant planning CTA: Driver = Start Day Plan, Fleet = Plan Contract, CaaS = Find Charger Gaps.
+  2. The planning CTA opens a full-viewport map workbench that maximizes desktop work surface; centered cards are not used as the primary work area.
+  3. Workbench has a left planning toolbar with role-specific inputs: route endpoints, truck selector, driver/profile selector, work hours, round trips/containers/day, date/schedule.
+  4. Address/port/yard/charger inputs use autocomplete/lookup and geocoding instead of free-text-only fields.
+  5. Map shows actual route geometry, charger pins, carrier/parking/amenity overlays, and clickable asset metadata cards.
+  6. Driver day plan answers: can I complete N round trips; where do I charge; what detours exist if no Class 8-friendly charger is on-route.
+  7. Fleet contract plan answers: trucks/drivers required, charge events, charging downtime, route amenities, true gaps, and mobile CaaS support points/times.
+  8. CaaS map starts from US-wide opportunity view and supports drilldown: US → state → air district (where available) → county → zip → city → address.
+  9. CaaS route/gap analysis shows true Class 8 charger gaps, detour-solvable gaps, candidate fleets/carriers, and mobile charging positioning recommendations.
+  10. AI output is map-first: overlays, pins, result cards, and structured plan summaries — not walls of text.
+
+**Plans**: TBD
+
