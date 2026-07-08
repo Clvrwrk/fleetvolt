@@ -148,22 +148,22 @@ export default function CaasPage() {
         </SkeuomorphicCard>
       </div>
 
-      {/* ── Primary CTA: Open AI Planner (Von Restorff) ──────────────────── */}
+      {/* ── Primary CTA: launch gap map workbench (Von Restorff) ─────────── */}
       <SkeuomorphicCard padding="lg" className="mt-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-base font-semibold text-[var(--fv-graphite)]">
-              Analyze charger gaps with AI
+              Analyze charger gaps on the map
             </div>
             <p className="mt-1 text-sm text-[var(--fv-text-muted)]">
-              Ask the AI Planner for heatmap visualizations of charger gaps along any route,
-              with top carriers and siting recommendations.
+              Open a full-viewport gap map for route-based Class-8 gaps, target carriers,
+              parking context, and mobile charger positioning.
             </p>
           </div>
-          <Link href="/planner" className="no-underline inline-block">
+          <Link href="/caas/gap-map" className="no-underline inline-block">
             <PrimaryButton className="flex items-center gap-2">
               <Zap size={16} />
-              Open AI Planner
+              Find Charger Gaps
             </PrimaryButton>
           </Link>
         </div>

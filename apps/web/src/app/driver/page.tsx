@@ -9,7 +9,7 @@
 //   1. Today's Route card — assigned route info or empty state
 //   2. Vehicle Status card — assigned truck or empty state
 //   3. Charging card — nearest Class-8 chargers or empty state
-//   4. Quick Actions — "Start Navigation" (primary), "Find Chargers" (secondary)
+//   4. Quick Actions — "Start Day Plan" (primary)
 //
 // The 6-step registration wizard moved to /driver/setup.
 //
@@ -22,7 +22,6 @@ import { FramedPanel } from "@/components/design/framed-panel";
 import { SkeuomorphicCard } from "@/components/design/skeuomorphic-card";
 import { KpiCell } from "@/components/design/kpi-cell";
 import { PrimaryButton } from "@/components/design/primary-button";
-import { SecondaryButton } from "@/components/design/secondary-button";
 import { StatusBadge } from "@/components/design/status-badge";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { Route, Zap, Truck, Navigation } from "lucide-react";
@@ -115,19 +114,13 @@ export default function DriverDashboardPage() {
         </SkeuomorphicCard>
       </div>
 
-      {/* ── Quick Actions: primary + secondary ─────────────────────────── */}
+      {/* ── Quick Action: dashboard launchpad into map workbench ────────── */}
       <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
-        <Link href="/planner" className="flex-1 no-underline">
+        <Link href="/driver/day-plan" className="flex-1 no-underline">
           <PrimaryButton block className="flex items-center justify-center gap-2">
             <Navigation size={16} />
-            Start Navigation
+            Start Day Plan
           </PrimaryButton>
-        </Link>
-        <Link href="/planner" className="flex-1 no-underline">
-          <SecondaryButton className="w-full flex items-center justify-center gap-2">
-            <Zap size={16} />
-            Find Chargers
-          </SecondaryButton>
         </Link>
       </div>
 

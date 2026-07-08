@@ -10,9 +10,9 @@ import { useUserRole, type FleetVoltRole } from "@/lib/auth";
 // Uses usePathname() to determine the active item.
 //
 // Nav items per role (from task spec):
-//   Driver:         Dashboard, My Routes, Charging, Vehicle, System Status
-//   Fleet Manager:  Dashboard, Routes, Vehicles, Load Config, Drivers, System Status
-//   CaaS:           Dashboard, Charger Network, AI Planner, System Status
+//   Driver:         Dashboard, Day Plan, Vehicle, System Status
+//   Fleet Manager:  Dashboard, Contract Plan, Vehicles, Load Config, Drivers, System Status
+//   CaaS:           Dashboard, Gap Map, System Status
 //   No role:        [] (empty — no nav)
 //
 // Each item: { label, href, icon }
@@ -31,15 +31,14 @@ export type NavItem = {
 
 const DRIVER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/driver", icon: "LayoutDashboard" },
-  { label: "My Routes", href: "/planner", icon: "Route" },
-  { label: "Charging", href: "/planner", icon: "Zap" },
+  { label: "Day Plan", href: "/driver/day-plan", icon: "Route" },
   { label: "Vehicle", href: "/unit", icon: "Truck" },
   { label: "System Status", href: "/status", icon: "Activity" },
 ];
 
 const FLEET_MANAGER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/fleet", icon: "LayoutDashboard" },
-  { label: "Routes", href: "/planner", icon: "Route" },
+  { label: "Contract Plan", href: "/fleet/contract-plan", icon: "Route" },
   { label: "Vehicles", href: "/unit", icon: "Truck" },
   { label: "Load Config", href: "/load", icon: "Package" },
   { label: "Drivers", href: "/driver", icon: "Users" },
@@ -48,8 +47,7 @@ const FLEET_MANAGER_NAV: NavItem[] = [
 
 const CAAS_NAV: NavItem[] = [
   { label: "Dashboard", href: "/caas", icon: "LayoutDashboard" },
-  { label: "Charger Network", href: "/hotspot", icon: "Map" },
-  { label: "AI Planner", href: "/planner", icon: "Sparkles" },
+  { label: "Gap Map", href: "/caas/gap-map", icon: "Map" },
   { label: "System Status", href: "/status", icon: "Activity" },
 ];
 

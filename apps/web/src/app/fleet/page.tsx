@@ -9,7 +9,7 @@
 //   1. KPI row (4 KpiCells): Total Vehicles, Active Routes, Charging Sessions, Avg Utilization
 //   2. Vehicle Status table: max 5 rows, progressive disclosure ("Show all")
 //   3. Fleet Overview card: empty state if no fleet → "Create Your Fleet" → /fleet/setup
-//   4. Primary CTA: "Dispatch New Route" (PrimaryButton → /planner)
+//   4. Primary CTA: "Plan Contract" (PrimaryButton → /fleet/contract-plan)
 //
 // The 4-step fleet creation wizard moved to /fleet/setup.
 //
@@ -206,15 +206,15 @@ export default function FleetDashboardPage() {
           <SkeuomorphicCard padding="lg">
             <div className="flex items-center gap-2 mb-3">
               <Route size={16} className="text-[var(--fv-accent)]" />
-              <TechnicalLabel>DISPATCH</TechnicalLabel>
+              <TechnicalLabel>CONTRACT PLANNING</TechnicalLabel>
             </div>
             <p className="text-sm text-[var(--fv-text-muted)] mb-3">
-              Plan a new route with AI-powered charger analysis.
+              Plan a new contract route with charger, schedule, and fleet assumptions on the map.
             </p>
-            <Link href="/planner" className="no-underline block">
+            <Link href="/fleet/contract-plan" className="no-underline block">
               <PrimaryButton block className="flex items-center justify-center gap-2">
                 <ArrowRight size={16} />
-                Dispatch New Route
+                Plan Contract
               </PrimaryButton>
             </Link>
           </SkeuomorphicCard>
