@@ -48,9 +48,9 @@ export default function CaasPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-20 h-2 rounded-full bg-[var(--fv-bg,#0d0d1a)] overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-yellow-500 to-red-500" style={{ width: `${h.score ?? 0 * 100}%` }} />
+                    <div className="h-full bg-gradient-to-r from-yellow-500 to-red-500" style={{ width: `${(h.score ?? 0) * 100}%` }} />
                   </div>
-                  <span className="text-sm font-mono text-[var(--fv-text,#e0e0e8)]">{h.score ?? 0.toFixed(3)}</span>
+                  <span className="text-sm font-mono text-[var(--fv-text,#e0e0e8)]">{(h.score ?? 0).toFixed(3)}</span>
                 </div>
               </div>
             ))}
