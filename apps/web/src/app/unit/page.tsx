@@ -1,16 +1,34 @@
-import { ScreenShell } from "@/components/screens/screen-shell";
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { FramedPanel } from "@/components/design/framed-panel";
+import { SkeuomorphicCard } from "@/components/design/skeuomorphic-card";
+import { TechnicalLabel } from "@/components/design/technical-label";
+import { KpiCell } from "@/components/design/kpi-cell";
+import { Truck } from "lucide-react";
 
 export default function UnitConfiguratorPage() {
+  const trucks = useQuery(api.trucks.queries.list) ?? [];
+
   return (
-    <ScreenShell
-      mockFile="FleetVolt Unit Configurator.dc.html"
-      title="Unit Configurator"
-      subtitle="CLASS 8 BEV TRACTOR — eCascadia 438 kWh"
-      phaseNote="Phase 5+ — powertrain parameters, truck schematic, and live efficiency preview per mockup."
-      gridClass="grid-cols-[296px_minmax(0,1fr)_268px]"
-      leftLabel="POWERTRAIN PARAMETERS"
-      centerLabel="UNIT SCHEMATIC — SIDE PROFILE"
-      rightLabel="LIVE CALCULATED OUTPUTS"
-    />
+    <FramedPanel className="p-6">
+      <div className="mb-6">
+        <TechnicalLabel>UNIT CONFIGURATOR</TechnicalLabel>
+        <h1 className="text-lg font-bold mt-1 text-[var(--fv-text)]">Class 8 BEV Tractor Specs</h1>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {trucks.slice(0, 9).map((t: Record<string, unknown>) => (
+          <SkeuomorphicCard key={String(t.name)} className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Truck size={16} className="text-[var(--fv-accent)]" />
+              <span className="text-sm font-semibold text-[var(--fv-text)]">{String(t.name ?? "Unknown")}</span>
+            </div>
+            <KpiCell label="BATTERY" value={`${t.batteryUsableKwh ?? t.batteryNameplateKwh ?? "—"} kWh`} />
+            <KpiCell label="STREET EFF." value={`${((t.streetEfficiencyKwhPerMi as Record<string, number>)?.typical) ?? "—"} kWh/mi`} />
+          </SkeuomorphicCard>
+        ))}
+      </div>
+    </FramedPanel>
   );
 }
