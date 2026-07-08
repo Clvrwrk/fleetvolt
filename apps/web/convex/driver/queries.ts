@@ -60,6 +60,17 @@ export const listCorridorCities = query({
   },
 });
 
+/** Carrier row shape returned by carriersInRadius. */
+type CarrierRow = {
+  name: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  corridorCity: string | null;
+  location: { lat: number; lng: number } | null;
+  distanceM: number;
+};
+
 /**
  * Delegated carrier search — calls carriers/queries.carriersInRadius so the
  * spatial layer (lib/spatial.nearestPoints) stays in one place. Returns the
@@ -72,7 +83,7 @@ export const listCarriersNear = query({
     radiusM: v.number(),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<CarrierRow[]> => {
     return await ctx.runQuery(api.carriers.queries.carriersInRadius, {
       lat: args.lat,
       lng: args.lng,

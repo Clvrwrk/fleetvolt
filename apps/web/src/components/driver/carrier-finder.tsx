@@ -10,7 +10,7 @@
 // The "Associate" button calls back to the parent so the registration form can
 // set associatedCarrierKey on the profile.
 import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 
 type CarrierRow = {
@@ -86,7 +86,7 @@ export function CarrierFinder({
             Carrier density by corridor city
           </h4>
           <div className="flex flex-wrap gap-1.5">
-            {density.clusters.slice(0, 8).map((cluster) => (
+            {density.clusters.slice(0, 8).map((cluster: { corridorCity: string; count: number }) => (
               <span
                 key={cluster.corridorCity}
                 className="rounded-full bg-[var(--fv-surface-muted)] px-2.5 py-1 text-[10px] font-medium text-[var(--fv-text-secondary)]"
