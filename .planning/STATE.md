@@ -4,17 +4,17 @@ milestone: v3.0
 milestone_name: Progress
 current_phase: 12
 current_phase_name: convex-data-spatial-layer
-status: executing
-stopped_at: "Phase 12 Waves 0+1+2 COMPLETE (7/8 plans); only 12-08 (Wave 3) remains. Wave2 ingested ALL live data into Convex sensible-oriole-832: 12-04 chargers (2,867 AFDC CA DC-fast, 13 Class-8; nrel→nlr fixed; parity gate PASS on geodesic clause — NOTE flagship '0 Class-8 on POLB→SB' gap has CLOSED, now 3 HD stations WattEV Pier A 360kW/WattEV SB 360kW/Greenlane 400kW, flagged for 12-08 to reconcile stale FLAGSHIP-QUERY-VERIFIED.md), 12-05 carriers (1,823 POLB; corridor-city targeting 560 in-corridor byte-exact vs flagship; GEOCODING RESOLVED 2026-07-07 — provisioned GOOGLE_MAPS_SERVER_KEY, geocoded 1,823/1,823 100%, re-ingested with coords+spatial index, carriersInRadius/topCarriersNear now LIVE), 12-06 CalTrans (6,865 Truck AADT segments; data-driven mostCongestedRoute RTE 5=3.08M 5-axle closed flagship gap #1; corridor parity 825 exact), 12-07 NATD+OSM (83 CA truck-stop parking sites + 12,964 OSM POIs streamed from 1.3GB pbf: fuel 2595/convenience 2124/fast_food 8188/rest_area 53/truck_parking 4). Post-wave gate PASS: 62/62 tests green (34 unit+22 lib+6 charger-live), tsc clean except pre-existing scenario-form.tsx. Docker stack UP. NEXT ACTION = plan+execute 12-08 (Wave 3, report query consuming all layers). Ingest pattern established: local Python prep→Convex action→batched internalMutation upsert (BATCH_SIZE 50 for geospatial 4096-reads limit)→spatial.insertPoint at write, idempotent by stable key."
-last_updated: "2026-07-07T23:15:00.000Z"
+status: phase_complete
+stopped_at: "PHASE 12 COMPLETE (8/8 plans, 83/83 tests green, tsc clean). All 6 Convex layers live on sensible-oriole-832 + the capstone: 12-08 delivered the MODELED hotspot score (5 corridor hotspots, top 0.621, method:modeled + 4 proxy inputs, honesty-guarded), US→State→County geo rollup (60 geoRegions, corridor counties carry aggregateScore: LA 0.536/Riverside 0.555/SB 0.426), THE report query (report.ts hotspotReport fusing all 6 layers + derived whatsMissing + deferredToPhase13), and the flagship north-star acceptance test (6/6 sub-answers GREEN with LIVE reconciliation: class8Gap=3 not 0 [WattEV Pier A 360kW, WattEV SB 360kW, Greenlane 400kW], mostCongestedRoute data-driven route 5=3.08M, carriers totalInCorridor=560 not 685, FAF zone-061 ~393k ktons/~$1.29T; detour+CO2 marked Phase-13 external). FLAGSHIP-QUERY-VERIFIED.md is now PARTLY STALE — 3 flagship answers shifted; 12-08-SUMMARY records all 3 reconciliations for Phase 15 + downstream. Post-wave gate: 83/83 tests (8 score+7 report+6 flagship+34 unit+22 lib+6 charger-live). Docker stack UP. NEXT = Phase 13 (physics→Convex actions, parity ±0.5% energy/SoC) or Phase 14 (Vercel+teardown) or Phase 15 (Hotspot Explorer UI+AI brief)."
+last_updated: "2026-07-07T23:25:00.000Z"
 last_activity: 2026-07-07
-last_activity_desc: Phase 12 Wave 2 complete (12-04 chargers, 12-05 carriers, 12-06 CalTrans, 12-07 NATD+OSM); post-wave gate 62/62 green
+last_activity_desc: Phase 12 COMPLETE — 8/8 plans, 83/83 tests, flagship north-star acceptance test green
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 10
-  percent: 30
+  completed_plans: 11
+  percent: 40
 ---
 
 # Project State
