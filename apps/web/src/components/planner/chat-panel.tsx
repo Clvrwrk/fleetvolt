@@ -139,7 +139,7 @@ export function ChatPanel({ defaultRole = "caas" }: { defaultRole?: Role }) {
                 </span>
               </div>
               <div className="prose prose-sm prose-invert max-w-none text-[var(--fv-text,#e0e0e8)] whitespace-pre-wrap">
-                {r.answer}
+                {String(r.answer)}
               </div>
             </div>
 

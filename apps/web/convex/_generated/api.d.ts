@@ -9,6 +9,8 @@
  */
 
 import type * as brief from "../brief.js";
+import type * as caas_mutations from "../caas/mutations.js";
+import type * as caas_queries from "../caas/queries.js";
 import type * as carriers_corridorCity from "../carriers/corridorCity.js";
 import type * as carriers_ingest from "../carriers/ingest.js";
 import type * as carriers_mutations from "../carriers/mutations.js";
@@ -28,7 +30,10 @@ import type * as faf_ingestActuals from "../faf/ingestActuals.js";
 import type * as faf_lookups from "../faf/lookups.js";
 import type * as faf_mutations from "../faf/mutations.js";
 import type * as faf_queries from "../faf/queries.js";
+import type * as fleet_mutations from "../fleet/mutations.js";
+import type * as fleet_queries from "../fleet/queries.js";
 import type * as geo_ingest from "../geo/ingest.js";
+import type * as geo_ingestAirDistricts from "../geo/ingestAirDistricts.js";
 import type * as geo_mutations from "../geo/mutations.js";
 import type * as geo_queries from "../geo/queries.js";
 import type * as geo_rollup from "../geo/rollup.js";
@@ -62,6 +67,7 @@ import type * as physics_socIntegrator from "../physics/socIntegrator.js";
 import type * as physics_speedResolver from "../physics/speedResolver.js";
 import type * as physics_types from "../physics/types.js";
 import type * as physics_weather from "../physics/weather.js";
+import type * as planner from "../planner.js";
 import type * as pois_classify from "../pois/classify.js";
 import type * as pois_ingest from "../pois/ingest.js";
 import type * as pois_mutations from "../pois/mutations.js";
@@ -83,6 +89,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   brief: typeof brief;
+  "caas/mutations": typeof caas_mutations;
+  "caas/queries": typeof caas_queries;
   "carriers/corridorCity": typeof carriers_corridorCity;
   "carriers/ingest": typeof carriers_ingest;
   "carriers/mutations": typeof carriers_mutations;
@@ -102,7 +110,10 @@ declare const fullApi: ApiFromModules<{
   "faf/lookups": typeof faf_lookups;
   "faf/mutations": typeof faf_mutations;
   "faf/queries": typeof faf_queries;
+  "fleet/mutations": typeof fleet_mutations;
+  "fleet/queries": typeof fleet_queries;
   "geo/ingest": typeof geo_ingest;
+  "geo/ingestAirDistricts": typeof geo_ingestAirDistricts;
   "geo/mutations": typeof geo_mutations;
   "geo/queries": typeof geo_queries;
   "geo/rollup": typeof geo_rollup;
@@ -136,6 +147,7 @@ declare const fullApi: ApiFromModules<{
   "physics/speedResolver": typeof physics_speedResolver;
   "physics/types": typeof physics_types;
   "physics/weather": typeof physics_weather;
+  planner: typeof planner;
   "pois/classify": typeof pois_classify;
   "pois/ingest": typeof pois_ingest;
   "pois/mutations": typeof pois_mutations;
