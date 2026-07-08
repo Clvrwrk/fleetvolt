@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Progress
-current_phase: 12
-current_phase_name: convex-data-spatial-layer
-status: milestone_complete
-stopped_at: "FLEETVOLT v3.0 MILESTONE COMPLETE. All 5 phases done (11+13+14+15+12): Phase 12 Convex data (83 tests), Phase 13 physics→Convex (49 tests, 0.0000% parity), Phase 14 Vercel+Docker teardown (Docker fully decommissioned, Convex data verified intact, services/ archived), Phase 15 Hotspot Explorer+AI brief (14 tests). NEW FEATURES: 10 Class 8 EV trucks with OEM+Street metadata ingested (Tesla Semi LR/SR, eCascadia 438/291, Volvo VNR 565/375, Peterbilt 579EV, Kenworth T680E, Nikola Tre BEV, BYD 8TT), driver registration flow at /driver (6-step profile capturing all physics preferences + carrier association), carrier-finder component. MANUAL STEPS for Chris: (1) npx vercel deploy with Vercel account, (2) DNS fleetvolt.network→Vercel, (3) OPENAI_API_KEY in Convex prod env for live LLM briefs. Actual vehicle telemetry section HELD until a real fleet pilot partner provides connected BMS/telematics data (no fabrication)."
-last_updated: "2026-07-07T23:55:00.000Z"
-last_activity: 2026-07-07
-last_activity_desc: FleetVolt v3.0 milestone complete — all 5 phases + truck enrichment + driver registration
+current_phase: 17
+current_phase_name: role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map
+status: phase_complete
+stopped_at: "Phase 17 COMPLETE — map workbench (12/12 tasks). Hybrid /workbench + Driver/Fleet/CaaS vertical slices + map-first AI command bar + Playwright specs. Commits e0564cc (17-11), 4dc13a7 (17-12)."
+last_updated: "2026-07-08T22:45:00.000Z"
+last_activity: 2026-07-08
+last_activity_desc: Phase 17 complete — role-based map workbench shipped
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 18
-  completed_plans: 18
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 19
+  completed_plans: 19
   percent: 100
 ---
 
@@ -24,22 +24,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
-**Current focus:** Phase 12 — convex-data-spatial-layer
+**Current focus:** Phase 17 complete — next: verify phase / discuss next milestone work
 
 ## Current Position
 
-Phase: 12 (convex-data-spatial-layer) — EXECUTING
-Plan: 1 of 8
-Status: Executing Phase 12
-Last activity: 2026-07-07 — Phase 12 execution started
+Phase: 17 (role-based-map-workbench) — COMPLETE
+Plan: 17-00 (1/1) — all 12 tasks done
+Status: Phase complete — SUMMARY written
+Last activity: 2026-07-08 — 17-11 AI command bar + 17-12 e2e/screenshots shipped
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 12
+- Total plans completed: 19
 - Average duration: 35 min
-- Total execution time: 4.1 hours
+- Total execution time: —
 
 **By Phase:**
 
@@ -47,6 +47,7 @@ Last activity: 2026-07-07 — Phase 12 execution started
 |-------|-------|-------|----------|
 | 1 | 7 | 9 | 35 min |
 | 3 | 5 | - | - |
+| 17 | 1 | 1 | — |
 
 **Recent Trend:**
 
@@ -62,22 +63,21 @@ Recent decisions affecting current work:
 
 - Priority corridors: POLB drayage + Cajon Pass
 - Truck models: eCascadia 438 kWh + T680E 375 kWh
-- Emissions core in Phase 5; full TCO chart in Phase 6
-- Deployment: Docker Compose on VPS
-- NREL ingest uses per-connector kW from EV CCS Power Output, not station header max
-- hd_capable requires power >= 350 kW AND CCS/MCS connector per D-06
-- SoCal bbox -121.0,32.5,-114.0,37.0 for Valhalla extract per D-14
-- Valhalla route proxy uses costing=truck with Class 8 height/weight/axle params
-- Makefile valhalla-pbf/verify-pbf as primary local PBF workflow per Plan 01-07
-- socal.osm.pbf local-only (~696 MB); SHA256 1a5ea9d9… for team reference
+- Hybrid workbench: semantic role launchers → canonical `/workbench?mode=`
+- Map-first AI: draftPatch + mapActions + cards before prose
+- Google Routes labeled advisory (not truck-certified); PTV seam preserved
+- E2E: `FLEETVOLT_E2E=1` + `fv_e2e` cookie for Playwright auth bypass
 
 ### Pending Todos
 
-- **[DIRECTION — 2026-07-07] Full-stack re-platform requested by Chris:** move the ENTIRE app (not just /pulse) to Google Maps + Vercel + Convex. Retire Mapbox/react-map-gl app-wide, VPS/Docker Compose → Vercel, PostGIS/Fastify/Celery → Convex. This supersedes the narrow 07-04 (/pulse-only migration) scope and needs its own planning pass before execution. PAUSED at Chris's request pending scoping.
+- Manual deploy: Vercel deploy, DNS `fleetvolt.network` → Vercel, `OPENAI_API_KEY` in Convex prod for live LLM
+- Re-run Playwright map-workbench e2e with clean ulimit / free port (EMFILE flaky in executor env)
+- Deploy `workbench/ai` via `npx convex dev` for live Convex AI (client has deterministic example fallback)
 
 ### Blockers/Concerns
 
 - Parallel Supabase database project — production corridors/chargers/persistence; re-validate UAT tests 7–10 when integrated.
+- Playwright full suite flaky under EMFILE / AuthKit / port conflicts — specs exist; re-run recommended.
 
 ## Deferred Items
 
@@ -90,6 +90,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-07-07T07:43:42.494Z
-Stopped at: Phase 11 COMPLETE (11-01 PTV routing, 11-03 Google maps, 11-02 Valhalla teardown); awaiting human visual check of MAP-01/02/03 on /planner before phase close
-Resume file: .planning/phases/11-google-maps-app-wide-routing-migration/11-03-SUMMARY.md
+Last session: 2026-07-08T22:45:00.000Z
+Stopped at: Phase 17 COMPLETE (17-01–17-12); SUMMARY at 17-00-SUMMARY.md; awaiting phase verify / next milestone
+Resume file: .planning/phases/17-role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map/17-00-SUMMARY.md
