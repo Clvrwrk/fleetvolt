@@ -101,32 +101,19 @@ export function useWorkOSAuth() {
       document.cookie = `fv_selected_role=${selectedRole}; path=/; max-age=600; SameSite=Lax`;
     }
 
-    // Redirect to WorkOS hosted login
-    const authUrl = new URL("https://auth.workos.com/user_management/authorize");
-    authUrl.searchParams.set("client_id", WORKOS_CLIENT_ID || "");
-    authUrl.searchParams.set("redirect_uri", getRedirectUri());
-    authUrl.searchParams.set("response_type", "code");
-    authUrl.searchParams.set("provider", "authkit");
-    // Force AuthKit to show open account creation/onboarding for first-time users.
-    // Existing users can still switch to sign-in inside AuthKit.
-    authUrl.searchParams.set("screen_hint", "sign-up");
-    // Pass selected role in state param for the callback to read
-    if (selectedRole) {
-      authUrl.searchParams.set("state", selectedRole);
-    }
-    window.location.href = authUrl.toString();
+    // Use the official WorkOS AuthKit Next.js server route so PKCE/CSRF cookies
+    // are set and the callback can establish the app session. Manual client-side
+    // AuthKit URLs do not create the verifier cookie and cause redirect loops.
+    const signUpUrl = new URL("/api/auth/sign-up", window.location.origin);
+    if (selectedRole) signUpUrl.searchParams.set("role", selectedRole);
+    window.location.href = signUpUrl.toString();
   }, []);
 
   const signOut = useCallback(() => {
-    // Redirect to WorkOS logout endpoint — this clears the WorkOS session.
-    // The Convex auth state is cleared automatically when the cookie is gone.
-    const logoutUrl = new URL(
-      "https://auth.workos.com/user_management/sessions/logout",
-    );
-    logoutUrl.searchParams.set("client_id", WORKOS_CLIENT_ID || "");
-    // Clear our local role cookie
+    // Clear our local role cookie and use the official AuthKit sign-out route
+    // so the encrypted WorkOS session cookie is removed correctly.
     document.cookie = "fv_selected_role=; path=/; max-age=0";
-    window.location.href = logoutUrl.toString();
+    window.location.href = "/api/auth/sign-out";
   }, []);
 
   return {

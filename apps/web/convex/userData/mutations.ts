@@ -36,6 +36,37 @@ export const upsertMyUserAccount = mutation({
   },
 });
 
+export const upsertUserAccountFromWorkOS = mutation({
+  args: {
+    userId: v.string(),
+    role: roleValidator,
+    email: v.optional(v.string()),
+    displayName: v.optional(v.string()),
+    companyName: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("userAccounts")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+    const payload = {
+      userId: args.userId,
+      role: args.role,
+      email: args.email,
+      displayName: args.displayName ?? args.email ?? "FleetVolt User",
+      companyName: args.companyName,
+      updatedAt: now,
+    };
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return { id: existing._id, patched: true };
+    }
+    const id = await ctx.db.insert("userAccounts", { ...payload, createdAt: now });
+    return { id, inserted: true };
+  },
+});
+
 export const upsertMyFleet = mutation({
   args: {
     fleetId: v.string(),
