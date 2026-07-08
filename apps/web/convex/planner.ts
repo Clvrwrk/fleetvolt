@@ -303,8 +303,12 @@ export const planWithAi = action({
     }
 
     // ── Step 2: Execute the planned queries ───────────────────────────────
+    // Each query is wrapped in try/catch. Errors are converted to human-readable
+    // messages (no raw API paths like "chargers/queries:class8Gap" leaked to users).
     const queryRuns: QueryRun[] = [];
     const queryResults: Record<string, unknown> = {};
+    let allQueriesFailed = false;
+    let firstErrorMessage = "";
 
     for (const q of plan.queries) {
       try {
@@ -319,13 +323,36 @@ export const planWithAi = action({
         queryResults[q.function] = result;
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : String(e);
+        const humanReadable = humanizeQueryError(q.function, errMsg);
         queryRuns.push({
           name: q.function,
           args: q.args,
-          result_summary: `ERROR: ${errMsg}`,
+          result_summary: `ERROR: ${humanReadable}`,
         });
+        if (!firstErrorMessage) firstErrorMessage = humanReadable;
       }
     }
+
+    // If ALL queries failed, return a human-readable error instead of passing
+    // empty results to the LLM (which would produce a confusing "no data" answer)
+    if (plan.queries.length > 0 && queryRuns.every((r) => r.result_summary.startsWith("ERROR:"))) {
+      allQueriesFailed = true;
+      const errorAnswer = buildErrorAnswer(firstErrorMessage, plan.queries.length);
+      return {
+        answer: errorAnswer,
+        visualization: { type: "text", data: null },
+        queries_run: queryRuns.map((r) => ({
+          name: r.name,
+          args: r.args,
+          result_summary: r.result_summary,
+        })),
+        role,
+        model,
+        fallback: true,
+      };
+    }
+    // Suppress unused variable warning
+    void allQueriesFailed;
 
     // ── Step 3: Feed results back to the LLM for a grounded answer ────────
     const resultsContext = JSON.stringify(
@@ -396,6 +423,34 @@ async function callOpenAI(
     choices?: Array<{ message?: { content?: string } }>;
   };
   return json.choices?.[0]?.message?.content ?? "";
+}
+
+// ── Human-readable error helpers ─────────────────────────────────────────────
+// Converts raw Convex API errors into plain-language messages.
+// Never exposes raw API paths like "chargers/queries:class8Gap" to the user.
+
+function humanizeQueryError(functionName: string, errMsg: string): string {
+  // Categorize by query module
+  const module = functionName.split("/")[0] ?? "data";
+  const isConvexConnectionError = errMsg.includes("Auth") || errMsg.includes("auth") || errMsg.includes("connection") || errMsg.includes("network");
+  const isTableError = errMsg.includes("not found") || errMsg.includes("does not exist") || errMsg.includes("table");
+  const isArgError = errMsg.includes("argument") || errMsg.includes("args") || errMsg.includes("required");
+
+  if (isConvexConnectionError) {
+    return `I couldn't connect to the database to retrieve ${module} data. The Convex backend may be temporarily unavailable. Try again in a moment, or check the backend status.`;
+  }
+  if (isTableError) {
+    return `The ${module} data isn't available yet. This usually means the database tables haven't been seeded. Try running the seed scripts or contact an administrator.`;
+  }
+  if (isArgError) {
+    return `The query for ${module} data was given invalid parameters. Try rephrasing your question with more specific details (e.g., exact city names or coordinates).`;
+  }
+  // Generic fallback — no raw API paths
+  return `I couldn't retrieve ${module} data for this route. ${errMsg.slice(0, 120)}. Try selecting a specific corridor first, or check that the Convex backend is connected.`;
+}
+
+function buildErrorAnswer(firstError: string, queryCount: number): string {
+  return `## I couldn't retrieve the data for this route\n\n${firstError}\n\n**What to try:**\n- Select a specific corridor from the sidebar, then retry\n- Check that the Convex backend is running and seeded\n- If the problem persists, contact an administrator\n\n*(${queryCount} data ${queryCount === 1 ? "query" : "queries"} failed)*`;
 }
 
 // ── Query executor ───────────────────────────────────────────────────────────
