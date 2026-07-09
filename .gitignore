@@ -37,3 +37,6 @@ data/ingest/**/out/
 apps/web/test-results/
 apps/web/tsconfig.tsbuildinfo
 Grok_Chat
+
+# Git worktrees
+.worktrees/
