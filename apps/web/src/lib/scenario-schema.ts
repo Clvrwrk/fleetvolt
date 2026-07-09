@@ -25,12 +25,25 @@ export const DEFAULT_SCENARIO_FORM: ScenarioFormValues = {
 };
 
 export const TRUCK_SLUG_BY_NAME: Record<string, string> = {
+  "Freightliner eCascadia 291 kWh": "ecascadia_291",
   "Freightliner eCascadia 438 kWh": "ecascadia_438",
   "Kenworth T680E 375 kWh": "t680e_375",
+  "Volvo VNR Electric 375 kWh": "vnr_electric_375",
+  "Volvo VNR Electric 565 kWh": "vnr_electric_565",
+  "Tesla Semi Long Range": "tesla_semi_800",
+  "Tesla Semi Standard Range": "tesla_semi_500",
 };
 
 export function slugFromTruckName(name: string): string {
   return TRUCK_SLUG_BY_NAME[name] ?? name.toLowerCase().replace(/\s+/g, "_");
+}
+
+/** Inverse of slugFromTruckName — physics simulate looks up truckConfigs by `name`. */
+export function truckNameFromSlug(slug: string): string | undefined {
+  for (const [name, mapped] of Object.entries(TRUCK_SLUG_BY_NAME)) {
+    if (mapped === slug) return name;
+  }
+  return undefined;
 }
 
 export function toSimulateRequest(values: ScenarioFormValues): SimulateRequest {

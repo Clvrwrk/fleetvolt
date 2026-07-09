@@ -24,6 +24,7 @@ function toConfigRow(
   doc: {
     stationId: string;
     name?: string | null;
+    location?: { lat: number; lng: number } | null;
     powerKw: number;
     maxVehicleClass?: "LD" | "MD" | "HD" | null;
     connectorTypes: string[];
@@ -36,6 +37,8 @@ function toConfigRow(
   return {
     stationId: doc.stationId,
     name: doc.name ?? null,
+    // Required for workbench map pins — without lat/lng the canvas cannot place markers.
+    location: doc.location ?? null,
     powerKw: doc.powerKw,
     maxVehicleClass: doc.maxVehicleClass ?? null,
     connectorTypes: doc.connectorTypes,
@@ -50,14 +53,10 @@ function toConfigRow(
  * Nearest TRUE Class-8-capable chargers (≥350 kW AND MD/HD) within radius,
  * ascending by distance.
  *
- * The class8 predicate is applied as a JS filter on the doc's isClass8Capable
- * field (nearestPoints over-fetches, then filters), NOT via the in-index
- * filterEq. WHY: the 12-02 ingest indexes points with filterField key `class8`
- * (mutations.ts insertPoint filterFields:{class8}), so an in-index
- * `eq("isClass8Capable", …)` matches NOTHING and would silently return an empty
- * set — fabricating a Class-8 gap that live data does not have (the inverse of
- * T-12-04b). The doc-level JS predicate is authoritative and cannot be fooled by
- * a filterKey drift.
+ * Prefer the in-index `class8` filterKey (set at ingest via insertPoint
+ * filterFields:{class8}). Do NOT use a JS-only filter here — nearestPoints
+ * multiplies fetchLimit by 5 when a JS filter is present, which blows the
+ * Convex document-read budget on long corridors.
  */
 export const nearestClass8 = query({
   args: {
@@ -72,9 +71,12 @@ export const nearestClass8 = query({
       point: { lat, lng },
       maxDistanceM: radiusM,
       limit: limit ?? 5,
-      filter: (doc) => doc.isClass8Capable === true,
+      filterEq: { field: "class8", value: true },
     });
-    return results.map(({ doc, distanceM }) => toConfigRow(doc, distanceM));
+    // Defense in depth if an old index row drifted.
+    return results
+      .filter(({ doc }) => doc.isClass8Capable === true)
+      .map(({ doc, distanceM }) => toConfigRow(doc, distanceM));
   },
 });
 
@@ -107,6 +109,10 @@ export const fiveClosest = query({
  * point, reports the closest such charger's distance (null when none), and the
  * 5 closest any-class chargers (near the FIRST corridor point) as the reality
  * check. class8WithinCorridor === 0 IS the flagship answer for POLB→SB.
+ *
+ * Read-budget guard: evenly sample ≤12 probes and use the in-index `class8`
+ * filterKey (no JS-filter over-fetch). Long SF→Barstow polylines previously
+ * blew the 32k document-read cap via 24×(64×5) geospatial nearest scans.
  */
 export const class8Gap = query({
   args: {
@@ -119,19 +125,19 @@ export const class8Gap = query({
       { row: ReturnType<typeof toConfigRow>; distanceM: number }
     >();
 
-    for (const pt of corridorPoints) {
+    const probes = sampleCorridorProbes(corridorPoints, 12);
+
+    for (const pt of probes) {
       const hits = await nearestPoints(ctx, {
         table: "chargers",
         point: { lat: pt.lat, lng: pt.lng },
         maxDistanceM: radiusM,
-        // pull a generous window so no in-radius Class-8 unit is missed. The
-        // Class-8 filter is a doc-level JS predicate on isClass8Capable (NOT an
-        // in-index filterEq) — the 12-02 index keys on `class8`, so an in-index
-        // eq on isClass8Capable would match nothing and fabricate a false gap.
-        limit: 64,
-        filter: (doc) => doc.isClass8Capable === true,
+        // Small limit — gap analysis needs presence + closest, not a full catalog.
+        limit: 8,
+        filterEq: { field: "class8", value: true },
       });
       for (const { doc, distanceM } of hits) {
+        if (doc.isClass8Capable !== true) continue;
         const prev = class8ByStation.get(doc.stationId);
         if (!prev || distanceM < prev.distanceM) {
           class8ByStation.set(doc.stationId, {
@@ -146,15 +152,16 @@ export const class8Gap = query({
       (a, b) => a.distanceM - b.distanceM,
     );
     const closestClass8DistanceM =
-      class8Rows.length > 0 ? class8Rows[0].distanceM : null;
+      class8Rows.length > 0 ? class8Rows[0]!.distanceM : null;
 
     // Reality check: the 5 closest ANY-class chargers near the first corridor
     // point (typically the origin) — the LD units that are the wrong answer.
     let fiveClosestAnyClass: ReturnType<typeof toConfigRow>[] = [];
     if (corridorPoints.length > 0) {
+      const origin = corridorPoints[0]!;
       const anyHits = await nearestPoints(ctx, {
         table: "chargers",
-        point: { lat: corridorPoints[0].lat, lng: corridorPoints[0].lng },
+        point: { lat: origin.lat, lng: origin.lng },
         limit: 5,
       });
       fiveClosestAnyClass = anyHits.map(({ doc, distanceM }) =>
@@ -170,3 +177,18 @@ export const class8Gap = query({
     };
   },
 });
+
+/** Evenly sample corridor probes so long polylines stay under the read budget. */
+function sampleCorridorProbes(
+  points: Array<{ lat: number; lng: number }>,
+  maxPoints: number,
+): Array<{ lat: number; lng: number }> {
+  if (points.length <= maxPoints) return points;
+  const lastIndex = points.length - 1;
+  const sampled: Array<{ lat: number; lng: number }> = [];
+  for (let i = 0; i < maxPoints; i += 1) {
+    const index = Math.round((i / (maxPoints - 1)) * lastIndex);
+    sampled.push(points[index]!);
+  }
+  return sampled;
+}

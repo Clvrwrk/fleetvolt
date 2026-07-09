@@ -151,7 +151,8 @@ export function GeoRegionLayer({
                 tone.fill,
                 isSelected ? "scale-105 ring-4 ring-white/70" : "",
               )}
-              aria-label={`Select region ${region.name}`}
+              aria-label={isSelected ? `Deselect region ${region.name}` : `Select region ${region.name}`}
+              aria-pressed={isSelected}
             >
               {scoreLabel}
             </button>

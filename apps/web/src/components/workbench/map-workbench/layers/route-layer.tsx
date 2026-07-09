@@ -14,10 +14,23 @@ export type RouteLayerProps = {
 };
 
 function toLatLngPath(coordinates: RouteCoordinate[]): google.maps.LatLngLiteral[] {
-  return coordinates.map((coordinate) => ({
-    lat: coordinate.latitude,
-    lng: coordinate.longitude,
-  }));
+  return coordinates
+    .map((coordinate) => {
+      const lat =
+        typeof coordinate.latitude === "number"
+          ? coordinate.latitude
+          : typeof (coordinate as { lat?: number }).lat === "number"
+            ? (coordinate as { lat: number }).lat
+            : NaN;
+      const lng =
+        typeof coordinate.longitude === "number"
+          ? coordinate.longitude
+          : typeof (coordinate as { lng?: number }).lng === "number"
+            ? (coordinate as { lng: number }).lng
+            : NaN;
+      return { lat, lng };
+    })
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 }
 
 /**

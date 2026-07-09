@@ -1,57 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, Loader2, MapPinned, Route, SlidersHorizontal, Zap } from "lucide-react";
+import { AlertTriangle, Filter, Loader2, MapPinned, Route, SlidersHorizontal, Zap } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
-import type { WorkbenchLayerId, WorkbenchMode, WorkbenchResultCard } from "./types";
+import type { WorkbenchMode, WorkbenchResultCard } from "./types";
+import type { WorkbenchMapAsset } from "./layers/asset-marker-layer";
 import { AiCommandBar } from "./ai-command-bar";
 import { ContractConstraints, getFleetContractDefaults } from "./inputs/contract-constraints";
 import { RouteBuilder } from "./inputs/route-builder";
 import { DRIVER_TRUCK_PROFILES, TruckProfileSelect } from "./inputs/truck-profile-select";
 import { WorkdayConstraints, getDriverConstraintDefaults } from "./inputs/workday-constraints";
+import { CORE_CORRIDORS } from "@/lib/workbench/core-routes";
+import {
+  filtersForMode,
+  layersForMode,
+  type LayerFilterId,
+} from "./role-layers";
 
 type WorkbenchLeftPanelProps = {
   mode?: WorkbenchMode;
   className?: string;
+  /** When embedded in the stacked tool rail accordion, hide duplicate chrome. */
+  chrome?: "standalone" | "embedded";
 };
 
-const quickRoutes = [
-  {
-    id: "polb-barstow",
-    label: "POLB → Barstow",
-    meta: "128 mi · I-710 / I-15",
-    origin: { id: "polb", label: "Port of Long Beach", latitude: 33.7542, longitude: -118.2165, kind: "port" as const, source: "fleetvolt" as const },
-    destination: { label: "Barstow", latitude: 34.8958, longitude: -117.0173, kind: "manual" as const, source: "manual" as const },
-  },
-  {
-    id: "oakland-tracy",
-    label: "Oakland → Tracy",
-    meta: "63 mi · I-580",
-    origin: { label: "Port of Oakland", latitude: 37.7955, longitude: -122.2793, kind: "port" as const, source: "fleetvolt" as const },
-    destination: { label: "Tracy", latitude: 37.7397, longitude: -121.4252, kind: "manual" as const, source: "manual" as const },
-  },
-  {
-    id: "fontana-la",
-    label: "Fontana → LA Basin",
-    meta: "54 mi · I-10",
-    origin: { label: "Fontana", latitude: 34.0922, longitude: -117.435, kind: "manual" as const, source: "manual" as const },
-    destination: { label: "Los Angeles Basin", latitude: 34.0522, longitude: -118.2437, kind: "manual" as const, source: "manual" as const },
-  },
-];
-
-const layerToggles: Array<{ id: WorkbenchLayerId; label: string }> = [
-  { id: "route", label: "Route" },
-  { id: "chargers", label: "Chargers" },
-  { id: "parking", label: "Parking" },
-  { id: "pois", label: "POIs" },
-  { id: "class8-gaps", label: "Class 8 gaps" },
-  { id: "freight-flow", label: "Freight flow" },
-];
+const quickRoutes = CORE_CORRIDORS.map((corridor) => ({
+  id: corridor.id,
+  label: corridor.label,
+  meta: corridor.meta,
+  origin: corridor.origin,
+  destination: corridor.destination,
+}));
 
 function resolvePanelMode(mode: WorkbenchMode | undefined, rawMode: string | null): WorkbenchMode {
   if (mode) return mode;
@@ -75,21 +59,47 @@ function routePointsForCaaS(
 
 const caasDrilldownLabels = ["US", "State", "County", "Air district", "ZIP", "City", "Address"];
 
-export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftPanelProps) {
+export function WorkbenchLeftPanel({
+  mode: modeProp,
+  className,
+  chrome = "standalone",
+}: WorkbenchLeftPanelProps) {
   const searchParams = useSearchParams();
   const mode = resolvePanelMode(modeProp, searchParams.get("mode"));
   const [runError, setRunError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<LayerFilterId[]>([]);
   const storeMode = useMapWorkbenchStore((state) => state.mode);
   const draft = useMapWorkbenchStore((state) => state.draft);
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const applyDraftPatch = useMapWorkbenchStore((state) => state.applyDraftPatch);
   const toggleLayer = useMapWorkbenchStore((state) => state.toggleLayer);
-  const runDriverDayPlan = useAction(api.workbench.actions.driverDayPlan);
-  const runFleetContractPlan = useAction(api.workbench.actions.fleetContractPlan);
-  const caasOpportunity = useQuery(api.workbench.queries.caasOpportunityMap, mode === "caas_gap_map" ? { limit: 12 } : "skip");
+  const layerToggles = layersForMode(mode);
+  const layerFilters = filtersForMode(mode);
+
+  function toggleFilter(filterId: LayerFilterId) {
+    setActiveFilters((prev) => {
+      const next = prev.includes(filterId)
+        ? prev.filter((id) => id !== filterId)
+        : [...prev, filterId];
+      applyDraftPatch({
+        metadata: {
+          ...(useMapWorkbenchStore.getState().draft.metadata ?? {}),
+          layerFilters: next,
+        },
+      });
+      return next;
+    });
+  }
+  const runDriverDayPlan = useAction(api["workbench/actions"].driverDayPlan);
+  const runFleetContractPlan = useAction(api["workbench/actions"].fleetContractPlan);
+  const saveWorkbenchRun = useMutation(api["workbench/runs"].saveRun);
+  const caasOpportunity = useQuery(
+    api["workbench/queries"].caasOpportunityMap,
+    mode === "caas_gap_map" ? { limit: 12 } : "skip",
+  );
   const caasRouteOpportunity = useQuery(
-    api.workbench.queries.analyzeCaasRouteOpportunity,
+    api["workbench/queries"].analyzeCaasRouteOpportunity,
     mode === "caas_gap_map" && draft.origin && draft.destination
       ? {
           origin: { lat: draft.origin.latitude, lng: draft.origin.longitude },
@@ -146,6 +156,20 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
 
   function applyQuickRoute(route: (typeof quickRoutes)[number]) {
     applyDraftPatch({ origin: route.origin, destination: route.destination });
+    // Immediate straight-line preview; WorkbenchBootstrap upgrades to Google roads.
+    useMapWorkbenchStore.setState({
+      routeGeometry: {
+        provider: "google",
+        coordinates: [
+          { latitude: route.origin.latitude, longitude: route.origin.longitude },
+          {
+            latitude: route.destination.latitude,
+            longitude: route.destination.longitude,
+          },
+        ],
+        warnings: ["Snapping corridor to roads…"],
+      },
+    });
   }
 
   async function calculateDriverPlan() {
@@ -161,6 +185,8 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
 
     setIsRunning(true);
     try {
+      // Clear stale POLB/sample pins while the new corridor calculates.
+      useMapWorkbenchStore.setState({ mapAssets: [] });
       const result = await runDriverDayPlan({
         origin: draft.origin,
         destination: draft.destination,
@@ -176,7 +202,41 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
         routeGeometry: result.routeGeometry,
         resultCards: result.resultCards as WorkbenchResultCard[],
         providerWarnings: result.providerWarnings ?? [],
+        mapAssets: Array.isArray(result.mapPins)
+          ? (result.mapPins as WorkbenchMapAsset[])
+          : [],
       });
+      try {
+        await saveWorkbenchRun({
+          mode: "driver_day_plan",
+          origin: {
+            label: draft.origin.label,
+            latitude: draft.origin.latitude,
+            longitude: draft.origin.longitude,
+            kind: draft.origin.kind,
+            source: draft.origin.source,
+            id: draft.origin.id,
+          },
+          destination: {
+            label: draft.destination.label,
+            latitude: draft.destination.latitude,
+            longitude: draft.destination.longitude,
+            kind: draft.destination.kind,
+            source: draft.destination.source,
+            id: draft.destination.id,
+          },
+          routeGeometry: result.routeGeometry,
+          resultCards: result.resultCards,
+          providerWarnings: result.providerWarnings ?? [],
+          metadata: {
+            ...(useMapWorkbenchStore.getState().draft.metadata ?? {}),
+            mapPins: result.mapPins ?? [],
+          },
+        });
+      } catch (persistError) {
+        // Persistence is best-effort — Calculate results already live in the store.
+        console.warn("[workbench] saveRun skipped", persistError);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setRunError(message);
@@ -231,7 +291,40 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
         routeGeometry: result.routeGeometry,
         resultCards: result.resultCards as WorkbenchResultCard[],
         providerWarnings: result.providerWarnings ?? [],
+        mapAssets: Array.isArray(result.mapPins)
+          ? (result.mapPins as WorkbenchMapAsset[])
+          : [],
       });
+      try {
+        await saveWorkbenchRun({
+          mode: "fleet_contract_plan",
+          origin: {
+            label: draft.origin.label,
+            latitude: draft.origin.latitude,
+            longitude: draft.origin.longitude,
+            kind: draft.origin.kind,
+            source: draft.origin.source,
+            id: draft.origin.id,
+          },
+          destination: {
+            label: draft.destination.label,
+            latitude: draft.destination.latitude,
+            longitude: draft.destination.longitude,
+            kind: draft.destination.kind,
+            source: draft.destination.source,
+            id: draft.destination.id,
+          },
+          routeGeometry: result.routeGeometry,
+          resultCards: result.resultCards,
+          providerWarnings: result.providerWarnings ?? [],
+          metadata: {
+            ...(useMapWorkbenchStore.getState().draft.metadata ?? {}),
+            mapPins: result.mapPins ?? [],
+          },
+        });
+      } catch (persistError) {
+        console.warn("[workbench] saveRun skipped", persistError);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setRunError(message);
@@ -261,19 +354,24 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
 
   return (
     <aside
+      id="workbench-left-panel"
       data-testid="workbench-left-panel"
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden border-r border-black/10 bg-[var(--fv-paper)]/95 shadow-[inset_-1px_0_0_rgba(255,255,255,0.55)]",
+        "flex min-h-0 flex-col overflow-hidden",
+        chrome === "standalone" &&
+          "border-r border-black/10 bg-[var(--fv-paper)]/95 shadow-[inset_-1px_0_0_rgba(255,255,255,0.55)]",
         className,
       )}
       aria-label="Workbench tools"
     >
-      <div className="border-b border-black/10 px-4 py-3">
-        <TechnicalLabel>{mode === "driver_day_plan" ? "Driver mode" : mode === "fleet_contract_plan" ? "Fleet mode" : "CaaS mode"}</TechnicalLabel>
-        <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
-          {mode === "driver_day_plan" ? "Day-plan inputs" : mode === "fleet_contract_plan" ? "Contract inputs" : "Gap / opportunity map"}
-        </h2>
-      </div>
+      {chrome === "standalone" ? (
+        <div className="border-b border-black/10 px-4 py-3">
+          <TechnicalLabel>{mode === "driver_day_plan" ? "Driver mode" : mode === "fleet_contract_plan" ? "Fleet mode" : "CaaS mode"}</TechnicalLabel>
+          <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
+            {mode === "driver_day_plan" ? "Day-plan inputs" : mode === "fleet_contract_plan" ? "Contract inputs" : "Gap / opportunity map"}
+          </h2>
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <AiCommandBar mode={mode} />
@@ -372,8 +470,21 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
         <section className="space-y-2" aria-labelledby="layers-heading">
           <div className="flex items-center gap-2" id="layers-heading">
             <SlidersHorizontal size={16} className="text-[var(--fv-accent)]" />
-            <TechnicalLabel>Layers</TechnicalLabel>
+            <TechnicalLabel>
+              {mode === "caas_gap_map"
+                ? "Full map suite"
+                : mode === "fleet_contract_plan"
+                  ? "Fleet layers"
+                  : "Driver layers"}
+            </TechnicalLabel>
           </div>
+          <p className="text-[10px] leading-4 text-[var(--fv-steel)]">
+            {mode === "driver_day_plan"
+              ? "Charge · park · amenities on your A→B route. No carrier or census noise."
+              : mode === "fleet_contract_plan"
+                ? "Yards, highways, and chargers for contract corridor sizing."
+                : "Every dataset — gaps, carriers, freight flow, census, CaaS zones."}
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {layerToggles.map((layer) => {
               const isActive = activeLayers.includes(layer.id);
@@ -382,21 +493,69 @@ export function WorkbenchLeftPanel({ mode: modeProp, className }: WorkbenchLeftP
                   key={layer.id}
                   type="button"
                   data-testid={`workbench-layer-toggle-${layer.id}`}
+                  title={layer.hint}
                   onClick={() => toggleLayer(layer.id)}
                   aria-pressed={isActive}
                   className={cn(
-                    "min-h-11 rounded-xl border px-3 text-xs font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
+                    "min-h-11 rounded-xl border px-3 text-left text-xs font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
                     isActive
                       ? "border-[var(--fv-accent)] bg-[var(--fv-accent)] text-white"
                       : "border-black/10 bg-white text-[var(--fv-graphite)] hover:border-[var(--fv-accent)]",
                   )}
                 >
-                  {layer.label}
+                  <span className="block">{layer.label}</span>
+                  <span
+                    className={cn(
+                      "mt-0.5 block text-[10px] font-medium leading-3",
+                      isActive ? "text-white/80" : "text-[var(--fv-steel)]",
+                    )}
+                  >
+                    {layer.hint}
+                  </span>
                 </button>
               );
             })}
           </div>
         </section>
+
+        {layerFilters.length > 0 ? (
+          <section className="space-y-2" aria-labelledby="filters-heading">
+            <div className="flex items-center gap-2" id="filters-heading">
+              <Filter size={16} className="text-[var(--fv-accent)]" />
+              <TechnicalLabel>Dataset filters</TechnicalLabel>
+            </div>
+            <p className="text-[10px] leading-4 text-[var(--fv-steel)]">
+              {mode === "caas_gap_map"
+                ? "e.g. cold-storage / reefer freight leaving a port — higher aux load."
+                : "Narrow chargers and sites to what this role needs."}
+            </p>
+            <div className="flex flex-col gap-2">
+              {layerFilters.map((filter) => {
+                const isActive = activeFilters.includes(filter.id);
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    data-testid={`workbench-filter-${filter.id}`}
+                    onClick={() => toggleFilter(filter.id)}
+                    aria-pressed={isActive}
+                    className={cn(
+                      "min-h-11 rounded-xl border px-3 py-2 text-left text-xs font-semibold shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
+                      isActive
+                        ? "border-[var(--fv-blueprint-blue)] bg-[var(--fv-blueprint-blue)]/10 text-[var(--fv-graphite)]"
+                        : "border-black/10 bg-white text-[var(--fv-graphite)] hover:border-[var(--fv-accent)]",
+                    )}
+                  >
+                    <span className="block">{filter.label}</span>
+                    <span className="mt-0.5 block text-[10px] font-medium leading-3 text-[var(--fv-steel)]">
+                      {filter.hint}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         {runError ? (
           <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs leading-5 text-red-900">

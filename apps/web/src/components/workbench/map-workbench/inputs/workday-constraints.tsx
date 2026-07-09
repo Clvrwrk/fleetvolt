@@ -9,6 +9,9 @@ type WorkdayConstraintsProps = {
   className?: string;
 };
 
+/** Stable fallback — never allocate `{}` inside a Zustand selector (infinite loop). */
+const EMPTY_METADATA: Record<string, unknown> = Object.freeze({});
+
 const weatherOptions = [
   { value: "ideal", label: "Ideal", note: "FleetVolt baseline" },
   { value: "hot", label: "Hot", note: "Aux / thermal load" },
@@ -27,7 +30,9 @@ function stringMetadata(key: string, fallback: string): string {
 }
 
 export function WorkdayConstraints({ className }: WorkdayConstraintsProps) {
-  const metadata = useMapWorkbenchStore((state) => state.draft.metadata ?? {});
+  const metadata = useMapWorkbenchStore(
+    (state) => state.draft.metadata ?? EMPTY_METADATA,
+  );
   const applyDraftPatch = useMapWorkbenchStore((state) => state.applyDraftPatch);
 
   const roundTrips = typeof metadata.roundTrips === "number" ? metadata.roundTrips : 1;

@@ -82,3 +82,13 @@ Mobile: collapse tools to bottom sheet/stepper; show only necessary controls.
 - Do not create another centered card report as primary UX
 - Do not output long AI prose without map/result-card translation
 - Do not ask users to know raw DB names or internal data model
+
+## Locked chrome — tool rail (2026-07-08)
+
+On map workbench routes the left edge is a **tool panel**, not a second copy of the Phase 16 AppShell sidebar:
+
+- Global `Sidebar` is hidden; role **navigation sits above** accordion tools in the same ~320px rail.
+- Tools (inputs / summary) **slide open/closed** under that nav.
+- Dashboards (`/driver`, `/fleet`, `/caas`) keep the global sidebar as launchpad chrome.
+
+Full contract: `TOOL-RAIL.md` in this phase folder.

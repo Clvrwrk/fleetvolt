@@ -199,7 +199,7 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastSummary, setLastSummary] = useState<string | null>(null);
   const applyAiResult = useMapWorkbenchStore((state) => state.applyAiResult);
-  const runWorkbenchAi = useAction(api.workbench.ai.workbenchPlanWithAi);
+  const runWorkbenchAi = useAction(api["workbench/ai"].workbenchPlanWithAi);
   const examples = useMemo(() => EXAMPLE_PROMPTS[mode], [mode]);
 
   async function submit(message: string) {
@@ -278,6 +278,10 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder={examples[0]}
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm text-[var(--fv-graphite)] shadow-sm outline-none focus-visible:border-[var(--fv-accent)] focus-visible:ring-2 focus-visible:ring-[var(--fv-accent)]/30"
         />
         <button

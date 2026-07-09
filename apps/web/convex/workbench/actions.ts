@@ -4,6 +4,7 @@ import { action } from "../_generated/server";
 import {
   GOOGLE_TRUCK_ROUTE_WARNING,
   decodeGoogleEncodedPolyline,
+  downsampleRouteCoordinates,
   getRouteRequestHash,
   routeGeometryFallback,
   type RouteGeometryProvider,
@@ -73,7 +74,7 @@ function latLngFromCoordinate(point: { latitude: number; longitude: number }) {
 
 function sampleRoutePoints(
   coordinates: Array<{ latitude: number; longitude: number }>,
-  maxPoints = 24,
+  maxPoints = 12,
 ) {
   if (coordinates.length <= maxPoints) return coordinates.map(latLngFromCoordinate);
   const lastIndex = coordinates.length - 1;
@@ -148,6 +149,18 @@ type DriverPlanCard = {
   actions?: Array<{ id: string; label: string; kind: "primary" | "secondary" }>;
 };
 
+type WorkbenchMapPin = {
+  id: string;
+  type: "charger" | "parking" | "poi";
+  layerId: "chargers" | "parking" | "pois";
+  label: string;
+  latitude: number;
+  longitude: number;
+  subtitle?: string;
+  metric?: string;
+  metadata?: Record<string, unknown>;
+};
+
 type DriverDayPlanResult = {
   id: string;
   mode: "driver_day_plan" | "fleet_contract_plan";
@@ -158,10 +171,145 @@ type DriverDayPlanResult = {
   fiveClosestChargers: unknown[];
   parking: unknown;
   pois: unknown;
+  /** Live map markers for the calculated corridor (replaces sample POLB pins). */
+  mapPins: WorkbenchMapPin[];
   resultCards: DriverPlanCard[];
   providerWarnings: string[];
   assumptions: string[];
 };
+
+function asFiniteLatLng(value: unknown): { lat: number; lng: number } | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as { lat?: unknown; lng?: unknown; lon?: unknown; latitude?: unknown; longitude?: unknown };
+  const lat =
+    typeof row.lat === "number"
+      ? row.lat
+      : typeof row.latitude === "number"
+        ? row.latitude
+        : null;
+  const lng =
+    typeof row.lng === "number"
+      ? row.lng
+      : typeof row.lon === "number"
+        ? row.lon
+        : typeof row.longitude === "number"
+          ? row.longitude
+          : null;
+  if (
+    lat === null ||
+    lng === null ||
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    Math.abs(lat) > 90 ||
+    Math.abs(lng) > 180
+  ) {
+    return null;
+  }
+  return { lat, lng };
+}
+
+function buildMapPins(args: {
+  nearestClass8: unknown[];
+  fiveClosest: unknown[];
+  class8AlongRoute: unknown[];
+  parking: unknown[];
+  pois: unknown[];
+  chargingStops: unknown[];
+}): WorkbenchMapPin[] {
+  const pins: WorkbenchMapPin[] = [];
+  const seen = new Set<string>();
+
+  function push(pin: WorkbenchMapPin) {
+    if (seen.has(pin.id)) return;
+    seen.add(pin.id);
+    pins.push(pin);
+  }
+
+  for (const raw of [...args.class8AlongRoute, ...args.nearestClass8, ...args.fiveClosest]) {
+    const row = raw as {
+      stationId?: unknown;
+      name?: unknown;
+      location?: unknown;
+      powerKw?: unknown;
+      isClass8Capable?: unknown;
+      distanceM?: unknown;
+    };
+    const loc = asFiniteLatLng(row.location);
+    if (!loc) continue;
+    const stationId = String(row.stationId ?? `${loc.lat},${loc.lng}`);
+    const isClass8 = row.isClass8Capable === true;
+    // Driver toolbar only toggles `chargers` — keep Class 8 pins on that layer.
+    push({
+      id: `charger-${stationId}`,
+      type: "charger",
+      layerId: "chargers",
+      label: String(row.name ?? `Charger ${stationId}`),
+      latitude: loc.lat,
+      longitude: loc.lng,
+      subtitle: isClass8 ? "Class 8 capable" : "Candidate charger",
+      metric: typeof row.powerKw === "number" ? `${row.powerKw} kW` : undefined,
+      metadata: {
+        stationId,
+        powerKw: row.powerKw ?? null,
+        isClass8Capable: isClass8,
+        distanceM: row.distanceM ?? null,
+        classification: isClass8 ? "class8" : "any",
+      },
+    });
+  }
+
+  for (const raw of args.chargingStops) {
+    const loc = stopPointFromChargingStop(raw);
+    if (!loc) continue;
+    const row = raw as { name?: unknown; power_kw?: unknown };
+    push({
+      id: `sim-stop-${loc.lat.toFixed(4)}-${loc.lng.toFixed(4)}`,
+      type: "charger",
+      layerId: "chargers",
+      label: String(row.name ?? "Simulated charge stop"),
+      latitude: loc.lat,
+      longitude: loc.lng,
+      subtitle: "Physics simulation stop",
+      metric: typeof row.power_kw === "number" ? `${row.power_kw} kW` : undefined,
+      metadata: { source: "simulation" },
+    });
+  }
+
+  args.parking.forEach((raw, index) => {
+    const row = raw as { name?: unknown; location?: unknown; numberOfSpots?: unknown; hgv?: unknown; distanceM?: unknown };
+    const loc = asFiniteLatLng(row.location);
+    if (!loc) return;
+    push({
+      id: `parking-${index}-${loc.lat.toFixed(4)}-${loc.lng.toFixed(4)}`,
+      type: "parking",
+      layerId: "parking",
+      label: String(row.name ?? "Truck parking"),
+      latitude: loc.lat,
+      longitude: loc.lng,
+      subtitle: row.hgv === true ? "HGV parking" : "Parking",
+      metric: typeof row.numberOfSpots === "number" ? `${row.numberOfSpots} spots` : undefined,
+      metadata: { distanceM: row.distanceM ?? null, hgv: row.hgv ?? null },
+    });
+  });
+
+  args.pois.forEach((raw, index) => {
+    const row = raw as { name?: unknown; type?: unknown; location?: unknown; distanceM?: unknown };
+    const loc = asFiniteLatLng(row.location);
+    if (!loc) return;
+    push({
+      id: `poi-${index}-${loc.lat.toFixed(4)}-${loc.lng.toFixed(4)}`,
+      type: "poi",
+      layerId: "pois",
+      label: String(row.name ?? row.type ?? "POI"),
+      latitude: loc.lat,
+      longitude: loc.lng,
+      subtitle: typeof row.type === "string" ? row.type.replace(/_/g, " ") : "Amenity",
+      metadata: { type: row.type ?? null, distanceM: row.distanceM ?? null },
+    });
+  });
+
+  return pins;
+}
 
 type FleetContractPlanResult = DriverDayPlanResult & {
   mode: "fleet_contract_plan";
@@ -303,16 +451,20 @@ export const routeGeometry = action({
         );
       }
 
+      const decoded = decodeGoogleEncodedPolyline(encodedPolyline);
+      const coordinates = downsampleRouteCoordinates(decoded);
       const result: RouteGeometryResult = {
         provider: "google",
-        coordinates: decodeGoogleEncodedPolyline(encodedPolyline),
+        coordinates,
         distanceMeters: route.distanceMeters,
         durationSeconds: parseGoogleDurationSeconds(route.duration),
-        encodedPolyline,
+        // Encoded polyline can exceed Convex return size; keep decoded sample only.
         warnings: [GOOGLE_TRUCK_ROUTE_WARNING],
         metadata: {
           requestHash,
           cacheStatus: "miss",
+          coordinateCountRaw: decoded.length,
+          coordinateCountReturned: coordinates.length,
         },
       };
 
@@ -357,11 +509,17 @@ export const driverDayPlan = action({
       provider: "google" as const,
     });
     const routeHash = await getRouteRequestHash(routeRequest);
-    const route = routeGeometryFallback(
+    let route = routeGeometryFallback(
       routeRequest,
       "Route provider result unavailable inside driver aggregate action; using endpoint geometry and labeled provider warning.",
       { requestHash: routeHash },
     );
+    try {
+      // Road-snapped Google Routes polyline (same path as fleet contract plan).
+      route = await ctx.runAction(api["workbench/actions"].routeGeometry, routeRequest);
+    } catch {
+      // Keep labeled fallback — providerWarnings surface the assumption.
+    }
 
     const routeCoordinates =
       route.coordinates.length > 0
@@ -373,7 +531,7 @@ export const driverDayPlan = action({
     let simulation: unknown = null;
     let simulationError: string | null = null;
     try {
-      simulation = await ctx.runAction(api.physics.simulate.simulate, {
+      simulation = await ctx.runAction(api["physics/simulate"].simulate, {
         request: {
           route: {
             origin: { lat: args.origin.latitude, lon: args.origin.longitude },
@@ -407,7 +565,7 @@ export const driverDayPlan = action({
         }
       | null;
 
-    const gapAnalysis = (await ctx.runQuery(api.workbench.queries.analyzeClass8GapAlongRoute, {
+    const gapAnalysis = (await ctx.runQuery(api["workbench/queries"].analyzeClass8GapAlongRoute, {
       corridorPoints,
       radiusM: CLASS8_GAP_RADIUS_M,
     })) as {
@@ -420,28 +578,60 @@ export const driverDayPlan = action({
     };
     const gap = gapAnalysis.gap;
 
-    const destinationNearestClass8 = (await ctx.runQuery(api.chargers.queries.nearestClass8, {
+    const destinationNearestClass8 = (await ctx.runQuery(api["chargers/queries"].nearestClass8, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       radiusM: 50_000,
       limit: 5,
     })) as unknown[];
-    const destinationFiveClosest = (await ctx.runQuery(api.chargers.queries.fiveClosest, {
+    const destinationFiveClosest = (await ctx.runQuery(api["chargers/queries"].fiveClosest, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       limit: 5,
     })) as unknown[];
+    // Also sample origin + mid-corridor so long routes (SF→Barstow) get pins
+    // along the path, not only at the destination.
+    const originProbe = corridorPoints[0] ?? {
+      lat: args.origin.latitude,
+      lng: args.origin.longitude,
+    };
+    const midProbe = corridorPoints[Math.floor(corridorPoints.length / 2)] ?? originProbe;
+    const [originFiveClosest, midFiveClosest, originNearestClass8, midNearestClass8] =
+      (await Promise.all([
+        ctx.runQuery(api["chargers/queries"].fiveClosest, {
+          lat: originProbe.lat,
+          lng: originProbe.lng,
+          limit: 4,
+        }),
+        ctx.runQuery(api["chargers/queries"].fiveClosest, {
+          lat: midProbe.lat,
+          lng: midProbe.lng,
+          limit: 4,
+        }),
+        ctx.runQuery(api["chargers/queries"].nearestClass8, {
+          lat: originProbe.lat,
+          lng: originProbe.lng,
+          radiusM: 50_000,
+          limit: 3,
+        }),
+        ctx.runQuery(api["chargers/queries"].nearestClass8, {
+          lat: midProbe.lat,
+          lng: midProbe.lng,
+          radiusM: 50_000,
+          limit: 3,
+        }),
+      ])) as [unknown[], unknown[], unknown[], unknown[]];
 
     const stopPoints =
       sim?.charging_stops?.map(stopPointFromChargingStop).filter((point): point is { lat: number; lng: number } => Boolean(point)) ?? [];
     const accessProbePoint = stopPoints[0] ?? { lat: args.destination.latitude, lng: args.destination.longitude };
     const [parking, pois] = (await Promise.all([
-      ctx.runQuery(api.pois.queries.parkingInRadius, {
+      ctx.runQuery(api["pois/queries"].parkingInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         limit: 5,
       }),
-      ctx.runQuery(api.pois.queries.poisInRadius, {
+      ctx.runQuery(api["pois/queries"].poisInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         types: ["fuel", "food", "rest_area", "truck_stop", "repair"],
@@ -451,6 +641,23 @@ export const driverDayPlan = action({
       { count: number; totalSpotsWithinRadius: number; parking: unknown[] },
       { total: number; pois: unknown[]; byType: Record<string, unknown[]> },
     ];
+
+    const mapPins = buildMapPins({
+      nearestClass8: [
+        ...destinationNearestClass8,
+        ...originNearestClass8,
+        ...midNearestClass8,
+      ],
+      fiveClosest: [
+        ...destinationFiveClosest,
+        ...originFiveClosest,
+        ...midFiveClosest,
+      ],
+      class8AlongRoute: gap?.class8Chargers ?? [],
+      parking: parking.parking ?? [],
+      pois: pois.pois ?? [],
+      chargingStops: sim?.charging_stops ?? [],
+    });
 
     const oneWaySeconds = route.durationSeconds ?? sim?.kpis?.total_time_s ?? null;
     const oneWayKwh = sim?.kpis?.total_kwh ?? null;
@@ -571,6 +778,7 @@ export const driverDayPlan = action({
       fiveClosestChargers: destinationFiveClosest,
       parking,
       pois,
+      mapPins,
       resultCards: cards,
       providerWarnings,
       assumptions: [
@@ -626,7 +834,7 @@ export const fleetContractPlan = action({
       { requestHash: routeHash },
     );
     try {
-      route = await ctx.runAction(api.workbench.actions.routeGeometry, routeRequest);
+      route = await ctx.runAction(api["workbench/actions"].routeGeometry, routeRequest);
     } catch {
       // Keep the labeled fallback above. The provider warning card makes the assumption visible.
     }
@@ -641,7 +849,7 @@ export const fleetContractPlan = action({
     let simulation: unknown = null;
     let simulationError: string | null = null;
     try {
-      simulation = await ctx.runAction(api.physics.simulate.simulate, {
+      simulation = await ctx.runAction(api["physics/simulate"].simulate, {
         request: {
           route: {
             origin: { lat: args.origin.latitude, lon: args.origin.longitude },
@@ -675,7 +883,7 @@ export const fleetContractPlan = action({
         }
       | null;
 
-    const gapAnalysis = (await ctx.runQuery(api.workbench.queries.analyzeClass8GapAlongRoute, {
+    const gapAnalysis = (await ctx.runQuery(api["workbench/queries"].analyzeClass8GapAlongRoute, {
       corridorPoints,
       radiusM: CLASS8_GAP_RADIUS_M,
     })) as {
@@ -688,13 +896,13 @@ export const fleetContractPlan = action({
     };
     const gap = gapAnalysis.gap;
 
-    const destinationNearestClass8 = (await ctx.runQuery(api.chargers.queries.nearestClass8, {
+    const destinationNearestClass8 = (await ctx.runQuery(api["chargers/queries"].nearestClass8, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       radiusM: 50_000,
       limit: 5,
     })) as unknown[];
-    const destinationFiveClosest = (await ctx.runQuery(api.chargers.queries.fiveClosest, {
+    const destinationFiveClosest = (await ctx.runQuery(api["chargers/queries"].fiveClosest, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       limit: 5,
@@ -708,12 +916,12 @@ export const fleetContractPlan = action({
     };
     const accessProbePoint = stopPoints[0] ?? midpoint;
     const [parking, pois] = (await Promise.all([
-      ctx.runQuery(api.pois.queries.parkingInRadius, {
+      ctx.runQuery(api["pois/queries"].parkingInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         limit: 5,
       }),
-      ctx.runQuery(api.pois.queries.poisInRadius, {
+      ctx.runQuery(api["pois/queries"].poisInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         types: ["fuel", "food", "rest_area", "truck_stop", "repair"],
@@ -723,6 +931,15 @@ export const fleetContractPlan = action({
       { count: number; totalSpotsWithinRadius: number; parking: unknown[] },
       { total: number; pois: unknown[]; byType: Record<string, unknown[]> },
     ];
+
+    const mapPins = buildMapPins({
+      nearestClass8: destinationNearestClass8,
+      fiveClosest: destinationFiveClosest,
+      class8AlongRoute: gap?.class8Chargers ?? [],
+      parking: parking.parking ?? [],
+      pois: pois.pois ?? [],
+      chargingStops: sim?.charging_stops ?? [],
+    });
 
     const oneWaySeconds = route.durationSeconds ?? sim?.kpis?.total_time_s ?? null;
     const dwellSeconds = (portDwellMinutes + destinationDwellMinutes) * 60;
@@ -875,6 +1092,7 @@ export const fleetContractPlan = action({
       fiveClosestChargers: destinationFiveClosest,
       parking,
       pois,
+      mapPins,
       resultCards: cards,
       providerWarnings,
       assumptions: [

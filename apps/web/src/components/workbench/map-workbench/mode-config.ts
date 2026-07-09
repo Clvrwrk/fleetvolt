@@ -3,6 +3,7 @@ import type {
   WorkbenchMode,
   WorkbenchPlanDraft,
 } from "./types";
+import { ROLE_LAYER_IDS } from "./role-layers";
 
 export type { WorkbenchMode };
 
@@ -11,6 +12,7 @@ export type WorkbenchModeConfig = {
   title: string;
   description: string;
   primaryCta: string;
+  /** Layers on by default — must be a subset of ROLE_LAYER_IDS[mode]. */
   defaultLayers: WorkbenchLayerId[];
   defaultDraft: WorkbenchPlanDraft;
 };
@@ -21,9 +23,10 @@ export const WORKBENCH_MODE_CONFIG: Record<WorkbenchMode, WorkbenchModeConfig> =
   driver_day_plan: {
     mode: "driver_day_plan",
     title: "Driver Day Plan",
-    description: "Plan one driver's route with charging, parking, and POI context.",
+    description:
+      "A→B with Class 8 BET: where to charge, how far off route, dwell, amenities.",
     primaryCta: "Start Day Plan",
-    defaultLayers: ["route", "chargers", "parking", "pois"],
+    defaultLayers: [...ROLE_LAYER_IDS.driver_day_plan],
     defaultDraft: {
       vehicleClass: "Class 8 drayage",
     },
@@ -31,9 +34,10 @@ export const WORKBENCH_MODE_CONFIG: Record<WorkbenchMode, WorkbenchModeConfig> =
   fleet_contract_plan: {
     mode: "fleet_contract_plan",
     title: "Fleet Contract Plan",
-    description: "Evaluate contract routes against chargers, yards, POIs, and highways.",
+    description:
+      "Contract corridor sizing with yards, chargers, highways, and parking.",
     primaryCta: "Plan Contract",
-    defaultLayers: ["route", "chargers", "fleet-yards", "pois", "highways"],
+    defaultLayers: ["route", "chargers", "fleet-yards", "highways"],
     defaultDraft: {
       vehicleClass: "Class 8 fleet",
     },
@@ -41,16 +45,10 @@ export const WORKBENCH_MODE_CONFIG: Record<WorkbenchMode, WorkbenchModeConfig> =
   caas_gap_map: {
     mode: "caas_gap_map",
     title: "CaaS Gap Map",
-    description: "Find charging-as-a-service gaps across regions, carriers, parking, and freight flows.",
+    description:
+      "Full suite: gaps, carriers, freight flow, census regions, mobile CaaS zones.",
     primaryCta: "Find Charger Gaps",
-    defaultLayers: [
-      "geo-regions",
-      "class8-gaps",
-      "carriers",
-      "parking",
-      "freight-flow",
-      "caas-zones",
-    ],
+    defaultLayers: ["route", "chargers", "class8-gaps", "caas-zones", "freight-flow"],
     defaultDraft: {
       vehicleClass: "Class 8 corridor",
     },

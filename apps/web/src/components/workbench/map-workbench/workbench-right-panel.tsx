@@ -9,6 +9,7 @@ import type { WorkbenchResultCard } from "./types";
 
 type WorkbenchRightPanelProps = {
   className?: string;
+  chrome?: "standalone" | "embedded";
 };
 
 const initialCards: WorkbenchResultCard[] = [
@@ -143,7 +144,10 @@ function resolveResultMode(storeMode: string, rawMode: string | null) {
   return storeMode;
 }
 
-export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
+export function WorkbenchRightPanel({
+  className,
+  chrome = "standalone",
+}: WorkbenchRightPanelProps) {
   const searchParams = useSearchParams();
   const resultCards = useMapWorkbenchStore((state) => state.resultCards);
   const providerWarnings = useMapWorkbenchStore((state) => state.providerWarnings);
@@ -156,19 +160,24 @@ export function WorkbenchRightPanel({ className }: WorkbenchRightPanelProps) {
 
   return (
     <aside
+      id="workbench-right-panel"
       data-testid="workbench-right-panel"
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden border-l border-black/10 bg-[var(--fv-paper)]/95 shadow-[inset_1px_0_0_rgba(255,255,255,0.55)]",
+        "flex min-h-0 flex-col overflow-hidden",
+        chrome === "standalone" &&
+          "border-l border-black/10 bg-[var(--fv-paper)]/95 shadow-[inset_1px_0_0_rgba(255,255,255,0.55)]",
         className,
       )}
       aria-label="Workbench results"
     >
-      <div className="border-b border-black/10 px-4 py-3">
-        <TechnicalLabel>{mode === "caas_gap_map" ? "CaaS opportunity cards" : mode === "fleet_contract_plan" ? "Fleet result cards" : "Driver result cards"}</TechnicalLabel>
-        <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
-          {mode === "caas_gap_map" ? "Gap-map summary" : mode === "fleet_contract_plan" ? "Contract-plan summary" : "Day-plan summary"}
-        </h2>
-      </div>
+      {chrome === "standalone" ? (
+        <div className="border-b border-black/10 px-4 py-3">
+          <TechnicalLabel>{mode === "caas_gap_map" ? "CaaS opportunity cards" : mode === "fleet_contract_plan" ? "Fleet result cards" : "Driver result cards"}</TechnicalLabel>
+          <h2 className="mt-1 text-base font-semibold tracking-tight text-[var(--fv-graphite)]">
+            {mode === "caas_gap_map" ? "Gap-map summary" : mode === "fleet_contract_plan" ? "Contract-plan summary" : "Day-plan summary"}
+          </h2>
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {lastAiSummary ? (

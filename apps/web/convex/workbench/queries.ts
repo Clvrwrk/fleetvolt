@@ -8,7 +8,7 @@ const DEFAULT_LAYER_LIMIT = 80;
 const MAX_LAYER_LIMIT = 200;
 const MAX_HIGHWAY_RESULTS = 120;
 const MAX_GEO_REGION_RESULTS = 100;
-const MAX_ROUTE_POINTS = 80;
+const MAX_ROUTE_POINTS = 12;
 const CAAS_ROUTE_RADIUS_M = 8_047;
 const CAAS_NEARBY_RADIUS_M = 50_000;
 const CAAS_HOTSPOT_RADIUS_M = 25_000;
@@ -328,11 +328,11 @@ function routeMidpoint(points: Array<{ lat: number; lng: number }>) {
 }
 
 function sampleCaaSRoutePoints(points: Array<{ lat: number; lng: number }>) {
-  if (points.length <= 24) return points;
+  if (points.length <= 12) return points;
   const lastIndex = points.length - 1;
   const sampled: Array<{ lat: number; lng: number }> = [];
-  for (let i = 0; i < 24; i += 1) {
-    sampled.push(points[Math.round((i / 23) * lastIndex)]!);
+  for (let i = 0; i < 12; i += 1) {
+    sampled.push(points[Math.round((i / 11) * lastIndex)]!);
   }
   return sampled;
 }
@@ -757,18 +757,20 @@ export const searchPlaceAssets = query({
     const term = normalizeSearchTerm(rawQuery);
     if (term.length < 2) return [];
 
+    // Cap reads — full-table collect on chargers/parking blows the 16MB limit.
+    const SCAN_CAP = 400;
     const [ports, chargers, carriers, parking, pois, fleetLots] = await Promise.all([
-      ctx.db.query("ports").collect(),
-      ctx.db.query("chargers").collect(),
-      ctx.db.query("carriers").collect(),
-      ctx.db.query("parking").collect(),
-      ctx.db.query("pois").collect(),
+      ctx.db.query("ports").take(80),
+      ctx.db.query("chargers").take(SCAN_CAP),
+      ctx.db.query("carriers").take(SCAN_CAP),
+      ctx.db.query("parking").take(SCAN_CAP),
+      ctx.db.query("pois").take(SCAN_CAP),
       fleetId
         ? ctx.db
             .query("fleetParkingLots")
             .withIndex("by_fleetId", (q) => q.eq("fleetId", fleetId))
-            .collect()
-        : ctx.db.query("fleetParkingLots").collect(),
+            .take(120)
+        : ctx.db.query("fleetParkingLots").take(120),
     ]);
 
     const rows: AssetSuggestion[] = [];

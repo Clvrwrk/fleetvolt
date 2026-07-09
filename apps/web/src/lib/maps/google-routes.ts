@@ -119,6 +119,35 @@ export function toConvexRouteGeometryArgs(
   return canonicalizeRouteRequest(request);
 }
 
+/** Convex arrays max out at 8192 items — keep road polylines under that.
+ *  Prefer ~800 for fast client transfer while still looking road-accurate. */
+export const MAX_ROUTE_COORDINATES = 800;
+
+/** Evenly sample a dense polyline while always keeping endpoints. */
+export function downsampleRouteCoordinates(
+  coordinates: RoutePoint[],
+  maxPoints = MAX_ROUTE_COORDINATES,
+): RoutePoint[] {
+  if (coordinates.length <= maxPoints) return coordinates;
+  if (maxPoints < 2) return coordinates.slice(0, maxPoints);
+
+  const lastIndex = coordinates.length - 1;
+  const sampled: RoutePoint[] = [];
+  for (let i = 0; i < maxPoints; i += 1) {
+    const index = Math.round((i / (maxPoints - 1)) * lastIndex);
+    const point = coordinates[index]!;
+    const prev = sampled[sampled.length - 1];
+    if (
+      !prev ||
+      prev.latitude !== point.latitude ||
+      prev.longitude !== point.longitude
+    ) {
+      sampled.push(point);
+    }
+  }
+  return sampled;
+}
+
 export function decodeGoogleEncodedPolyline(encoded: string): RoutePoint[] {
   const coordinates: RoutePoint[] = [];
   let index = 0;
@@ -301,9 +330,10 @@ export async function fetchGoogleRouteGeometry(
       );
     }
 
+    const decoded = decodeGoogleEncodedPolyline(encodedPolyline);
     const result: RouteGeometryResult = {
       provider: "google",
-      coordinates: decodeGoogleEncodedPolyline(encodedPolyline),
+      coordinates: downsampleRouteCoordinates(decoded),
       distanceMeters: route.distanceMeters,
       durationSeconds: parseGoogleDurationSeconds(route.duration),
       encodedPolyline,
@@ -311,6 +341,8 @@ export async function fetchGoogleRouteGeometry(
       metadata: {
         requestHash,
         cacheStatus: "miss",
+        coordinateCountRaw: decoded.length,
+        coordinateCountReturned: Math.min(decoded.length, MAX_ROUTE_COORDINATES),
       },
     };
 

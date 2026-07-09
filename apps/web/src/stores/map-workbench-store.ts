@@ -3,6 +3,7 @@ import {
   DEFAULT_WORKBENCH_MODE,
   WORKBENCH_MODE_CONFIG,
 } from "../components/workbench/map-workbench/mode-config";
+import { ROLE_LAYER_IDS } from "../components/workbench/map-workbench/role-layers";
 import type {
   RouteGeometryResult,
   WorkbenchAiResult,
@@ -14,6 +15,7 @@ import type {
   WorkbenchResultCard,
   WorkbenchSelection,
 } from "../components/workbench/map-workbench/types";
+import type { WorkbenchMapAsset } from "../components/workbench/map-workbench/layers/asset-marker-layer";
 
 export type MapWorkbenchState = {
   mode: WorkbenchMode;
@@ -21,6 +23,8 @@ export type MapWorkbenchState = {
   activeLayers: WorkbenchLayerId[];
   selectedAsset: WorkbenchSelection | null;
   routeGeometry: RouteGeometryResult | null;
+  /** Live pins from Calculate (chargers/parking/POIs). Empty → canvas falls back to samples. */
+  mapAssets: WorkbenchMapAsset[];
   resultCards: WorkbenchResultCard[];
   providerWarnings: string[];
   focusBounds: {
@@ -35,6 +39,7 @@ export type MapWorkbenchState = {
   toggleLayer: (layerId: WorkbenchLayerId) => void;
   setLayers: (layerIds: WorkbenchLayerId[]) => void;
   selectAsset: (selection: WorkbenchSelection | null) => void;
+  setMapAssets: (assets: WorkbenchMapAsset[]) => void;
   applyMapActions: (actions: WorkbenchMapAction[]) => void;
   applyAiResult: (result: WorkbenchAiResult) => void;
 };
@@ -81,6 +86,7 @@ function initialStateForMode(mode: WorkbenchMode) {
     activeLayers: [...config.defaultLayers],
     selectedAsset: null,
     routeGeometry: null,
+    mapAssets: [],
     resultCards: [],
     providerWarnings: [],
     focusBounds: null,
@@ -92,20 +98,17 @@ function sortLayersForMode(
   mode: WorkbenchMode,
   layerIds: WorkbenchLayerId[],
 ): WorkbenchLayerId[] {
-  const defaultOrder = WORKBENCH_MODE_CONFIG[mode].defaultLayers;
+  // Prefer role toolbar order (full suite), fall back to mode defaults.
+  const order = ROLE_LAYER_IDS[mode] ?? WORKBENCH_MODE_CONFIG[mode].defaultLayers;
   return [...layerIds].sort((a, b) => {
-    const aIndex = defaultOrder.indexOf(a);
-    const bIndex = defaultOrder.indexOf(b);
+    const aIndex = order.indexOf(a);
+    const bIndex = order.indexOf(b);
 
     if (aIndex === -1 && bIndex === -1) {
       return a.localeCompare(b);
     }
-    if (aIndex === -1) {
-      return 1;
-    }
-    if (bIndex === -1) {
-      return -1;
-    }
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
     return aIndex - bIndex;
   });
 }
@@ -217,7 +220,21 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
     }));
   },
   selectAsset: (selection) => {
-    set({ selectedAsset: selection });
+    set((state) => {
+      // Same asset again → deselect (marker is the open/close control).
+      if (
+        selection &&
+        state.selectedAsset &&
+        state.selectedAsset.id === selection.id &&
+        state.selectedAsset.type === selection.type
+      ) {
+        return { selectedAsset: null };
+      }
+      return { selectedAsset: selection };
+    });
+  },
+  setMapAssets: (assets) => {
+    set({ mapAssets: assets });
   },
   applyMapActions: (actions) => {
     for (const action of actions) {

@@ -1,13 +1,14 @@
 "use client";
 
-import { X } from "lucide-react";
-import type { WorkbenchSelection } from "../types";
+import { useMemo } from "react";
+import { assessRouteProximity } from "@/lib/maps/route-proximity";
 import { cn } from "@/lib/utils";
+import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
+import type { WorkbenchSelection } from "../types";
 
 export type SelectedAssetCardProps = {
   selection: WorkbenchSelection | null;
   className?: string;
-  onClose?: () => void;
 };
 
 function formatSelectionType(type: WorkbenchSelection["type"]): string {
@@ -23,7 +24,12 @@ function metadataRows(metadata: Record<string, unknown> | undefined) {
   }
 
   return Object.entries(metadata)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .filter(([key, value]) => {
+      if (value === undefined || value === null || value === "") return false;
+      // Keep the card focused — proximity is shown as the banner.
+      if (key === "subtitle" || key === "metric") return false;
+      return true;
+    })
     .slice(0, 6)
     .map(([key, value]) => ({
       key,
@@ -35,7 +41,32 @@ function metadataRows(metadata: Record<string, unknown> | undefined) {
     }));
 }
 
-export function SelectedAssetCard({ selection, className, onClose }: SelectedAssetCardProps) {
+export function SelectedAssetCard({ selection, className }: SelectedAssetCardProps) {
+  const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
+
+  const proximity = useMemo(() => {
+    if (
+      !selection ||
+      typeof selection.latitude !== "number" ||
+      typeof selection.longitude !== "number" ||
+      !Number.isFinite(selection.latitude) ||
+      !Number.isFinite(selection.longitude)
+    ) {
+      return null;
+    }
+
+    const path = (routeGeometry?.coordinates ?? [])
+      .filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude))
+      .map((c) => ({ lat: c.latitude, lng: c.longitude }));
+
+    if (path.length < 2) return null;
+
+    return assessRouteProximity(
+      { lat: selection.latitude, lng: selection.longitude },
+      path,
+    );
+  }, [routeGeometry?.coordinates, selection]);
+
   if (!selection) {
     return null;
   }
@@ -47,30 +78,42 @@ export function SelectedAssetCard({ selection, className, onClose }: SelectedAss
       data-testid="selected-asset-card"
       data-asset-id={selection.id}
       data-asset-type={selection.type}
+      data-on-route={proximity ? String(proximity.onRoute) : undefined}
       className={cn(
         "pointer-events-auto w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-black/10 bg-white/95 p-4 text-[var(--fv-graphite)] shadow-2xl backdrop-blur",
         className,
       )}
       aria-label={`${selection.label} details`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--fv-steel)]">
-            {formatSelectionType(selection.type)} · {selection.layerId}
-          </div>
-          <h3 className="mt-1 text-base font-bold leading-tight">{selection.label}</h3>
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--fv-steel)]">
+          {formatSelectionType(selection.type)} · {selection.layerId}
         </div>
-        {onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex min-h-9 min-w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-[var(--fv-steel)] transition hover:border-[var(--fv-accent)] hover:text-[var(--fv-graphite)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]"
-            aria-label="Close selected asset card"
-          >
-            <X size={16} />
-          </button>
-        ) : null}
+        <h3 className="mt-1 text-base font-bold leading-tight">{selection.label}</h3>
+        <p className="mt-1 text-[10px] text-[var(--fv-steel)]">
+          Tap the map marker again to close
+        </p>
       </div>
+
+      {proximity ? (
+        <div
+          data-testid="selected-asset-route-proximity"
+          className={cn(
+            "mt-3 rounded-xl px-3 py-2 text-[11px] uppercase tracking-[0.08em]",
+            proximity.onRoute
+              ? "border border-[var(--fv-signal-green)]/30 bg-[var(--fv-signal-green)]/10 font-bold text-[var(--fv-signal-green)]"
+              : "border-2 border-[var(--fv-alert-red)] bg-[var(--fv-alert-red)]/10 font-black text-[var(--fv-alert-red)]",
+          )}
+          role="status"
+        >
+          {proximity.label}
+          {!proximity.onRoute ? (
+            <span className="mt-1 block text-[10px] font-semibold normal-case tracking-normal text-[var(--fv-alert-red)]/90">
+              Dotted blue spur = leave main route → this stop → rejoin.
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {typeof selection.latitude === "number" && typeof selection.longitude === "number" ? (
         <div className="mt-3 rounded-xl bg-[var(--fv-bg)] px-3 py-2 font-[family-name:var(--font-jetbrains-mono)] text-[11px] text-[var(--fv-steel)]">

@@ -20,17 +20,44 @@ import type { ChargerSearchCtx } from "./chargingPlanner";
 
 const MIN_HD_POWER_KW = 350.0;
 
+/**
+ * Workbench / scenario forms pass file slugs (ecascadia_438); truckConfigs
+ * rows are keyed by display `name`. Keep this map in sync with
+ * apps/web/src/lib/scenario-schema.ts TRUCK_SLUG_BY_NAME.
+ */
+const TRUCK_NAME_BY_SLUG: Record<string, string> = {
+  ecascadia_291: "Freightliner eCascadia 291 kWh",
+  ecascadia_438: "Freightliner eCascadia 438 kWh",
+  t680e_375: "Kenworth T680E 375 kWh",
+  vnr_electric_375: "Volvo VNR Electric 375 kWh",
+  vnr_electric_565: "Volvo VNR Electric 565 kWh",
+  tesla_semi_800: "Tesla Semi Long Range",
+  tesla_semi_500: "Tesla Semi Standard Range",
+};
+
+function resolveTruckLookupName(slugOrName: string): string {
+  return TRUCK_NAME_BY_SLUG[slugOrName] ?? slugOrName;
+}
+
 // ── Internal queries for table reads (actions can't use ctx.db) ─────────────
 
-/** Query: get truck config by name. */
+/** Query: get truck config by display name or workbench slug. */
 export const getTruckConfig = query({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
-    const row = await ctx.db
+    const lookup = resolveTruckLookupName(name);
+    const byName = await ctx.db
       .query("truckConfigs")
-      .withIndex("by_name", (q) => q.eq("name", name))
+      .withIndex("by_name", (q) => q.eq("name", lookup))
       .first();
-    return row;
+    if (byName) return byName;
+    if (lookup !== name) {
+      return await ctx.db
+        .query("truckConfigs")
+        .withIndex("by_name", (q) => q.eq("name", name))
+        .first();
+    }
+    return null;
   },
 });
 

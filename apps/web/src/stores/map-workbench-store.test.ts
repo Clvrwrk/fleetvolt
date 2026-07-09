@@ -131,6 +131,23 @@ describe("useMapWorkbenchStore", () => {
     assert.equal(useMapWorkbenchStore.getState().selectedAsset, null);
   });
 
+  it("toggles the same asset off on second select", () => {
+    const selection = {
+      id: "charger-2",
+      type: "charger" as const,
+      label: "Ontario plaza",
+      layerId: "chargers" as const,
+      latitude: 34.05,
+      longitude: -117.65,
+    };
+
+    useMapWorkbenchStore.getState().selectAsset(selection);
+    assert.equal(useMapWorkbenchStore.getState().selectedAsset?.id, "charger-2");
+
+    useMapWorkbenchStore.getState().selectAsset(selection);
+    assert.equal(useMapWorkbenchStore.getState().selectedAsset, null);
+  });
+
   it("applies AI map actions and cards without inventing metrics", () => {
     const origin = {
       id: "polb",

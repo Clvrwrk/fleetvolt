@@ -11,6 +11,7 @@ import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import { cn } from "@/lib/utils";
 import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
+import { DetourLegsLayer } from "./layers/detour-legs-layer";
 import { GeoRegionLayer, type WorkbenchGeoRegion } from "./layers/geo-region-layer";
 import { RouteLayer } from "./layers/route-layer";
 import { SelectedAssetCard } from "./layers/selected-asset-card";
@@ -21,7 +22,10 @@ import type {
 } from "./types";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAP_ID;
+/** Prefer monochrome cloud style when configured; fall back to the primary vector Map ID. */
+const MAP_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_MAP_ID_MONOCHROME ||
+  process.env.NEXT_PUBLIC_GOOGLE_MAP_ID;
 
 const CA_BOUNDS: google.maps.LatLngBoundsLiteral = {
   north: 42.1,
@@ -262,7 +266,9 @@ function MapFocusController({
     if (
       selectedAsset &&
       typeof selectedAsset.latitude === "number" &&
-      typeof selectedAsset.longitude === "number"
+      Number.isFinite(selectedAsset.latitude) &&
+      typeof selectedAsset.longitude === "number" &&
+      Number.isFinite(selectedAsset.longitude)
     ) {
       map.panTo({ lat: selectedAsset.latitude, lng: selectedAsset.longitude });
       const zoom = map.getZoom();
@@ -272,7 +278,11 @@ function MapFocusController({
       return;
     }
 
-    const routeBounds = boundsForCoordinates(routeCoordinates);
+    const routeBounds = boundsForCoordinates(
+      routeCoordinates.filter(
+        (c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude),
+      ),
+    );
     if (routeBounds) {
       map.fitBounds(paddedBounds(routeBounds), 56);
       return;
@@ -294,6 +304,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const selectedAsset = useMapWorkbenchStore((state) => state.selectedAsset);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
+  const mapAssets = useMapWorkbenchStore((state) => state.mapAssets);
   const focusBounds = useMapWorkbenchStore((state) => state.focusBounds);
   const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
 
@@ -303,11 +314,30 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
     }
   }, [mode, reset, storeMode]);
 
-  const routeCoordinates = routeGeometry?.coordinates.length
-    ? routeGeometry.coordinates
-    : SAMPLE_ROUTES[mode];
+  const routeCoordinates = useMemo(() => {
+    const raw = routeGeometry?.coordinates ?? [];
+    const valid = raw.filter(
+      (c) =>
+        Number.isFinite(c.latitude) &&
+        Number.isFinite(c.longitude) &&
+        Math.abs(c.latitude) <= 90 &&
+        Math.abs(c.longitude) <= 180,
+    );
+    return valid.length >= 2 ? valid : SAMPLE_ROUTES[mode];
+  }, [mode, routeGeometry?.coordinates]);
 
-  const assets = useMemo(() => SAMPLE_ASSETS[mode], [mode]);
+  const roadSnapStatus =
+    routeCoordinates.length >= 8
+      ? "road"
+      : routeCoordinates.length >= 2
+        ? "preview"
+        : "empty";
+
+  const assets = useMemo(() => {
+    // Prefer live Calculate pins; fall back to mode samples only before first run.
+    if (mapAssets.length > 0) return mapAssets;
+    return SAMPLE_ASSETS[mode];
+  }, [mapAssets, mode]);
   const defaultBounds = mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS;
 
   if (!API_KEY || !MAP_ID) {
@@ -346,6 +376,11 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             coordinates={routeCoordinates}
             visible={visibleLayer(activeLayers, "route")}
           />
+          <DetourLegsLayer
+            routeCoordinates={routeCoordinates}
+            selectedAsset={selectedAsset}
+            visible={visibleLayer(activeLayers, "route")}
+          />
           <GeoRegionLayer
             regions={SAMPLE_REGIONS}
             visible={visibleLayer(activeLayers, "geo-regions")}
@@ -367,10 +402,24 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
         <div className="mt-1 text-sm font-semibold text-[var(--fv-graphite)]">
           Shared FleetVolt canvas
         </div>
+        <div
+          data-testid="route-snap-status"
+          data-status={roadSnapStatus}
+          className={cn(
+            "mt-2 text-[10px] font-bold uppercase tracking-[0.12em]",
+            roadSnapStatus === "road"
+              ? "text-[var(--fv-signal-green)]"
+              : "text-[var(--fv-alert-red)]",
+          )}
+        >
+          {roadSnapStatus === "road"
+            ? `Road-snapped · ${routeCoordinates.length} pts`
+            : "Straight-line preview · snapping to roads…"}
+        </div>
       </div>
 
       <div className="absolute bottom-5 right-5 z-10">
-        <SelectedAssetCard selection={selectedAsset} onClose={() => selectAsset(null)} />
+        <SelectedAssetCard selection={selectedAsset} />
       </div>
     </div>
   );

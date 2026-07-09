@@ -27,6 +27,11 @@ export default function ErrorBoundary({
           <p className="text-sm text-[var(--fv-text-muted)]">
             An unexpected error occurred. Your data is safe — try reloading the page.
           </p>
+          {process.env.NODE_ENV === "development" && error.message ? (
+            <p className="max-h-32 overflow-y-auto rounded-lg bg-black/5 px-3 py-2 text-left text-xs font-mono text-[var(--fv-text-muted)]">
+              {error.message}
+            </p>
+          ) : null}
           {error.digest && (
             <p className="text-xs text-[var(--fv-text-muted)] font-mono">
               Error ID: {error.digest}

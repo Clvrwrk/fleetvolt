@@ -12,23 +12,26 @@ import { MobileTabBar } from "./mobile-tab-bar";
 //
 // The new app chrome for ALL authenticated pages. Replaces the old NavHeader.
 //
-// Layout:
+// Layout (dashboards / non-workbench):
 //   ┌──────────────────────────────────────────────────────┐
 //   │ ┌────┐  Top Bar (56px)                                │
 //   │ │ S  │  ┌─────────────────────────────────────────┐   │
 //   │ │ i  │  │ PageHeader (title+breadcrumb) │ UserMenu│   │
 //   │ │ d  │  └─────────────────────────────────────────┘   │
 //   │ │ e  │  ┌─────────────────────────────────────────┐   │
-//   │ │ b  │  │                                         │   │
-//   │ │ a  │  │           Content Area (children)       │   │
+//   │ │ b  │  │           Content Area (children)       │   │
+//   │ │ a  │  │                                         │   │
 //   │ │ r  │  │                                         │   │
-//   │ │    │  │                                         │   │
 //   │ │260px│ └─────────────────────────────────────────┘   │
 //   │ └────┘                                                │
 //   └──────────────────────────────────────────────────────┘
 //
+// Map workbench routes (Phase 17 — see TOOL-RAIL.md):
+//   Global Sidebar is HIDDEN. Left chrome is the workbench tool rail
+//   (role nav above, accordion tools below) inside MapWorkbenchShell.
+//
 // Sidebar: 260px expanded, 56px collapsed (Wave 3). PageHeader in top bar.
-// MobileTabBar: bottom-fixed on <768px screens.
+// MobileTabBar: bottom-fixed on <768px screens (hidden on map-first routes).
 //
 // Public routes (/, /role-select, /callback) bypass the AppShell entirely
 // and render children without the sidebar/top bar.
@@ -91,6 +94,14 @@ function SignInButton() {
   );
 }
 
+function isMapWorkbenchRoute(pathname: string): boolean {
+  if (pathname === "/workbench" || pathname.startsWith("/workbench/")) return true;
+  if (pathname === "/driver/day-plan" || pathname.startsWith("/driver/day-plan/")) return true;
+  if (pathname === "/fleet/contract-plan" || pathname.startsWith("/fleet/contract-plan/")) return true;
+  if (pathname === "/caas/gap-map" || pathname.startsWith("/caas/gap-map/")) return true;
+  return false;
+}
+
 function AppShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useWorkOSAuth();
@@ -101,17 +112,25 @@ function AppShellInner({ children }: { children: ReactNode }) {
   }
 
   const pageTitle = getPageTitle(pathname);
+  // Map workbench owns its own stacked left tool rail — hide global Sidebar.
+  const mapFirst = isMapWorkbenchRoute(pathname);
 
   return (
     <div className="min-h-screen bg-[var(--fv-bg)]">
-      <Sidebar />
-      {/* Content shifts right to accommodate sidebar width */}
-      <div className="md:pl-[260px] pl-14">
+      {!mapFirst ? <Sidebar /> : null}
+      <div className={mapFirst ? "pl-0" : "pl-14 md:pl-[260px]"}>
         <TopBar pageTitle={pageTitle} />
-        <main className="min-h-[calc(100dvh-3.5rem)] min-w-0 pb-14 md:pb-0">{children}</main>
+        <main
+          className={
+            mapFirst
+              ? "fv-app-main fv-app-main--map min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0"
+              : "fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0 pb-14 md:pb-0"
+          }
+        >
+          {children}
+        </main>
       </div>
-      {/* Bottom tab bar for mobile */}
-      <MobileTabBar />
+      {!mapFirst ? <MobileTabBar /> : null}
     </div>
   );
 }

@@ -117,8 +117,11 @@ export async function nearestPoints<T extends PointTable>(
   const { table, point, limit, maxDistanceM, filter, filterEq } = args;
 
   if (SPATIAL_BACKEND === "component") {
-    // over-fetch when a JS post-filter is present so the limit still fills
-    const fetchLimit = (limit ?? 64) * (filter ? 5 : 1);
+    // Over-fetch only when a JS post-filter is present AND we lack an in-index
+    // filterEq. With filterEq (e.g. class8), the index already narrows results —
+    // multiplying limit×5 was blowing the 32k document-read cap on corridor scans.
+    const fetchLimit =
+      filter && !filterEq ? (limit ?? 64) * 2 : (limit ?? 64);
     const hits = await geoIndex().nearest(ctx, {
       point: { latitude: point.lat, longitude: point.lng },
       limit: fetchLimit,

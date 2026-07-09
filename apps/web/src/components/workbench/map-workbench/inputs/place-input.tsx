@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import { useQuery } from "convex/react";
 import { Check, Loader2, MapPin, Navigation, Search } from "lucide-react";
 import { api } from "../../../../../convex/_generated/api";
@@ -13,6 +22,31 @@ import {
   type GooglePlaceSuggestion,
 } from "@/lib/maps/google-places";
 import type { WorkbenchPlace, WorkbenchPlaceKind } from "../types";
+
+/**
+ * Convex useQuery throws into the nearest error boundary when a function is
+ * missing or fails. Catch here so place search degrades to Google/manual only
+ * instead of crashing the whole workbench.
+ */
+class SoftQueryBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn("[PlaceInput] local asset search unavailable:", error.message, info.componentStack);
+  }
+
+  render() {
+    if (this.state.failed) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 type FleetVoltAssetSuggestion = {
   id: string;
@@ -107,14 +141,22 @@ function isAmbiguousSelection(suggestion: PlaceSuggestion, suggestions: PlaceSug
   return nearMatches.length > 1;
 }
 
-export function PlaceInput({
+function useLocalPlaceAssets(trimmedInput: string, fleetId?: string) {
+  return useQuery(
+    api["workbench/queries"].searchPlaceAssets,
+    trimmedInput.length >= 2 ? { query: trimmedInput, limit: 7, fleetId } : "skip",
+  ) as FleetVoltAssetSuggestion[] | undefined;
+}
+
+function PlaceInputBody({
   label,
   value,
   onChange,
   placeholder = "Search ports, yards, chargers, addresses, or lat,lng",
   fleetId,
   className,
-}: PlaceInputProps) {
+  localAssetsEnabled,
+}: PlaceInputProps & { localAssetsEnabled: boolean }) {
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
   const [inputValue, setInputValue] = useState(value?.label ?? "");
@@ -126,10 +168,10 @@ export function PlaceInput({
   const debouncedInput = useDebouncedValue(inputValue, 250);
   const trimmedInput = debouncedInput.trim();
 
-  const localAssets = useQuery(
-    api.workbench.queries.searchPlaceAssets,
-    trimmedInput.length >= 2 ? { query: trimmedInput, limit: 7, fleetId } : "skip",
-  ) as FleetVoltAssetSuggestion[] | undefined;
+  const localAssets = useLocalPlaceAssets(
+    localAssetsEnabled ? trimmedInput : "",
+    fleetId,
+  );
 
   useEffect(() => {
     if (value?.label && value.label !== inputValue && !isOpen) {
@@ -300,5 +342,15 @@ export function PlaceInput({
         </div>
       ) : null}
     </div>
+  );
+}
+
+export function PlaceInput(props: PlaceInputProps) {
+  return (
+    <SoftQueryBoundary
+      fallback={<PlaceInputBody {...props} localAssetsEnabled={false} />}
+    >
+      <PlaceInputBody {...props} localAssetsEnabled />
+    </SoftQueryBoundary>
   );
 }

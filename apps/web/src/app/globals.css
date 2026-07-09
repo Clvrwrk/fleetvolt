@@ -633,10 +633,20 @@ body {
   padding: 0;
 }
 
+/* Document-style pages keep a readable column. Map workbench must be full-bleed. */
 main {
   max-width: 960px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+}
+
+main.fv-app-main,
+main.fv-app-main--map,
+[data-testid="map-workbench-shell"] main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 h1 {
@@ -858,6 +868,12 @@ th {
   color: var(--fv-steel);
   letter-spacing: 1.5px;
   text-transform: uppercase;
+}
+
+/* Workbench accordion eyebrows — design-system blue must beat default steel. */
+.fv-mono-label.fv-workbench-eyebrow {
+  color: var(--fv-blueprint-blue);
+  font-weight: 700;
 }
 
 /* ── .fv-mono-value — JetBrains Mono data value (§04 Typography) ── */

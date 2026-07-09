@@ -32,8 +32,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className={`${inter.className} min-w-[1024px] antialiased`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
+      {/* Extensions (Grammarly, Dashlane, etc.) inject attrs on body before hydrate. */}
+      <body
+        className={`${inter.className} min-w-[1024px] antialiased`}
+        suppressHydrationWarning
+      >
         <ConvexClientProvider>
           <AppShell>{children}</AppShell>
         </ConvexClientProvider>

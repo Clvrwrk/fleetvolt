@@ -550,24 +550,16 @@ Current constraints:
   - `<main className="min-h-[calc(100vh-3.5rem)] pb-14 md:pb-0">`
 - It assumes expanded sidebar width `260px` on desktop.
 
-Issue for Phase 17:
+**Resolved for Phase 17 (locked — see `TOOL-RAIL.md`):**
 
-- Sidebar can collapse to 56px in `sidebar.tsx`, but AppShell always applies `md:pl-[260px]`. This wastes horizontal space for a full-viewport workbench when collapsed.
-- Workbench needs map to dominate the viewport while preserving Google attribution and not being buried by padding.
+- Map-workbench routes use `isMapWorkbenchRoute()` → **hide global `Sidebar`**, `pl-0`, full-bleed `fv-app-main--map`.
+- Left chrome is the workbench **tool rail**: role nav **above**, accordion tool panels **below** (`map-workbench-shell.tsx` + `workbench-rail-nav.tsx`).
+- Dashboards keep the Phase 16 sidebar; do not reintroduce dual left chrome on `/workbench` / day-plan / contract-plan / gap-map.
 
-Options:
+Optional follow-ups (non-blocking):
 
-1. Minimal Phase 17:
-   - Keep AppShell as-is and build the workbench inside `main` with `h-[calc(100vh-3.5rem)]` and no internal max-width.
-2. Better follow-up:
-   - Lift sidebar collapsed width into context/store or CSS variable so content padding tracks actual sidebar width.
-3. Route-level escape hatch:
-   - Add a route metadata or pathname check for full-bleed workbench pages, e.g. `main` class without page padding and with `overflow-hidden`.
-
-Files likely modified:
-
-- `apps/web/src/components/nav/app-shell.tsx`
-- `apps/web/src/components/nav/use-role-nav.ts`
+- Soft-fallback role nav on dashboards when `useUserRole()` lags.
+- Track collapsed sidebar width via CSS variable on non-workbench pages.
 
 ---
 

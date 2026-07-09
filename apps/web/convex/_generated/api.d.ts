@@ -83,6 +83,7 @@ import type * as ports from "../ports.js";
 import type * as report from "../report.js";
 import type * as seed_ports from "../seed/ports.js";
 import type * as spatial from "../spatial.js";
+import type * as spatial_reindex from "../spatial/reindex.js";
 import type * as trucks_ingest from "../trucks/ingest.js";
 import type * as trucks_mutations from "../trucks/mutations.js";
 import type * as trucks_queries from "../trucks/queries.js";
@@ -93,6 +94,7 @@ import type * as users_queries from "../users/queries.js";
 import type * as workbench_actions from "../workbench/actions.js";
 import type * as workbench_ai from "../workbench/ai.js";
 import type * as workbench_queries from "../workbench/queries.js";
+import type * as workbench_runs from "../workbench/runs.js";
 
 import type {
   ApiFromModules,
@@ -176,6 +178,7 @@ declare const fullApi: ApiFromModules<{
   report: typeof report;
   "seed/ports": typeof seed_ports;
   spatial: typeof spatial;
+  "spatial/reindex": typeof spatial_reindex;
   "trucks/ingest": typeof trucks_ingest;
   "trucks/mutations": typeof trucks_mutations;
   "trucks/queries": typeof trucks_queries;
@@ -186,6 +189,7 @@ declare const fullApi: ApiFromModules<{
   "workbench/actions": typeof workbench_actions;
   "workbench/ai": typeof workbench_ai;
   "workbench/queries": typeof workbench_queries;
+  "workbench/runs": typeof workbench_runs;
 }>;
 
 /**
@@ -215,5 +219,6 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  geospatial: import("@convex-dev/geospatial/_generated/component.js").ComponentApi<"geospatial">;
   workOSAuthKit: import("@convex-dev/workos-authkit/_generated/component.js").ComponentApi<"workOSAuthKit">;
 };

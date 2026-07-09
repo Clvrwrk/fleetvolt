@@ -114,18 +114,24 @@ function NavItemLink({
   );
 }
 
-export function Sidebar() {
+type SidebarProps = {
+  /** When true (map workbench), keep the app nav as a 56px icon rail. */
+  forceCollapsed?: boolean;
+};
+
+export function Sidebar({ forceCollapsed = false }: SidebarProps) {
   const { items, loading, activeHref } = useRoleNav();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Load persisted collapse state after mount (avoids hydration mismatch)
   useEffect(() => {
-    setCollapsed(getInitialCollapsed());
+    setCollapsed(forceCollapsed ? true : getInitialCollapsed());
     setMounted(true);
-  }, []);
+  }, [forceCollapsed]);
 
   const toggleCollapsed = () => {
+    if (forceCollapsed) return;
     const next = !collapsed;
     setCollapsed(next);
     try {
@@ -135,7 +141,8 @@ export function Sidebar() {
     }
   };
 
-  const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+  const effectiveCollapsed = forceCollapsed || collapsed;
+  const width = effectiveCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
   return (
     <aside
@@ -150,10 +157,10 @@ export function Sidebar() {
       {/* Logo at top */}
       <div
         className="flex h-14 shrink-0 items-center border-b border-white/8"
-        style={{ padding: collapsed ? "0 14px" : "0 20px" }}
+        style={{ padding: effectiveCollapsed ? "0 14px" : "0 20px" }}
       >
         <Link href="/" className="flex items-center no-underline">
-          {collapsed ? (
+          {effectiveCollapsed ? (
             // Compact: icon-only logo (vertical variant fits 56px)
             <Image
               src="/fleetvolt-logo-vertical-light.svg"
@@ -179,7 +186,7 @@ export function Sidebar() {
       {/* Nav items */}
       <nav
         className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-3"
-        style={{ padding: collapsed ? "0 8px" : "0 12px" }}
+        style={{ padding: effectiveCollapsed ? "0 8px" : "0 12px" }}
       >
         {loading ? (
           // Skeleton placeholders while role loads
@@ -189,8 +196,8 @@ export function Sidebar() {
                 key={i}
                 className="h-10 rounded-lg bg-white/5 animate-pulse"
                 style={{
-                  margin: collapsed ? "0 auto" : undefined,
-                  width: collapsed ? 40 : "100%",
+                  margin: effectiveCollapsed ? "0 auto" : undefined,
+                  width: effectiveCollapsed ? 40 : "100%",
                 }}
               />
             ))}
@@ -201,40 +208,50 @@ export function Sidebar() {
               key={item.href}
               item={item}
               active={activeHref === item.href}
-              collapsed={collapsed}
+              collapsed={effectiveCollapsed}
             />
           ))
         ) : null}
       </nav>
 
-      {/* Collapse toggle at bottom */}
+      {/* Collapse toggle at bottom — hidden when map workbench forces icon rail */}
       <div
         className="shrink-0 border-t border-white/8"
-        style={{ padding: collapsed ? "8px" : "8px 12px" }}
+        style={{ padding: effectiveCollapsed ? "8px" : "8px 12px" }}
       >
-        <button
-          onClick={toggleCollapsed}
-          className={`
-            flex items-center gap-2 rounded-lg text-[var(--fv-steel)] transition-all
-            duration-[150ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-            hover:-translate-y-px hover:text-[var(--fv-fog)]
-            ${collapsed ? "h-9 w-9 justify-center mx-auto" : "h-9 w-full px-3"}
-          `}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand" : "Collapse"}
-          style={{ minHeight: 36 }}
-        >
-          {collapsed ? (
-            <ChevronRight size={16} />
-          ) : (
-            <>
-              <ChevronLeft size={16} />
-              <span className="text-[11px] font-mono uppercase tracking-wider">
-                Collapse
-              </span>
-            </>
-          )}
-        </button>
+        {!forceCollapsed ? (
+          <button
+            onClick={toggleCollapsed}
+            className={`
+              flex items-center gap-2 rounded-lg text-[var(--fv-steel)] transition-all
+              duration-[150ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+              hover:-translate-y-px hover:text-[var(--fv-fog)]
+              ${effectiveCollapsed ? "h-9 w-9 justify-center mx-auto" : "h-9 w-full px-3"}
+            `}
+            aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={effectiveCollapsed ? "Expand" : "Collapse"}
+            style={{ minHeight: 36 }}
+          >
+            {effectiveCollapsed ? (
+              <ChevronRight size={16} />
+            ) : (
+              <>
+                <ChevronLeft size={16} />
+                <span className="text-[11px] font-mono uppercase tracking-wider">
+                  Collapse
+                </span>
+              </>
+            )}
+          </button>
+        ) : (
+          <div
+            className="mx-auto flex h-9 w-9 items-center justify-center text-[var(--fv-steel)]"
+            title="Map workbench keeps nav collapsed"
+            aria-hidden="true"
+          >
+            <ChevronRight size={16} className="opacity-40" />
+          </div>
+        )}
       </div>
     </aside>
   );

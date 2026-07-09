@@ -21,6 +21,9 @@ type ContractConstraintsProps = {
   className?: string;
 };
 
+/** Stable fallback — never allocate `{}` inside a Zustand selector (infinite loop). */
+const EMPTY_METADATA: Record<string, unknown> = Object.freeze({});
+
 type ContractPatchValue = number | string | boolean;
 
 function todayIsoDate(): string {
@@ -61,7 +64,9 @@ export function getFleetContractDefaults(): FleetContractDefaults {
 }
 
 export function ContractConstraints({ className }: ContractConstraintsProps) {
-  const metadata = useMapWorkbenchStore((state) => state.draft.metadata ?? {});
+  const metadata = useMapWorkbenchStore(
+    (state) => state.draft.metadata ?? EMPTY_METADATA,
+  );
   const applyDraftPatch = useMapWorkbenchStore((state) => state.applyDraftPatch);
 
   const serviceDate = typeof metadata.serviceDate === "string" ? metadata.serviceDate : todayIsoDate();
