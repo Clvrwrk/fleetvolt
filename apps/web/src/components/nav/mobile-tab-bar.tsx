@@ -80,8 +80,8 @@ function TabItem({
 export function MobileTabBar() {
   const { items, loading, activeHref } = useRoleNav();
 
-  // Don't render while loading or if no items (logged out / no role)
-  if (loading || items.length === 0) return null;
+  // Don't render if no items; allow fallback nav (e.g. /fleet) while role loads
+  if (items.length === 0) return null;
 
   // Show first 4 nav items (Research §7.1: "bottom tab bar for ≤5 items")
   const tabItems = items.slice(0, 4);

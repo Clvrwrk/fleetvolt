@@ -23,6 +23,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { CatalogSidebarFilters } from "@/components/catalog/catalog-filters";
+import {
+  loadSavedFleets,
+  SAVED_FLEETS_EVENT,
+  type SavedFleet,
+} from "@/lib/fleet/saved-fleets";
 import { useRoleNav, type NavItem } from "./use-role-nav";
 
 // ── Phase 16 / Wave 3: Sidebar ─────────────────────────────────────────────
@@ -136,6 +141,7 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
   const { items, loading, activeHref } = useRoleNav();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [savedFleets, setSavedFleets] = useState<SavedFleet[]>([]);
   const prevPathRef = useRef(pathname);
   const showCatalogFilters =
     mounted && !forceCollapsed && !collapsed && isCatalogRoute(pathname);
@@ -145,6 +151,17 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
     setCollapsed(forceCollapsed ? true : getInitialCollapsed());
     setMounted(true);
   }, [forceCollapsed]);
+
+  useEffect(() => {
+    const sync = () => setSavedFleets(loadSavedFleets());
+    sync();
+    window.addEventListener(SAVED_FLEETS_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(SAVED_FLEETS_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   // Entering /catalog: expand once so filters are visible (user can still collapse).
   useEffect(() => {
@@ -176,6 +193,11 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
 
   const effectiveCollapsed = forceCollapsed || collapsed;
   const width = effectiveCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+  const showMyFleetsSubmenu =
+    mounted &&
+    !effectiveCollapsed &&
+    items.some((i) => i.href === "/fleet#fleets") &&
+    savedFleets.length > 0;
 
   return (
     <aside
@@ -224,8 +246,8 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
         }`}
         style={{ padding: effectiveCollapsed ? "0 8px" : "0 12px" }}
       >
-        {loading ? (
-          // Skeleton placeholders while role loads
+        {loading && items.length === 0 ? (
+          // Skeleton placeholders while role loads (skip if route already has fallback nav)
           <>
             {[1, 2, 3, 4].map((i) => (
               <div
@@ -240,12 +262,34 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
           </>
         ) : items.length > 0 ? (
           items.map((item) => (
-            <NavItemLink
-              key={item.href}
-              item={item}
-              active={activeHref === item.href}
-              collapsed={effectiveCollapsed}
-            />
+            <div key={item.href}>
+              <NavItemLink
+                item={item}
+                active={activeHref === item.href}
+                collapsed={effectiveCollapsed}
+              />
+              {item.href === "/fleet#fleets" && showMyFleetsSubmenu ? (
+                <ul
+                  className="mb-1 ml-3 mt-0.5 space-y-0.5 border-l border-white/10 pl-3"
+                  data-testid="my-fleets-submenu"
+                >
+                  {savedFleets.map((fleet) => (
+                    <li key={fleet.id}>
+                      <Link
+                        href={`/fleet#fleets`}
+                        className="block truncate rounded-md px-2 py-1.5 text-[12px] text-[var(--fv-slate)] no-underline transition hover:bg-white/5 hover:text-[var(--fv-fog)]"
+                        title={`${fleet.name} · ${fleet.routeName} (${fleet.status})`}
+                      >
+                        <span className="font-medium">{fleet.name}</span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-[var(--fv-steel)]">
+                          {fleet.status}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
           ))
         ) : null}
       </nav>

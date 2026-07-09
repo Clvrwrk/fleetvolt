@@ -28,6 +28,7 @@ export type WorkbenchPlace = {
 };
 
 export type WorkbenchLayerId =
+  | "ports"
   | "route"
   | "chargers"
   | "parking"

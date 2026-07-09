@@ -38,7 +38,7 @@ const DRIVER_NAV: NavItem[] = [
   { label: "System Status", href: "/status", icon: "Activity" },
 ];
 
-const FLEET_MANAGER_NAV: NavItem[] = [
+export const FLEET_MANAGER_NAV: NavItem[] = [
   { label: "My Fleets", href: "/fleet#fleets", icon: "LayoutDashboard" },
   { label: "My Drivers", href: "/fleet#drivers", icon: "Users" },
   { label: "My Routes", href: "/fleet#routes", icon: "Route" },
@@ -49,8 +49,8 @@ const FLEET_MANAGER_NAV: NavItem[] = [
 ];
 
 const CAAS_NAV: NavItem[] = [
-  { label: "Dashboard", href: "/caas", icon: "LayoutDashboard" },
-  { label: "Gap Map", href: "/caas/gap-map", icon: "Map" },
+  { label: "Freight Map", href: "/caas", icon: "Map" },
+  { label: "Summary KPIs", href: "/caas?view=summary", icon: "LayoutDashboard" },
   { label: "System Status", href: "/status", icon: "Activity" },
 ];
 
@@ -60,8 +60,19 @@ const NAV_BY_ROLE: Record<FleetVoltRole, NavItem[]> = {
   caas: CAAS_NAV,
 };
 
+function isFleetRoute(pathname: string): boolean {
+  return pathname === "/fleet" || pathname.startsWith("/fleet/");
+}
+
+function isCaasRoute(pathname: string): boolean {
+  return pathname === "/caas" || pathname.startsWith("/caas/");
+}
+
 /**
  * useRoleNav — returns role-filtered nav items + active href detection.
+ *
+ * On /fleet* and /caas* routes, falls back to role nav when role is still null
+ * so the sidebar is never empty for those dashboards.
  *
  * @returns { items: NavItem[], role: string | null, loading: boolean, activeHref: string | null }
  */
@@ -77,7 +88,13 @@ export function useRoleNav() {
     return () => window.removeEventListener("hashchange", sync);
   }, [pathname]);
 
-  const items = role ? NAV_BY_ROLE[role] : [];
+  let items: NavItem[] = role ? NAV_BY_ROLE[role] : [];
+  // Role dashboards must show menus even when role is unset in local/dev.
+  if (items.length === 0 && isFleetRoute(pathname)) {
+    items = FLEET_MANAGER_NAV;
+  } else if (items.length === 0 && isCaasRoute(pathname)) {
+    items = CAAS_NAV;
+  }
 
   // Active item detection: hash targets on /fleet, else exact/prefix match.
   let activeHref: string | null = null;

@@ -18,15 +18,20 @@ const FACET_BUTTONS: { key: FacetKey; label: string }[] = [
   { key: "category", label: "TYPE" },
 ];
 
+/** slug → quantity (qty > 0 means selected) */
+export type FleetSelection = Record<string, number>;
+
 export type FleetVehiclePickerProps = {
-  selectedSlugs: Set<string>;
-  onToggle: (slug: string) => void;
+  selection: FleetSelection;
+  onToggle: (slug: string, displayName?: string) => void;
+  onQtyChange: (slug: string, qty: number) => void;
   onClearSelection?: () => void;
 };
 
 export function FleetVehiclePicker({
-  selectedSlugs,
+  selection,
   onToggle,
+  onQtyChange,
   onClearSelection,
 }: FleetVehiclePickerProps) {
   const facets = useQuery(api.catalog.queries.listFacets, {});
@@ -50,6 +55,8 @@ export function FleetVehiclePicker({
   );
 
   const vehicles = useQuery(api.catalog.queries.list, queryArgs);
+  const selectedCount = Object.keys(selection).length;
+  const totalUnits = Object.values(selection).reduce((s, q) => s + q, 0);
   const activeFilterCount = [
     filters.oem,
     filters.vehicleClassLabel,
@@ -75,8 +82,8 @@ export function FleetVehiclePicker({
           <TechnicalLabel>VEHICLE CATALOG</TechnicalLabel>
           <p className="mt-1 text-sm text-[var(--fv-text-muted)]">
             Select models to build your fleet
-            {selectedSlugs.size > 0
-              ? ` · ${selectedSlugs.size} selected`
+            {selectedCount > 0
+              ? ` · ${selectedCount} model${selectedCount === 1 ? "" : "s"} · ${totalUnits} unit${totalUnits === 1 ? "" : "s"}`
               : ""}
           </p>
         </div>
@@ -147,7 +154,7 @@ export function FleetVehiclePicker({
               Remove all filters
             </button>
           ) : null}
-          {selectedSlugs.size > 0 && onClearSelection ? (
+          {selectedCount > 0 && onClearSelection ? (
             <button
               type="button"
               onClick={onClearSelection}
@@ -170,19 +177,17 @@ export function FleetVehiclePicker({
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {(vehicles as CatalogVehicle[]).map((vehicle) => {
-            const selected = selectedSlugs.has(vehicle.slug);
+            const qty = selection[vehicle.slug];
+            const selected = qty != null && qty > 0;
             const energyLabel = vehicle.energyEstimatePending
               ? "pending"
               : `${formatKwhPerMi(vehicle.kwhPerMiCombined)} kWh/mi`;
 
             return (
-              <button
+              <div
                 key={vehicle.slug}
-                type="button"
-                onClick={() => onToggle(vehicle.slug)}
                 className="group text-left"
                 data-selected={selected ? "true" : "false"}
-                aria-pressed={selected}
               >
                 <SkeuomorphicCard
                   className={cn(
@@ -190,7 +195,14 @@ export function FleetVehiclePicker({
                     selected && "ring-2 ring-[var(--fv-blueprint-blue)]",
                   )}
                 >
-                  <div className="relative aspect-[16/9] w-full bg-[var(--fv-surface-muted)]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onToggle(vehicle.slug, vehicle.displayName)
+                    }
+                    className="relative aspect-[16/9] w-full bg-[var(--fv-surface-muted)]"
+                    aria-pressed={selected}
+                  >
                     {vehicle.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- remote HVIP CDN URLs
                       <img
@@ -218,7 +230,7 @@ export function FleetVehiclePicker({
                     >
                       <Check size={14} strokeWidth={3} />
                     </span>
-                  </div>
+                  </button>
                   <div className="p-3">
                     <p className="truncate text-sm font-semibold text-[var(--fv-text)]">
                       {vehicle.displayName}
@@ -226,6 +238,30 @@ export function FleetVehiclePicker({
                     <p className="truncate text-xs text-[var(--fv-text-muted)]">
                       {vehicle.oem}
                     </p>
+                    {selected ? (
+                      <label
+                        className="mt-2 flex items-center gap-2"
+                        data-testid={`qty-${vehicle.slug}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="fv-mono-label text-[8px]">Qty</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={999}
+                          value={qty}
+                          onChange={(e) => {
+                            const next = Math.max(
+                              1,
+                              Math.min(999, parseInt(e.target.value, 10) || 1),
+                            );
+                            onQtyChange(vehicle.slug, next);
+                          }}
+                          className="fv-input w-16 py-1 text-center text-sm font-mono font-semibold"
+                          aria-label={`Quantity for ${vehicle.displayName}`}
+                        />
+                      </label>
+                    ) : null}
                     <dl className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
                       <div>
                         <dt className="fv-mono-label text-[8px]">Pack</dt>
@@ -257,7 +293,7 @@ export function FleetVehiclePicker({
                     </dl>
                   </div>
                 </SkeuomorphicCard>
-              </button>
+              </div>
             );
           })}
         </div>

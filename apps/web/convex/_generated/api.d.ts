@@ -36,6 +36,7 @@ import type * as faf_ingestActuals from "../faf/ingestActuals.js";
 import type * as faf_lookups from "../faf/lookups.js";
 import type * as faf_mutations from "../faf/mutations.js";
 import type * as faf_queries from "../faf/queries.js";
+import type * as faf_westCoastFlows from "../faf/westCoastFlows.js";
 import type * as fleet_mutations from "../fleet/mutations.js";
 import type * as fleet_queries from "../fleet/queries.js";
 import type * as geo_ingest from "../geo/ingest.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   "faf/lookups": typeof faf_lookups;
   "faf/mutations": typeof faf_mutations;
   "faf/queries": typeof faf_queries;
+  "faf/westCoastFlows": typeof faf_westCoastFlows;
   "fleet/mutations": typeof fleet_mutations;
   "fleet/queries": typeof fleet_queries;
   "geo/ingest": typeof geo_ingest;

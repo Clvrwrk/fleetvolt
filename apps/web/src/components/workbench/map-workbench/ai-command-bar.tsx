@@ -20,7 +20,11 @@ const EXAMPLE_PROMPTS: Record<WorkbenchMode, string[]> = {
     "Apply Oakland to Tracy contract assumptions",
     "Draft fleet contract layers",
   ],
-  caas_gap_map: ["Toggle gap and carrier layers", "Show Class 8 gap opportunity map"],
+  caas_gap_map: [
+    "Show freight volume out of west coast ports",
+    "Highlight Class 8 charger gaps near POLB",
+    "Query census counties with high truck traffic",
+  ],
 };
 
 function humanizeClientError(error: unknown): string {

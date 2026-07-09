@@ -69,7 +69,7 @@ export function WorkbenchRailNav() {
       </Link>
 
       <nav className="flex flex-col gap-0.5 px-3 py-3" aria-label="Role navigation">
-        {loading ? (
+        {loading && items.length === 0 ? (
           <>
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-9 animate-pulse rounded-lg bg-white/5" />

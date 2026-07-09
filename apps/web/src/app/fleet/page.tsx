@@ -4,7 +4,7 @@
  * Fleet Manager dashboard — full-bleed workbench layout.
  * Setup wizard + selectable HVIP catalog to build the fleet.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -15,7 +15,17 @@ import { PrimaryButton } from "@/components/design/primary-button";
 import { StatusBadge } from "@/components/design/status-badge";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { SkeletonContent } from "@/components/design/skeleton-card";
-import { FleetVehiclePicker } from "@/components/fleet/fleet-vehicle-picker";
+import {
+  FleetVehiclePicker,
+  type FleetSelection,
+} from "@/components/fleet/fleet-vehicle-picker";
+import { CreateFleetModal } from "@/components/fleet/create-fleet-modal";
+import { CelebrationOverlay } from "@/components/fleet/celebration-overlay";
+import {
+  addSavedFleet,
+  type FleetStatus,
+  type SavedFleetVehicle,
+} from "@/lib/fleet/saved-fleets";
 import {
   Check,
   MapPin,
@@ -28,22 +38,61 @@ import { cn } from "@/lib/utils";
 
 const SELECTION_KEY = "fleetvolt_fleet_selected_vehicles";
 const FLEET_ID_KEY = "fleetvolt_active_fleet_id";
+const NAMES_KEY = "fleetvolt_fleet_vehicle_names";
 
-function loadSelected(): Set<string> {
-  if (typeof window === "undefined") return new Set();
+type NameMap = Record<string, string>;
+
+function loadSelection(): FleetSelection {
+  if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(SELECTION_KEY);
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw) as string[];
-    return new Set(Array.isArray(arr) ? arr : []);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    // Migrate legacy Set-as-array format → qty 1 each
+    if (Array.isArray(parsed)) {
+      const next: FleetSelection = {};
+      for (const slug of parsed) {
+        if (typeof slug === "string") next[slug] = 1;
+      }
+      return next;
+    }
+    if (parsed && typeof parsed === "object") {
+      const next: FleetSelection = {};
+      for (const [slug, qty] of Object.entries(parsed as Record<string, unknown>)) {
+        const n = typeof qty === "number" ? qty : parseInt(String(qty), 10);
+        if (Number.isFinite(n) && n > 0) next[slug] = n;
+      }
+      return next;
+    }
+    return {};
   } catch {
-    return new Set();
+    return {};
   }
 }
 
-function persistSelected(slugs: Set<string>) {
+function persistSelection(selection: FleetSelection) {
   try {
-    localStorage.setItem(SELECTION_KEY, JSON.stringify([...slugs]));
+    localStorage.setItem(SELECTION_KEY, JSON.stringify(selection));
+  } catch {
+    // ignore
+  }
+}
+
+function loadNames(): NameMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(NAMES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as NameMap;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistNames(names: NameMap) {
+  try {
+    localStorage.setItem(NAMES_KEY, JSON.stringify(names));
   } catch {
     // ignore
   }
@@ -52,7 +101,6 @@ function persistSelected(slugs: Set<string>) {
 export default function FleetDashboardPage() {
   const { displayName, loading } = useWorkOSAuth();
   const [step, setStep] = useState(0);
-  const [fleetName, setFleetName] = useState("");
   const [fleetId, setFleetId] = useState<string | null>(null);
   const [lotName, setLotName] = useState("");
   const [lotAddress, setLotAddress] = useState("");
@@ -61,15 +109,20 @@ export default function FleetDashboardPage() {
   const [lotCapacity, setLotCapacity] = useState("10");
   const [lotAmenities, setLotAmenities] = useState<string[]>([]);
   const [driverName, setDriverName] = useState("");
-  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
+  const [selection, setSelection] = useState<FleetSelection>({});
+  const [vehicleNames, setVehicleNames] = useState<NameMap>({});
   const [mounted, setMounted] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const [celebrateName, setCelebrateName] = useState("");
 
   const createFleet = useMutation(api.fleet.mutations.createFleet);
   const addLot = useMutation(api.fleet.mutations.addParkingLot);
   const addDriver = useMutation(api.fleet.mutations.addDriverToFleet);
 
   useEffect(() => {
-    setSelectedSlugs(loadSelected());
+    setSelection(loadSelection());
+    setVehicleNames(loadNames());
     try {
       const saved = localStorage.getItem(FLEET_ID_KEY);
       if (saved) setFleetId(saved);
@@ -116,11 +169,27 @@ export default function FleetDashboardPage() {
   ];
   const steps = ["Create Fleet", "Parking Lots", "Drivers", "Routes"];
 
-  async function handleCreateFleet() {
+  const selectedVehicles: SavedFleetVehicle[] = useMemo(
+    () =>
+      Object.entries(selection).map(([slug, qty]) => ({
+        slug,
+        qty,
+        displayName: vehicleNames[slug],
+      })),
+    [selection, vehicleNames],
+  );
+
+  const canCreateFleet = selectedVehicles.some((v) => v.qty > 0);
+
+  async function handleSaveFleet(input: {
+    name: string;
+    routeName: string;
+    status: FleetStatus;
+  }) {
     const id = `fleet_${Date.now()}`;
     await createFleet({
       fleetId: id,
-      name: fleetName,
+      name: input.name,
       address: "TBD",
       location: { lat: 0, lng: 0 },
     });
@@ -130,6 +199,17 @@ export default function FleetDashboardPage() {
     } catch {
       // ignore
     }
+    addSavedFleet({
+      id,
+      name: input.name,
+      routeName: input.routeName,
+      status: input.status,
+      vehicles: selectedVehicles,
+      createdAt: Date.now(),
+    });
+    setModalOpen(false);
+    setCelebrateName(input.name);
+    setCelebrate(true);
     setStep(1);
   }
 
@@ -159,7 +239,7 @@ export default function FleetDashboardPage() {
   async function handleAddDriver() {
     if (!fleetId) return;
     const driverId = `drv_${Date.now()}`;
-    const truckSlug = [...selectedSlugs][0];
+    const truckSlug = Object.keys(selection)[0];
     await addDriver({
       fleetId,
       driverId,
@@ -169,20 +249,37 @@ export default function FleetDashboardPage() {
     setDriverName("");
   }
 
-  function toggleSlug(slug: string) {
-    setSelectedSlugs((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
-      persistSelected(next);
+  function toggleSlug(slug: string, displayName?: string) {
+    setSelection((prev) => {
+      const next = { ...prev };
+      if (next[slug] != null) {
+        delete next[slug];
+      } else {
+        next[slug] = 1;
+      }
+      persistSelection(next);
+      return next;
+    });
+    if (displayName) {
+      setVehicleNames((prev) => {
+        const next = { ...prev, [slug]: displayName };
+        persistNames(next);
+        return next;
+      });
+    }
+  }
+
+  function setQty(slug: string, qty: number) {
+    setSelection((prev) => {
+      const next = { ...prev, [slug]: Math.max(1, qty) };
+      persistSelection(next);
       return next;
     });
   }
 
   function clearSelection() {
-    const empty = new Set<string>();
-    setSelectedSlugs(empty);
-    persistSelected(empty);
+    setSelection({});
+    persistSelection({});
   }
 
   if (loading || !mounted) {
@@ -196,7 +293,7 @@ export default function FleetDashboardPage() {
     );
   }
 
-  const greeting = displayName ? `Welcome, ${displayName}` : "Fleet Dashboard";
+  const greeting = displayName ? `Welcome, ${displayName}` : "Fleet Manager";
 
   return (
     <div
@@ -211,10 +308,7 @@ export default function FleetDashboardPage() {
             </h1>
             <StatusBadge variant="ok">Fleet Manager</StatusBadge>
           </div>
-          <Link
-            href="/fleet/contract-plan"
-            className="no-underline"
-          >
+          <Link href="/fleet/contract-plan" className="no-underline">
             <PrimaryButton className="flex items-center gap-2">
               <ArrowRight size={16} />
               Plan Contract
@@ -276,35 +370,44 @@ export default function FleetDashboardPage() {
               {step === 0 && (
                 <div>
                   <TechnicalLabel className="mb-3 block">
-                    FLEET / COMPANY NAME
+                    BUILD YOUR FLEET
                   </TechnicalLabel>
-                  <div className="flex flex-wrap gap-3">
-                    <input
-                      value={fleetName}
-                      onChange={(e) => setFleetName(e.target.value)}
-                      placeholder="Acme Drayage Co."
-                      className="fv-input min-w-[220px] flex-1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void handleCreateFleet()}
-                      disabled={!fleetName}
-                      className="fv-btn-primary"
-                      style={{ width: "auto", padding: "10px 20px" }}
-                    >
-                      Create Fleet
-                    </button>
-                  </div>
-                  {selectedSlugs.size > 0 ? (
+                  <p className="mb-3 text-sm text-[var(--fv-text-muted)]">
+                    Check vehicles in the catalog below, set quantities, then
+                    create your fleet.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(true)}
+                    disabled={!canCreateFleet}
+                    className={cn(
+                      "fv-btn-primary",
+                      canCreateFleet && "fv-create-fleet-pulse",
+                    )}
+                    style={{ width: "auto", padding: "10px 20px" }}
+                    data-testid="create-fleet-cta"
+                  >
+                    Create Fleet
+                  </button>
+                  {canCreateFleet ? (
                     <p className="mt-2 text-xs text-[var(--fv-text-muted)]">
-                      {selectedSlugs.size} catalog model
-                      {selectedSlugs.size === 1 ? "" : "s"} selected for this
-                      fleet.
+                      {selectedVehicles.length} model
+                      {selectedVehicles.length === 1 ? "" : "s"} ·{" "}
+                      {selectedVehicles.reduce((s, v) => s + v.qty, 0)} unit
+                      {selectedVehicles.reduce((s, v) => s + v.qty, 0) === 1
+                        ? ""
+                        : "s"}{" "}
+                      ready.
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="mt-2 text-xs text-[var(--fv-text-muted)]">
+                      Select at least one vehicle with qty ≥ 1 to enable Create
+                      Fleet.
+                    </p>
+                  )}
                   {fleetId ? (
                     <div className="mt-3 flex items-center gap-1 font-mono text-[10px] text-[var(--fv-signal-green)]">
-                      <Check size={14} /> Fleet created: {fleetName || fleetId}
+                      <Check size={14} /> Fleet active: {fleetId}
                     </div>
                   ) : null}
                 </div>
@@ -510,8 +613,9 @@ export default function FleetDashboardPage() {
         <div id="maintenance" className="scroll-mt-20" />
 
         <FleetVehiclePicker
-          selectedSlugs={selectedSlugs}
+          selection={selection}
           onToggle={toggleSlug}
+          onQtyChange={setQty}
           onClearSelection={clearSelection}
         />
 
@@ -519,6 +623,19 @@ export default function FleetDashboardPage() {
           POWERED BY CLEVERWORK · ZERO EMISSION ADVISORS
         </div>
       </div>
+
+      <CreateFleetModal
+        open={modalOpen}
+        vehicles={selectedVehicles}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveFleet}
+      />
+
+      <CelebrationOverlay
+        active={celebrate}
+        fleetName={celebrateName}
+        onDone={() => setCelebrate(false)}
+      />
     </div>
   );
 }

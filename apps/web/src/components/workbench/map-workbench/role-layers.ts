@@ -58,33 +58,38 @@ const LAYER_CATALOG: Record<WorkbenchLayerId, LayerToolbarItem> = {
   },
   highways: {
     id: "highways",
-    label: "Highways",
-    hint: "NHFN / freight corridors",
+    label: "Truck traffic",
+    hint: "NHFN / AADT corridors",
   },
   "geo-regions": {
     id: "geo-regions",
     label: "Census / regions",
-    hint: "State · county · district",
+    hint: "State · county · district (ACS)",
   },
   "class8-gaps": {
     id: "class8-gaps",
-    label: "Class 8 gaps",
-    hint: "Coverage holes on corridor",
+    label: "Class 8 charger gap",
+    hint: "Where Class-8 charging is missing",
   },
   carriers: {
     id: "carriers",
     label: "Carriers",
     hint: "Carrier clusters / HQ",
   },
+  ports: {
+    id: "ports",
+    label: "Ports",
+    hint: "West-coast port anchors (POLA/POLB/OAK…)",
+  },
   "freight-flow": {
     id: "freight-flow",
-    label: "Freight flow",
-    hint: "Commodity / tonnage OD",
+    label: "Freight volume out of port",
+    hint: "Animated OD arcs · green/yellow/red by volume",
   },
   "caas-zones": {
     id: "caas-zones",
-    label: "CaaS zones",
-    hint: "Mobile support staging",
+    label: "Heat map / CaaS zones",
+    hint: "High truck traffic + Class-8 gap overlap",
   },
 };
 
@@ -100,17 +105,18 @@ export const ROLE_LAYER_IDS: Record<WorkbenchMode, WorkbenchLayerId[]> = {
     "highways",
   ],
   caas_gap_map: [
-    "route",
+    "ports",
+    "freight-flow",
     "chargers",
     "parking",
-    "pois",
-    "fleet-yards",
     "highways",
     "geo-regions",
     "class8-gaps",
     "carriers",
-    "freight-flow",
     "caas-zones",
+    "route",
+    "pois",
+    "fleet-yards",
   ],
 };
 

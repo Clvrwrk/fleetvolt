@@ -17,6 +17,9 @@ import type {
 } from "../components/workbench/map-workbench/types";
 import type { WorkbenchMapAsset } from "../components/workbench/map-workbench/layers/asset-marker-layer";
 
+/** CaaS: freight overview until route is built; then same route map as driver/fleet. */
+export type CaasMapPhase = "freight_overview" | "route_analysis";
+
 export type MapWorkbenchState = {
   mode: WorkbenchMode;
   draft: WorkbenchPlanDraft;
@@ -34,12 +37,15 @@ export type MapWorkbenchState = {
     west: number;
   } | null;
   lastAiSummary: string | null;
+  /** CaaS-only map phase. Ignored for driver/fleet modes. */
+  caasPhase: CaasMapPhase;
   reset: (mode?: WorkbenchMode) => void;
   applyDraftPatch: (patch: Partial<WorkbenchPlanDraft>) => void;
   toggleLayer: (layerId: WorkbenchLayerId) => void;
   setLayers: (layerIds: WorkbenchLayerId[]) => void;
   selectAsset: (selection: WorkbenchSelection | null) => void;
   setMapAssets: (assets: WorkbenchMapAsset[]) => void;
+  setCaasPhase: (phase: CaasMapPhase) => void;
   applyMapActions: (actions: WorkbenchMapAction[]) => void;
   applyAiResult: (result: WorkbenchAiResult) => void;
 };
@@ -54,6 +60,7 @@ const ALLOWED_LAYERS = new Set<WorkbenchLayerId>([
   "geo-regions",
   "class8-gaps",
   "carriers",
+  "ports",
   "freight-flow",
   "caas-zones",
 ]);
@@ -79,11 +86,25 @@ function cloneDraft(draft: WorkbenchPlanDraft): WorkbenchPlanDraft {
 
 function initialStateForMode(mode: WorkbenchMode) {
   const config = WORKBENCH_MODE_CONFIG[mode];
+  const caasOverviewLayers: WorkbenchLayerId[] = [
+    "ports",
+    "freight-flow",
+    "chargers",
+    "parking",
+    "class8-gaps",
+    "carriers",
+    "geo-regions",
+    "caas-zones",
+    "highways",
+  ];
 
   return {
     mode,
     draft: cloneDraft(config.defaultDraft),
-    activeLayers: [...config.defaultLayers],
+    activeLayers:
+      mode === "caas_gap_map"
+        ? sortLayersForMode(mode, caasOverviewLayers)
+        : [...config.defaultLayers],
     selectedAsset: null,
     routeGeometry: null,
     mapAssets: [],
@@ -91,6 +112,10 @@ function initialStateForMode(mode: WorkbenchMode) {
     providerWarnings: [],
     focusBounds: null,
     lastAiSummary: null,
+    caasPhase:
+      mode === "caas_gap_map"
+        ? ("freight_overview" as CaasMapPhase)
+        : ("route_analysis" as CaasMapPhase),
   };
 }
 
@@ -236,6 +261,27 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
   setMapAssets: (assets) => {
     set({ mapAssets: assets });
   },
+  setCaasPhase: (phase) => {
+    set((state) => {
+      if (state.mode !== "caas_gap_map") return {};
+      if (phase === "route_analysis") {
+        const withRoute = state.activeLayers.includes("route")
+          ? state.activeLayers
+          : sortLayersForMode(state.mode, [...state.activeLayers, "route"]);
+        return {
+          caasPhase: phase,
+          activeLayers: withRoute.filter((id) => id !== "freight-flow"),
+        };
+      }
+      return {
+        caasPhase: phase,
+        activeLayers: sortLayersForMode(state.mode, [
+          "freight-flow",
+          ...state.activeLayers.filter((id) => id !== "route"),
+        ]),
+      };
+    });
+  },
   applyMapActions: (actions) => {
     for (const action of actions) {
       const patch = applyMapAction(get(), action);
@@ -274,6 +320,20 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
       ...(result.providerWarnings ?? []),
       ...(result.error ? [result.error] : []),
     ];
+
+    const nextDraft = get().draft;
+    const aiBuiltRoute =
+      state.mode === "caas_gap_map" &&
+      Boolean(
+        result.routeGeometry ||
+          result.draftPatch?.origin ||
+          result.draftPatch?.destination ||
+          (nextDraft.origin && nextDraft.destination && result.draftPatch),
+      );
+
+    if (aiBuiltRoute && state.caasPhase === "freight_overview") {
+      get().setCaasPhase("route_analysis");
+    }
 
     set({
       ...(cards ? { resultCards: cards } : {}),

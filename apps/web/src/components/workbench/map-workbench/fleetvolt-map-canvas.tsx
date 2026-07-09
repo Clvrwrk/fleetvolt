@@ -14,8 +14,10 @@ import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import { cn } from "@/lib/utils";
+import { PortAnchors } from "@/components/pulse/port-anchors";
 import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
 import { DetourLegsLayer } from "./layers/detour-legs-layer";
+import { FreightFlowLayer } from "./layers/freight-flow-layer";
 import { GeoRegionLayer, type WorkbenchGeoRegion } from "./layers/geo-region-layer";
 import { RouteLayer } from "./layers/route-layer";
 import { SelectedAssetCard } from "./layers/selected-asset-card";
@@ -42,6 +44,14 @@ const US_BOUNDS: google.maps.LatLngBoundsLiteral = {
   north: 49.5,
   south: 24.4,
   east: -66.5,
+  west: -125.0,
+};
+
+/** West-coast freight overview framing (ports + inland corridors). */
+const WC_FREIGHT_BOUNDS: google.maps.LatLngBoundsLiteral = {
+  north: 42.2,
+  south: 31.8,
+  east: -111.5,
   west: -125.0,
 };
 
@@ -355,6 +365,9 @@ function MapCanvasBody({
   selectAsset,
   defaultBounds,
   authError,
+  showFreightFlows,
+  showPortAnchors,
+  showRouteLayer,
 }: {
   mode: WorkbenchMode;
   mapId: string;
@@ -366,6 +379,9 @@ function MapCanvasBody({
   selectAsset: (selection: WorkbenchSelection | null) => void;
   defaultBounds: google.maps.LatLngBoundsLiteral;
   authError: string | null;
+  showFreightFlows: boolean;
+  showPortAnchors: boolean;
+  showRouteLayer: boolean;
 }) {
   const status = useApiLoadingStatus();
 
@@ -405,14 +421,20 @@ function MapCanvasBody({
         selectedAsset={selectedAsset}
         focusBounds={focusBounds}
       />
+      <FreightFlowLayer
+        visible={showFreightFlows && visibleLayer(activeLayers, "freight-flow")}
+      />
+      {showPortAnchors && visibleLayer(activeLayers, "ports") ? (
+        <PortAnchors />
+      ) : null}
       <RouteLayer
         coordinates={routeCoordinates}
-        visible={visibleLayer(activeLayers, "route")}
+        visible={visibleLayer(activeLayers, "route") && showRouteLayer}
       />
       <DetourLegsLayer
         routeCoordinates={routeCoordinates}
         selectedAsset={selectedAsset}
-        visible={visibleLayer(activeLayers, "route")}
+        visible={visibleLayer(activeLayers, "route") && showRouteLayer}
       />
       <GeoRegionLayer
         regions={SAMPLE_REGIONS}
@@ -438,6 +460,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const mapAssets = useMapWorkbenchStore((state) => state.mapAssets);
   const focusBounds = useMapWorkbenchStore((state) => state.focusBounds);
   const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
+  const caasPhase = useMapWorkbenchStore((state) => state.caasPhase);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -446,25 +469,39 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
     }
   }, [mode, reset, storeMode]);
 
+  const freightOverview =
+    mode === "caas_gap_map" && caasPhase === "freight_overview";
+
   const routeCoordinates = useMemo(() => {
+    // Freight overview: no sample A→B polyline — only animated port arcs.
+    if (freightOverview) return [];
     const raw = routeGeometry?.coordinates ?? [];
     const valid = raw.filter((c) => isValidLatLng(c.latitude, c.longitude));
     return valid.length >= 2 ? valid : SAMPLE_ROUTES[mode];
-  }, [mode, routeGeometry?.coordinates]);
+  }, [freightOverview, mode, routeGeometry?.coordinates]);
 
   const roadSnapStatus =
-    routeCoordinates.length >= 8
-      ? "road"
-      : routeCoordinates.length >= 2
-        ? "preview"
-        : "empty";
+    freightOverview
+      ? "empty"
+      : routeCoordinates.length >= 8
+        ? "road"
+        : routeCoordinates.length >= 2
+          ? "preview"
+          : "empty";
 
   const assets = useMemo(() => {
     // Prefer live Calculate pins; fall back to mode samples only before first run.
+    // Freight overview: hide sample route pins so arcs dominate.
+    if (freightOverview && mapAssets.length === 0) return [];
     const source = mapAssets.length > 0 ? mapAssets : SAMPLE_ASSETS[mode];
     return source.filter((asset) => isValidLatLng(asset.latitude, asset.longitude));
-  }, [mapAssets, mode]);
-  const defaultBounds = mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS;
+  }, [freightOverview, mapAssets, mode]);
+  const defaultBounds =
+    mode === "caas_gap_map"
+      ? freightOverview
+        ? WC_FREIGHT_BOUNDS
+        : US_BOUNDS
+      : CA_BOUNDS;
 
   if (!API_KEY || !MAP_ID) {
     return (
@@ -508,6 +545,11 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             selectAsset={selectAsset}
             defaultBounds={defaultBounds}
             authError={authError}
+            showFreightFlows={
+              freightOverview && visibleLayer(activeLayers, "freight-flow")
+            }
+            showPortAnchors={freightOverview}
+            showRouteLayer={!freightOverview}
           />
         </APIProvider>
       </MapSoftBoundary>
@@ -517,21 +559,27 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
           Google vector map
         </div>
         <div className="mt-1 text-sm font-semibold text-[var(--fv-graphite)]">
-          Shared FleetVolt canvas
+          {freightOverview
+            ? "West-coast freight movement"
+            : "Shared FleetVolt canvas"}
         </div>
         <div
           data-testid="route-snap-status"
-          data-status={roadSnapStatus}
+          data-status={freightOverview ? "freight" : roadSnapStatus}
           className={cn(
             "mt-2 text-[10px] font-bold uppercase tracking-[0.12em]",
-            roadSnapStatus === "road"
-              ? "text-[var(--fv-signal-green)]"
-              : "text-[var(--fv-alert-red)]",
+            freightOverview
+              ? "text-[var(--fv-blueprint-blue)]"
+              : roadSnapStatus === "road"
+                ? "text-[var(--fv-signal-green)]"
+                : "text-[var(--fv-alert-red)]",
           )}
         >
-          {roadSnapStatus === "road"
-            ? `Road-snapped · ${routeCoordinates.length} pts`
-            : "Straight-line preview · snapping to roads…"}
+          {freightOverview
+            ? "Static freight arcs · green / yellow / red by volume"
+            : roadSnapStatus === "road"
+              ? `Road-snapped · ${routeCoordinates.length} pts`
+              : "Straight-line preview · snapping to roads…"}
         </div>
       </div>
 

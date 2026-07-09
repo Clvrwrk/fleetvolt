@@ -13,6 +13,7 @@ import type { WorkbenchMapAsset } from "./layers/asset-marker-layer";
 import { AiCommandBar } from "./ai-command-bar";
 import { ContractConstraints, getFleetContractDefaults } from "./inputs/contract-constraints";
 import { RouteBuilder } from "./inputs/route-builder";
+import { DriverProfileSelect } from "./inputs/driver-profile-select";
 import { DRIVER_TRUCK_PROFILES, TruckProfileSelect } from "./inputs/truck-profile-select";
 import { WorkdayConstraints, getDriverConstraintDefaults } from "./inputs/workday-constraints";
 import { CORE_CORRIDORS } from "@/lib/workbench/core-routes";
@@ -98,12 +99,39 @@ export function WorkbenchLeftPanel({
     api["workbench/queries"].caasOpportunityMap,
     mode === "caas_gap_map" ? { limit: 12 } : "skip",
   );
+  const caasPhase = useMapWorkbenchStore((state) => state.caasPhase);
+  const setCaasPhase = useMapWorkbenchStore((state) => state.setCaasPhase);
+  const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
+
+  const truckSlug =
+    typeof draft.metadata?.truckSlug === "string"
+      ? draft.metadata.truckSlug
+      : DRIVER_TRUCK_PROFILES[0].slug;
+  const driverProfile =
+    typeof draft.metadata?.driverProfile === "string"
+      ? draft.metadata.driverProfile
+      : "regional_drayage";
+
+  const canRunCaasGaps = Boolean(
+    mode === "caas_gap_map" &&
+      draft.origin &&
+      draft.destination &&
+      truckSlug &&
+      driverProfile,
+  );
+
   const caasRouteOpportunity = useQuery(
     api["workbench/queries"].analyzeCaasRouteOpportunity,
-    mode === "caas_gap_map" && draft.origin && draft.destination
+    mode === "caas_gap_map" &&
+      caasPhase === "route_analysis" &&
+      draft.origin &&
+      draft.destination
       ? {
           origin: { lat: draft.origin.latitude, lng: draft.origin.longitude },
-          destination: { lat: draft.destination.latitude, lng: draft.destination.longitude },
+          destination: {
+            lat: draft.destination.latitude,
+            lng: draft.destination.longitude,
+          },
           corridorPoints: routePointsForCaaS(draft.origin, draft.destination),
         }
       : "skip",
@@ -118,26 +146,8 @@ export function WorkbenchLeftPanel({
   useEffect(() => {
     if (mode !== "caas_gap_map") return;
 
-    if (caasRouteOpportunity) {
+    if (caasPhase === "route_analysis" && caasRouteOpportunity) {
       useMapWorkbenchStore.setState({
-        routeGeometry: draft.origin && draft.destination
-          ? {
-              provider: "mock",
-              coordinates: [
-                { latitude: draft.origin.latitude, longitude: draft.origin.longitude },
-                {
-                  latitude: caasRouteOpportunity.route.midpoint.lat,
-                  longitude: caasRouteOpportunity.route.midpoint.lng,
-                },
-                { latitude: draft.destination.latitude, longitude: draft.destination.longitude },
-              ],
-              distanceMeters: caasRouteOpportunity.route.approximateMiles
-                ? caasRouteOpportunity.route.approximateMiles * 1609.344
-                : undefined,
-              warnings: ["CaaS MVP route uses centroid/midpoint geometry unless Google Routes output is already present."],
-              metadata: { source: "workbench/queries:analyzeCaasRouteOpportunity" },
-            }
-          : null,
         resultCards: caasRouteOpportunity.cards as unknown as WorkbenchResultCard[],
         providerWarnings: [
           "True vs detour-solvable gap classification uses Class 8 radius plus nearest-charger distance; detour route time remains unavailable unless provider data is connected.",
@@ -146,13 +156,79 @@ export function WorkbenchLeftPanel({
       return;
     }
 
-    if (caasOpportunity) {
+    if (caasPhase === "freight_overview" && caasOpportunity) {
       useMapWorkbenchStore.setState({
         resultCards: caasOpportunity.cards as WorkbenchResultCard[],
-        providerWarnings: ["US-wide CaaS map uses geoRegion centroid/bbox MVP; polygon geometries are deferred."],
+        providerWarnings: [
+          "West-coast freight overview is static (port TEU + corridor intensity). Build a route with truck, A→B, and driver profile to run Class-8 gap analysis.",
+        ],
       });
     }
-  }, [caasOpportunity, caasRouteOpportunity, draft.destination, draft.origin, mode]);
+  }, [
+    caasOpportunity,
+    caasPhase,
+    caasRouteOpportunity,
+    draft.destination,
+    draft.origin,
+    mode,
+  ]);
+
+  async function runCaasGapAnalysis() {
+    setRunError(null);
+    if (!draft.origin || !draft.destination) {
+      setRunError("Set point A and point B before finding charger gaps.");
+      return;
+    }
+    if (!truckSlug || !driverProfile) {
+      setRunError("Select a truck and driver profile before finding charger gaps.");
+      return;
+    }
+
+    setIsRunning(true);
+    try {
+      setCaasPhase("route_analysis");
+      // Immediate preview; then snap to roads like driver/fleet.
+      useMapWorkbenchStore.setState({
+        routeGeometry: {
+          provider: "google",
+          coordinates: [
+            {
+              latitude: draft.origin.latitude,
+              longitude: draft.origin.longitude,
+            },
+            {
+              latitude: draft.destination.latitude,
+              longitude: draft.destination.longitude,
+            },
+          ],
+          warnings: ["Snapping corridor to roads…"],
+        },
+      });
+
+      const geometry = await fetchRouteGeometry({
+        origin: {
+          latitude: draft.origin.latitude,
+          longitude: draft.origin.longitude,
+        },
+        destination: {
+          latitude: draft.destination.latitude,
+          longitude: draft.destination.longitude,
+        },
+      });
+      useMapWorkbenchStore.setState({
+        routeGeometry: geometry,
+        providerWarnings: geometry.warnings ?? [],
+      });
+    } catch (error) {
+      setRunError(
+        error instanceof Error
+          ? error.message
+          : "Could not build route geometry for gap analysis.",
+      );
+    } finally {
+      setIsRunning(false);
+    }
+  }
 
   function applyQuickRoute(route: (typeof quickRoutes)[number]) {
     applyDraftPatch({ origin: route.origin, destination: route.destination });
@@ -344,8 +420,18 @@ export function WorkbenchLeftPanel({
     }
   }
 
-  const calculatePlan = mode === "fleet_contract_plan" ? calculateFleetContractPlan : calculateDriverPlan;
-  const canRunPlan = mode === "driver_day_plan" || mode === "fleet_contract_plan";
+  const calculatePlan =
+    mode === "caas_gap_map"
+      ? () => {
+          void runCaasGapAnalysis();
+        }
+      : mode === "fleet_contract_plan"
+        ? calculateFleetContractPlan
+        : calculateDriverPlan;
+  const canRunPlan =
+    mode === "driver_day_plan" ||
+    mode === "fleet_contract_plan" ||
+    canRunCaasGaps;
   const caasDrilldown = caasOpportunity?.drilldown ?? caasDrilldownLabels.map((label, index) => ({
     label,
     enabled: index <= 2,
@@ -419,35 +505,62 @@ export function WorkbenchLeftPanel({
         ) : null}
 
         {mode === "caas_gap_map" ? (
-          <section className="space-y-3 rounded-2xl border border-black/10 bg-white/70 p-3" aria-labelledby="caas-drilldown-heading">
-            <div className="flex items-center gap-2" id="caas-drilldown-heading">
-              <MapPinned size={16} className="text-[var(--fv-accent)]" />
-              <TechnicalLabel>US opportunity drilldown</TechnicalLabel>
-            </div>
-            <p className="text-xs leading-5 text-[var(--fv-steel)]">
-              Start US-wide, click a centroid/bbox region, then choose a route origin and destination. Missing levels remain visible as disabled labeled steps.
-            </p>
-            <div className="space-y-1.5">
-              {caasDrilldown.map((step) => (
-                <div
-                  key={step.label}
-                  className={cn(
-                    "flex items-center justify-between rounded-xl border px-3 py-2 text-xs",
-                    step.enabled
-                      ? "border-[var(--fv-accent)]/30 bg-[var(--fv-accent)]/10 text-[var(--fv-graphite)]"
-                      : "border-black/10 bg-slate-50 text-[var(--fv-steel)] opacity-70",
-                  )}
-                  title={step.reason}
+          <>
+            <section className="space-y-2" aria-labelledby="caas-truck-heading">
+              <div id="caas-truck-heading">
+                <TechnicalLabel>Truck profile</TechnicalLabel>
+              </div>
+              <TruckProfileSelect />
+            </section>
+            <section className="space-y-2" aria-labelledby="caas-driver-heading">
+              <div id="caas-driver-heading">
+                <TechnicalLabel>Driver profile</TechnicalLabel>
+              </div>
+              <DriverProfileSelect />
+            </section>
+            <section
+              className="space-y-3 rounded-2xl border border-black/10 bg-white/70 p-3"
+              aria-labelledby="caas-phase-heading"
+            >
+              <div className="flex items-center gap-2" id="caas-phase-heading">
+                <MapPinned size={16} className="text-[var(--fv-accent)]" />
+                <TechnicalLabel>Map phase</TechnicalLabel>
+              </div>
+              <p className="text-xs leading-5 text-[var(--fv-steel)]">
+                {caasPhase === "freight_overview"
+                  ? "Showing static west-coast freight movement (green / yellow / red by daily truck volume). Toggle data layers below or ask AI about census / freight."
+                  : "Route analysis map — same road-snapped canvas as Driver / Fleet. Gap cards run on your A→B corridor."}
+              </p>
+              {caasPhase === "route_analysis" ? (
+                <button
+                  type="button"
+                  onClick={() => setCaasPhase("freight_overview")}
+                  className="text-[11px] font-mono uppercase tracking-wider text-[var(--fv-blueprint-blue)] hover:underline"
                 >
-                  <span className="font-bold">{step.label}</span>
-                  <span className="font-mono uppercase tracking-[0.12em]">{step.enabled ? "available" : "deferred"}</span>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-2 text-[11px] leading-4 text-amber-950">
-              Route gap cards auto-run when origin and destination are both selected; detour time stays labeled unavailable unless provider detour data exists.
-            </div>
-          </section>
+                  ← Back to freight overview
+                </button>
+              ) : null}
+              <div className="space-y-1.5">
+                {caasDrilldown.map((step) => (
+                  <div
+                    key={step.label}
+                    className={cn(
+                      "flex items-center justify-between rounded-xl border px-3 py-2 text-xs",
+                      step.enabled
+                        ? "border-[var(--fv-accent)]/30 bg-[var(--fv-accent)]/10 text-[var(--fv-graphite)]"
+                        : "border-black/10 bg-slate-50 text-[var(--fv-steel)] opacity-70",
+                    )}
+                    title={step.reason}
+                  >
+                    <span className="font-bold">{step.label}</span>
+                    <span className="font-mono uppercase tracking-[0.12em]">
+                      {step.enabled ? "available" : "deferred"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
         ) : null}
 
         <section className="space-y-2" aria-labelledby="quick-routes-heading">
@@ -576,11 +689,17 @@ export function WorkbenchLeftPanel({
         >
           {isRunning ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
           {mode === "caas_gap_map"
-            ? caasRouteOpportunity
-              ? "Route gap analysis ready"
-              : draft.origin && draft.destination
-                ? "Analyzing CaaS gap"
-                : "Select origin + destination"
+            ? isRunning
+              ? "Building route…"
+              : canRunCaasGaps
+                ? caasPhase === "route_analysis"
+                  ? "Refresh charger gaps"
+                  : "Find Charger Gaps"
+                : !draft.origin || !draft.destination
+                  ? "Set point A + point B"
+                  : !truckSlug
+                    ? "Select truck profile"
+                    : "Select driver profile"
             : isRunning
               ? mode === "fleet_contract_plan"
                 ? "Running contract plan"
@@ -589,6 +708,11 @@ export function WorkbenchLeftPanel({
                 ? "Calculate contract plan"
                 : "Calculate day plan"}
         </button>
+        {mode === "caas_gap_map" && !canRunCaasGaps ? (
+          <p className="mt-2 text-center text-[10px] leading-4 text-[var(--fv-steel)]">
+            Gap analysis unlocks after truck, point A, point B, and driver profile are set.
+          </p>
+        ) : null}
       </div>
     </aside>
   );

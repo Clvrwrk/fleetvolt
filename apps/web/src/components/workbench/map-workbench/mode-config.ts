@@ -46,11 +46,25 @@ export const WORKBENCH_MODE_CONFIG: Record<WorkbenchMode, WorkbenchModeConfig> =
     mode: "caas_gap_map",
     title: "CaaS Gap Map",
     description:
-      "Full suite: gaps, carriers, freight flow, census regions, mobile CaaS zones.",
+      "West-coast freight overview, then gated Class-8 gap analysis on a built route.",
     primaryCta: "Find Charger Gaps",
-    defaultLayers: ["route", "chargers", "class8-gaps", "caas-zones", "freight-flow"],
+    defaultLayers: [
+      "ports",
+      "freight-flow",
+      "chargers",
+      "parking",
+      "class8-gaps",
+      "carriers",
+      "geo-regions",
+      "caas-zones",
+      "highways",
+    ],
     defaultDraft: {
       vehicleClass: "Class 8 corridor",
+      metadata: {
+        truckSlug: "ecascadia_438",
+        driverProfile: "regional_drayage",
+      },
     },
   },
 };
