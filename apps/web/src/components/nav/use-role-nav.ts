@@ -33,6 +33,7 @@ const DRIVER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/driver", icon: "LayoutDashboard" },
   { label: "Day Plan", href: "/driver/day-plan", icon: "Route" },
   { label: "Vehicle", href: "/unit", icon: "Truck" },
+  { label: "Catalog", href: "/catalog", icon: "BookOpen" },
   { label: "System Status", href: "/status", icon: "Activity" },
 ];
 
@@ -40,6 +41,7 @@ const FLEET_MANAGER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/fleet", icon: "LayoutDashboard" },
   { label: "Contract Plan", href: "/fleet/contract-plan", icon: "Route" },
   { label: "Vehicles", href: "/unit", icon: "Truck" },
+  { label: "Catalog", href: "/catalog", icon: "BookOpen" },
   { label: "Load Config", href: "/load", icon: "Package" },
   { label: "Drivers", href: "/driver", icon: "Users" },
   { label: "System Status", href: "/status", icon: "Activity" },

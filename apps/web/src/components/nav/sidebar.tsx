@@ -13,6 +13,7 @@ import {
   Package,
   Map,
   Sparkles,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   type LucideIcon,
@@ -46,6 +47,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Package,
   Map,
   Sparkles,
+  BookOpen,
 };
 
 const STORAGE_KEY = "fleetvolt_sidebar_collapsed";
