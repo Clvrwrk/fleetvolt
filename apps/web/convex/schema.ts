@@ -758,6 +758,40 @@ export default defineSchema({
     .index("by_userId_updatedAt", ["userId", "updatedAt"])
     .index("by_fleetId", ["fleetId"]),
 
+  // Last successful map-workbench Calculate runs (driver / fleet / caas).
+  // Used to restore route geometry + draft on "Start Day Plan" for returning users.
+  workbenchRuns: defineTable({
+    userId: v.string(),
+    mode: v.union(
+      v.literal("driver_day_plan"),
+      v.literal("fleet_contract_plan"),
+      v.literal("caas_gap_map"),
+    ),
+    origin: v.object({
+      label: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      kind: v.optional(v.string()),
+      source: v.optional(v.string()),
+      id: v.optional(v.string()),
+    }),
+    destination: v.object({
+      label: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      kind: v.optional(v.string()),
+      source: v.optional(v.string()),
+      id: v.optional(v.string()),
+    }),
+    routeGeometry: v.optional(v.any()),
+    resultCards: v.optional(v.any()),
+    providerWarnings: v.optional(v.array(v.string())),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_userId_createdAt", ["userId", "createdAt"])
+    .index("by_userId_mode_createdAt", ["userId", "mode", "createdAt"]),
+
   // ── Geo enrichment: air districts + zip codes on geoRegions (P-ROLES) ──────
   // geoRegions gains optional airDistrict + zipCodes fields so CaaS deployment
   // zones can reference finer-grained geographic context than nation/state/county.
