@@ -65,27 +65,68 @@ function FilterGroup({
   options,
   value,
   onChange,
+  onClearAll,
   defaultOpen = true,
 }: {
   title: string;
   options: string[];
   value: string | null;
   onChange: (next: string | null) => void;
+  /** Clears every catalog filter (shown on each active group). */
+  onClearAll: () => void;
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const active = value != null && value.length > 0;
 
   return (
-    <section className="border-b border-white/10" data-filter-group={title.toLowerCase()}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--fv-fog)] hover:text-white"
-        aria-expanded={open}
-      >
-        <span>{title}</span>
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-      </button>
+    <section
+      className="border-b border-white/10"
+      data-filter-group={title.toLowerCase()}
+      data-active={active ? "true" : "false"}
+    >
+      <div className="flex items-center gap-1.5 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={cn(
+            "min-w-0 flex-1 text-left text-[11px] font-mono uppercase tracking-[0.14em] transition",
+            active
+              ? "text-[var(--fv-alert-red)] hover:text-[var(--fv-alert-red)]"
+              : "text-[var(--fv-fog)] hover:text-white",
+          )}
+          aria-expanded={open}
+        >
+          {title}
+        </button>
+        {active ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClearAll();
+            }}
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--fv-alert-red)] text-white transition hover:brightness-110"
+            aria-label="Clear all filters"
+            title="Clear all filters"
+            data-testid={`catalog-filter-clear-all-${title.toLowerCase()}`}
+          >
+            <X size={11} strokeWidth={2.5} aria-hidden />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={cn(
+            "shrink-0 transition",
+            active ? "text-[var(--fv-alert-red)]" : "text-[var(--fv-fog)] hover:text-white",
+          )}
+          aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
+          aria-expanded={open}
+        >
+          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+      </div>
       {open ? (
         <div className="max-h-40 space-y-0.5 overflow-y-auto px-2 pb-3">
           <button
@@ -218,7 +259,7 @@ export function useCatalogFilterParams() {
  */
 export function CatalogSidebarFilters() {
   const facets = useQuery(api.catalog.queries.listFacets, {});
-  const { filters, setFilter } = useCatalogFilterParams();
+  const { filters, setFilter, clearAll } = useCatalogFilterParams();
   const activeCount = countActiveCatalogFilters(filters);
 
   return (
@@ -242,12 +283,14 @@ export function CatalogSidebarFilters() {
           options={facets?.categories ?? []}
           value={filters.category}
           onChange={(category) => setFilter("category", category)}
+          onClearAll={clearAll}
         />
         <FilterGroup
           title="OEM"
           options={facets?.oems ?? []}
           value={filters.oem}
           onChange={(oem) => setFilter("oem", oem)}
+          onClearAll={clearAll}
           defaultOpen={false}
         />
         <FilterGroup
@@ -257,6 +300,7 @@ export function CatalogSidebarFilters() {
           onChange={(vehicleClassLabel) =>
             setFilter("vehicleClassLabel", vehicleClassLabel)
           }
+          onClearAll={clearAll}
           defaultOpen={false}
         />
         <FilterGroup
@@ -264,6 +308,7 @@ export function CatalogSidebarFilters() {
           options={facets?.technologies ?? []}
           value={filters.technology}
           onChange={(technology) => setFilter("technology", technology)}
+          onClearAll={clearAll}
           defaultOpen={false}
         />
       </div>
