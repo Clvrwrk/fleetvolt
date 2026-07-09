@@ -16,6 +16,8 @@ import type * as carriers_corridorCity from "../carriers/corridorCity.js";
 import type * as carriers_ingest from "../carriers/ingest.js";
 import type * as carriers_mutations from "../carriers/mutations.js";
 import type * as carriers_queries from "../carriers/queries.js";
+import type * as catalog_enrich from "../catalog/enrich.js";
+import type * as catalog_enrichQueries from "../catalog/enrichQueries.js";
 import type * as catalog_ingest from "../catalog/ingest.js";
 import type * as catalog_mutations from "../catalog/mutations.js";
 import type * as catalog_queries from "../catalog/queries.js";
@@ -111,6 +113,8 @@ declare const fullApi: ApiFromModules<{
   "carriers/ingest": typeof carriers_ingest;
   "carriers/mutations": typeof carriers_mutations;
   "carriers/queries": typeof carriers_queries;
+  "catalog/enrich": typeof catalog_enrich;
+  "catalog/enrichQueries": typeof catalog_enrichQueries;
   "catalog/ingest": typeof catalog_ingest;
   "catalog/mutations": typeof catalog_mutations;
   "catalog/queries": typeof catalog_queries;

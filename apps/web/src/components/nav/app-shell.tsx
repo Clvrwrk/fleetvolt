@@ -58,6 +58,7 @@ function getPageTitle(pathname: string): string {
     "/unit": "Truck Unit",
     "/load": "Load Management",
     "/status": "System Status",
+    "/catalog": "Vehicle Catalog",
   };
   // Exact match first
   if (map[pathname]) return map[pathname];

@@ -123,3 +123,53 @@ export const upsertCatalogBatch = internalMutation({
     return { inserted, patched, total: rows.length };
   },
 });
+
+/** Patch scrape-derived media fields without rewriting the full HVIP row. */
+export const patchCatalogMediaBatch = internalMutation({
+  args: {
+    patches: v.array(
+      v.object({
+        slug: v.string(),
+        imageUrl: v.union(v.string(), v.null()),
+        galleryUrls: v.optional(v.array(v.string())),
+        scrapedAt: v.optional(v.number()),
+      }),
+    ),
+  },
+  returns: v.object({
+    patched: v.number(),
+    missing: v.number(),
+    total: v.number(),
+  }),
+  handler: async (ctx, { patches }) => {
+    let patched = 0;
+    let missing = 0;
+
+    for (const p of patches) {
+      const existing = await ctx.db
+        .query("catalogVehicles")
+        .withIndex("by_slug", (q) => q.eq("slug", p.slug))
+        .unique();
+
+      if (!existing) {
+        missing += 1;
+        continue;
+      }
+
+      const next: {
+        imageUrl: string | null;
+        galleryUrls?: string[];
+        scrapedAt?: number;
+      } = {
+        imageUrl: p.imageUrl,
+      };
+      if (p.galleryUrls !== undefined) next.galleryUrls = p.galleryUrls;
+      if (p.scrapedAt !== undefined) next.scrapedAt = p.scrapedAt;
+
+      await ctx.db.patch(existing._id, next);
+      patched += 1;
+    }
+
+    return { patched, missing, total: patches.length };
+  },
+});

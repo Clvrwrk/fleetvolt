@@ -324,6 +324,9 @@ export default defineSchema({
     hvipIncentiveUsd: v.union(v.number(), v.null()),
     hvipVehicleUrl: v.union(v.string(), v.null()),
     imageUrl: v.union(v.string(), v.null()),
+    /** Extra product photos from HVIP detail scrape (Firecrawl). */
+    galleryUrls: v.optional(v.array(v.string())),
+    scrapedAt: v.optional(v.number()),
     kwhPerMiCombined: v.union(v.number(), v.null()),
     kwhPerMiFullyLaden: v.union(v.number(), v.null()),
     kwhPerMiDrayage: v.union(v.number(), v.null()),

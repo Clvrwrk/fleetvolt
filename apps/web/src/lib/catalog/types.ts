@@ -38,6 +38,8 @@ export const catalogVehicleSchema = z.object({
   hvipIncentiveUsd: z.number().nullable(),
   hvipVehicleUrl: z.string().nullable(),
   imageUrl: z.string().nullable(),
+  galleryUrls: z.array(z.string()).optional(),
+  scrapedAt: z.number().optional(),
   kwhPerMiCombined: z.number().nullable(),
   kwhPerMiFullyLaden: z.number().nullable(),
   kwhPerMiDrayage: z.number().nullable(),

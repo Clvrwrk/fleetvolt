@@ -60,22 +60,34 @@ export function CatalogVehicleList({ vehicles, className }: CatalogVehicleListPr
             href={`/catalog/${vehicle.slug}`}
             className="no-underline group"
           >
-            <SkeuomorphicCard className="h-full p-4 transition-transform duration-150 ease-out group-hover:-translate-y-px">
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <BookOpen
-                    size={16}
-                    className="shrink-0 text-[var(--fv-accent)]"
-                    aria-hidden
+            <SkeuomorphicCard className="h-full overflow-hidden p-0 transition-transform duration-150 ease-out group-hover:-translate-y-px">
+              <div className="relative aspect-[16/9] w-full bg-[var(--fv-surface-muted)]">
+                {vehicle.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- remote HVIP CDN URLs vary by OEM
+                  <img
+                    src={vehicle.imageUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
                   />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--fv-text)]">
-                      {vehicle.displayName}
-                    </p>
-                    <p className="truncate text-xs text-[var(--fv-text-muted)]">
-                      {vehicle.oem} {vehicle.model}
-                    </p>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center gap-2 text-[var(--fv-steel)]">
+                    <BookOpen size={18} aria-hidden />
+                    <span className="font-mono text-[10px] uppercase tracking-wider">
+                      Photo pending
+                    </span>
                   </div>
+                )}
+              </div>
+              <div className="p-4">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[var(--fv-text)]">
+                    {vehicle.displayName}
+                  </p>
+                  <p className="truncate text-xs text-[var(--fv-text-muted)]">
+                    {vehicle.oem}
+                  </p>
                 </div>
               </div>
 
@@ -111,6 +123,7 @@ export function CatalogVehicleList({ vehicles, className }: CatalogVehicleListPr
                   </dd>
                 </div>
               </dl>
+              </div>
             </SkeuomorphicCard>
           </Link>
         );
