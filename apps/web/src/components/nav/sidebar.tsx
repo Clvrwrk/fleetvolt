@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Route,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
+import { CatalogSidebarFilters } from "@/components/catalog/catalog-filters";
 import { useRoleNav, type NavItem } from "./use-role-nav";
 
 // ── Phase 16 / Wave 3: Sidebar ─────────────────────────────────────────────
@@ -119,16 +121,41 @@ type SidebarProps = {
   forceCollapsed?: boolean;
 };
 
+function isCatalogRoute(pathname: string): boolean {
+  return pathname === "/catalog" || pathname.startsWith("/catalog/");
+}
+
 export function Sidebar({ forceCollapsed = false }: SidebarProps) {
+  const pathname = usePathname();
   const { items, loading, activeHref } = useRoleNav();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const prevPathRef = useRef(pathname);
+  const showCatalogFilters =
+    mounted && !forceCollapsed && !collapsed && isCatalogRoute(pathname);
 
   // Load persisted collapse state after mount (avoids hydration mismatch)
   useEffect(() => {
     setCollapsed(forceCollapsed ? true : getInitialCollapsed());
     setMounted(true);
   }, [forceCollapsed]);
+
+  // Entering /catalog: expand once so filters are visible (user can still collapse).
+  useEffect(() => {
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    if (!mounted || forceCollapsed) return;
+    const enteredCatalog =
+      isCatalogRoute(pathname) && !isCatalogRoute(prev);
+    if (enteredCatalog) {
+      setCollapsed(false);
+      try {
+        localStorage.setItem(STORAGE_KEY, "false");
+      } catch {
+        // ignore
+      }
+    }
+  }, [pathname, mounted, forceCollapsed]);
 
   const toggleCollapsed = () => {
     if (forceCollapsed) return;
@@ -153,6 +180,7 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
         transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
       aria-label="Primary navigation"
+      data-catalog-filters={showCatalogFilters ? "true" : "false"}
     >
       {/* Logo at top */}
       <div
@@ -183,9 +211,11 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
         </Link>
       </div>
 
-      {/* Nav items */}
+      {/* Nav items — shrink when catalog filters take the lower rail */}
       <nav
-        className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-3"
+        className={`flex flex-col gap-1 overflow-y-auto overflow-x-hidden py-3 ${
+          showCatalogFilters ? "shrink-0" : "flex-1"
+        }`}
         style={{ padding: effectiveCollapsed ? "0 8px" : "0 12px" }}
       >
         {loading ? (
@@ -213,6 +243,12 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
           ))
         ) : null}
       </nav>
+
+      {showCatalogFilters ? (
+        <Suspense fallback={null}>
+          <CatalogSidebarFilters />
+        </Suspense>
+      ) : null}
 
       {/* Collapse toggle at bottom — hidden when map workbench forces icon rail */}
       <div
