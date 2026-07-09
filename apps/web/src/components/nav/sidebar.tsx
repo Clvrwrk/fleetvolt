@@ -13,8 +13,11 @@ import {
   Users,
   Package,
   Map,
+  MapPin,
   Sparkles,
   BookOpen,
+  Wrench,
+  FileText,
   ChevronLeft,
   ChevronRight,
   type LucideIcon,
@@ -48,8 +51,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Users,
   Package,
   Map,
+  MapPin,
   Sparkles,
   BookOpen,
+  Wrench,
+  FileText,
 };
 
 const STORAGE_KEY = "fleetvolt_sidebar_collapsed";

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useUserRole, type FleetVoltRole } from "@/lib/auth";
 
@@ -38,13 +39,13 @@ const DRIVER_NAV: NavItem[] = [
 ];
 
 const FLEET_MANAGER_NAV: NavItem[] = [
-  { label: "Dashboard", href: "/fleet", icon: "LayoutDashboard" },
-  { label: "Contract Plan", href: "/fleet/contract-plan", icon: "Route" },
-  { label: "Vehicles", href: "/unit", icon: "Truck" },
+  { label: "My Fleets", href: "/fleet#fleets", icon: "LayoutDashboard" },
+  { label: "My Drivers", href: "/fleet#drivers", icon: "Users" },
+  { label: "My Routes", href: "/fleet#routes", icon: "Route" },
+  { label: "My Parking", href: "/fleet#parking", icon: "MapPin" },
+  { label: "Due for Maint", href: "/fleet#maintenance", icon: "Wrench" },
+  { label: "CaaS Contracts", href: "/fleet/contract-plan", icon: "FileText" },
   { label: "Catalog", href: "/catalog", icon: "BookOpen" },
-  { label: "Load Config", href: "/load", icon: "Package" },
-  { label: "Drivers", href: "/driver", icon: "Users" },
-  { label: "System Status", href: "/status", icon: "Activity" },
 ];
 
 const CAAS_NAV: NavItem[] = [
@@ -67,16 +68,36 @@ const NAV_BY_ROLE: Record<FleetVoltRole, NavItem[]> = {
 export function useRoleNav() {
   const { role, loading } = useUserRole();
   const pathname = usePathname();
+  const [hash, setHash] = useState("");
+
+  useEffect(() => {
+    const sync = () => setHash(window.location.hash.replace(/^#/, ""));
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, [pathname]);
 
   const items = role ? NAV_BY_ROLE[role] : [];
 
-  // Active item detection: exact match or prefix match
-  const activeHref =
-    items.find((item) => {
-      if (pathname === item.href) return true;
-      if (pathname.startsWith(item.href + "/")) return true;
-      return false;
-    })?.href ?? null;
+  // Active item detection: hash targets on /fleet, else exact/prefix match.
+  let activeHref: string | null = null;
+  for (const item of items) {
+    const [path, itemHash] = item.href.split("#");
+    if (itemHash) {
+      if (
+        pathname === path &&
+        (hash === itemHash || (!hash && itemHash === "fleets"))
+      ) {
+        activeHref = item.href;
+        break;
+      }
+      continue;
+    }
+    if (pathname === item.href || pathname.startsWith(item.href + "/")) {
+      activeHref = item.href;
+      break;
+    }
+  }
 
   return { items, role, loading, activeHref };
 }

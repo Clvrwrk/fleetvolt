@@ -1,229 +1,524 @@
 "use client";
 
-// ── Phase 16 / Wave 4 / Task 4.2: Fleet Manager Dashboard ──────────────────
-//
-// Replaces the 4-step fleet creation wizard with a desktop-first dashboard.
-// Fleet Manager is desktop-first: KPI row + vehicle status table.
-//
-// Content:
-//   1. KPI row (4 KpiCells): Total Vehicles, Active Routes, Charging Sessions, Avg Utilization
-//   2. Vehicle Status table: max 5 rows, progressive disclosure ("Show all")
-//   3. Fleet Overview card: empty state if no fleet → "Create Your Fleet" → /fleet/setup
-//   4. Primary CTA: "Plan Contract" (PrimaryButton → /fleet/contract-plan)
-//
-// The 4-step fleet creation wizard moved to /fleet/setup.
-//
-// UX checks: HOME-2, VIS-1 (one primary CTA), VIS-3 (F-pattern), COG-1, EMPTY-1
-// UX principles: Miller's Law (4 KPIs), Von Restorff (one primary CTA), inverted pyramid
-
-import { useState } from "react";
+/**
+ * Fleet Manager dashboard — full-bleed workbench layout.
+ * Setup wizard + selectable HVIP catalog to build the fleet.
+ */
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useWorkOSAuth } from "@/lib/auth";
-import { FramedPanel } from "@/components/design/framed-panel";
 import { SkeuomorphicCard } from "@/components/design/skeuomorphic-card";
 import { KpiCell } from "@/components/design/kpi-cell";
 import { PrimaryButton } from "@/components/design/primary-button";
 import { StatusBadge } from "@/components/design/status-badge";
 import { TechnicalLabel } from "@/components/design/technical-label";
-import { Truck, Users, Route, Zap, ArrowRight, Plus, TrendingUp } from "lucide-react";
 import { SkeletonContent } from "@/components/design/skeleton-card";
+import { FleetVehiclePicker } from "@/components/fleet/fleet-vehicle-picker";
+import {
+  Check,
+  MapPin,
+  Plus,
+  Route,
+  Users,
+  ArrowRight,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const MAX_TABLE_ROWS = 5;
+const SELECTION_KEY = "fleetvolt_fleet_selected_vehicles";
+const FLEET_ID_KEY = "fleetvolt_active_fleet_id";
+
+function loadSelected(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(SELECTION_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as string[];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistSelected(slugs: Set<string>) {
+  try {
+    localStorage.setItem(SELECTION_KEY, JSON.stringify([...slugs]));
+  } catch {
+    // ignore
+  }
+}
 
 export default function FleetDashboardPage() {
   const { displayName, loading } = useWorkOSAuth();
-  const [showAllVehicles, setShowAllVehicles] = useState(false);
+  const [step, setStep] = useState(0);
+  const [fleetName, setFleetName] = useState("");
+  const [fleetId, setFleetId] = useState<string | null>(null);
+  const [lotName, setLotName] = useState("");
+  const [lotAddress, setLotAddress] = useState("");
+  const [lotLat, setLotLat] = useState("");
+  const [lotLng, setLotLng] = useState("");
+  const [lotCapacity, setLotCapacity] = useState("10");
+  const [lotAmenities, setLotAmenities] = useState<string[]>([]);
+  const [driverName, setDriverName] = useState("");
+  const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
 
-  const greeting = displayName ? `Welcome, ${displayName}` : "Fleet Dashboard";
+  const createFleet = useMutation(api.fleet.mutations.createFleet);
+  const addLot = useMutation(api.fleet.mutations.addParkingLot);
+  const addDriver = useMutation(api.fleet.mutations.addDriverToFleet);
 
-  // Query fleet data — using a placeholder fleetId for now
-  // In production, this would come from the user's associated fleet
-  const fleetOverview = useQuery(api.fleet.queries.getFleetOverview, {
-    fleetId: "demo-fleet", // Will be replaced with real fleet association
-  });
+  useEffect(() => {
+    setSelectedSlugs(loadSelected());
+    try {
+      const saved = localStorage.getItem(FLEET_ID_KEY);
+      if (saved) setFleetId(saved);
+    } catch {
+      // ignore
+    }
+    setMounted(true);
+  }, []);
 
-  // ── Loading state — skeleton screens (Task 6.1) ──────────────────────
-  if (loading) {
+  // Sidebar hash links (#fleets, #drivers, …) → scroll + open matching setup step
+  useEffect(() => {
+    if (!mounted) return;
+    const applyHash = () => {
+      const hash = window.location.hash.replace(/^#/, "");
+      if (hash === "fleets") setStep(0);
+      if (hash === "parking") setStep(1);
+      if (hash === "drivers") setStep(2);
+      if (hash === "routes" || hash === "maintenance") setStep(3);
+      if (!hash) return;
+      requestAnimationFrame(() => {
+        document.getElementById(hash)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [mounted]);
+
+  const fleetOverview = useQuery(
+    api.fleet.queries.getFleetOverview,
+    fleetId ? { fleetId } : "skip",
+  );
+
+  const AMENITIES = [
+    "charging",
+    "restroom",
+    "food",
+    "secure_parking",
+    "maintenance",
+    "driver_lounge",
+  ];
+  const steps = ["Create Fleet", "Parking Lots", "Drivers", "Routes"];
+
+  async function handleCreateFleet() {
+    const id = `fleet_${Date.now()}`;
+    await createFleet({
+      fleetId: id,
+      name: fleetName,
+      address: "TBD",
+      location: { lat: 0, lng: 0 },
+    });
+    setFleetId(id);
+    try {
+      localStorage.setItem(FLEET_ID_KEY, id);
+    } catch {
+      // ignore
+    }
+    setStep(1);
+  }
+
+  async function handleAddLot() {
+    if (!fleetId) return;
+    const lotId = `lot_${Date.now()}`;
+    await addLot({
+      lotId,
+      fleetId,
+      name: lotName,
+      address: lotAddress,
+      location: {
+        lat: parseFloat(lotLat) || 0,
+        lng: parseFloat(lotLng) || 0,
+      },
+      capacityTrucks: parseInt(lotCapacity) || 1,
+      amenities: lotAmenities,
+    });
+    setLotName("");
+    setLotAddress("");
+    setLotLat("");
+    setLotLng("");
+    setLotCapacity("10");
+    setLotAmenities([]);
+  }
+
+  async function handleAddDriver() {
+    if (!fleetId) return;
+    const driverId = `drv_${Date.now()}`;
+    const truckSlug = [...selectedSlugs][0];
+    await addDriver({
+      fleetId,
+      driverId,
+      driverName,
+      ...(truckSlug ? { assignedTruckSlug: truckSlug } : {}),
+    });
+    setDriverName("");
+  }
+
+  function toggleSlug(slug: string) {
+    setSelectedSlugs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      persistSelected(next);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    const empty = new Set<string>();
+    setSelectedSlugs(empty);
+    persistSelected(empty);
+  }
+
+  if (loading || !mounted) {
     return (
-      <FramedPanel maxWidthClass="max-w-[1100px]">
-        <SkeletonContent kpiCount={4} cardLines={6} />
-      </FramedPanel>
+      <div
+        data-testid="fleet-dashboard"
+        className="min-h-[calc(100dvh-3.5rem)] w-full max-w-none bg-[var(--fv-bg)] px-5 py-5 md:px-8"
+      >
+        <SkeletonContent kpiCount={3} cardLines={6} />
+      </div>
     );
   }
 
-  // ── Derived data ──────────────────────────────────────────────────────
-  const drivers = fleetOverview?.drivers ?? [];
-  const routes = fleetOverview?.routes ?? [];
-  const parkingLots = fleetOverview?.parkingLots ?? [];
-  const hasFleet = fleetOverview?.company != null;
-
-  const totalVehicles = drivers.length;
-  const activeRoutes = routes.length;
-  const chargingSessions = 0; // No charging session tracking yet
-  const avgUtilization = totalVehicles > 0
-    ? Math.round((activeRoutes / totalVehicles) * 100)
-    : 0;
-
-  // Vehicle rows from drivers (each driver may have an assigned truck)
-  const vehicleRows = drivers.map((d: { driverName: string; driverId: string; assignedTruckSlug?: string; status?: string }) => ({
-    model: d.assignedTruckSlug ?? "Unassigned",
-    soc: "—",
-    status: d.status === "active" ? "ready" : "offline",
-    driver: d.driverName,
-    route: "—",
-  }));
-
-  const visibleVehicles = showAllVehicles
-    ? vehicleRows
-    : vehicleRows.slice(0, MAX_TABLE_ROWS);
+  const greeting = displayName ? `Welcome, ${displayName}` : "Fleet Dashboard";
 
   return (
-    <FramedPanel maxWidthClass="max-w-[1100px]">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-black/8 pb-4">
-        <div className="flex items-baseline gap-3.5">
-          <span className="text-[19px] font-bold tracking-tight text-[var(--fv-graphite)]">
-            {greeting}
-          </span>
-          <StatusBadge variant="ok">Fleet Manager</StatusBadge>
+    <div
+      data-testid="fleet-dashboard"
+      className="min-h-[calc(100dvh-3.5rem)] w-full max-w-none bg-[var(--fv-bg)]"
+    >
+      <div className="border-b border-black/8 bg-[var(--fv-paper)] px-5 py-5 md:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-baseline gap-3.5">
+            <h1 className="text-[19px] font-bold tracking-tight text-[var(--fv-graphite)]">
+              {greeting}
+            </h1>
+            <StatusBadge variant="ok">Fleet Manager</StatusBadge>
+          </div>
+          <Link
+            href="/fleet/contract-plan"
+            className="no-underline"
+          >
+            <PrimaryButton className="flex items-center gap-2">
+              <ArrowRight size={16} />
+              Plan Contract
+            </PrimaryButton>
+          </Link>
         </div>
-        <Link href="/fleet/setup" className="text-xs text-[var(--fv-steel)] hover:text-[var(--fv-accent)]">
-          Fleet settings →
-        </Link>
       </div>
 
-      {/* ── KPI Row (4 cells — Miller's Law) ─────────────────────────────── */}
-      <div className="mt-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-        <KpiCell label="TOTAL VEHICLES" value={totalVehicles} />
-        <KpiCell label="ACTIVE ROUTES" value={activeRoutes} />
-        <KpiCell label="CHARGING SESSIONS" value={chargingSessions} />
-        <KpiCell label="AVG UTILIZATION" value={avgUtilization} unit="%" />
-      </div>
-
-      {/* ── Empty state: no fleet created ──────────────────────────────── */}
-      {!hasFleet && (
-        <SkeuomorphicCard padding="lg" className="mt-5">
-          <div className="py-8 text-center">
-            <p className="text-base font-medium text-[var(--fv-graphite)]">
-              No fleet created yet
-            </p>
-            <p className="mt-1 text-sm text-[var(--fv-text-muted)]">
-              Set up your fleet to start managing vehicles, drivers, and routes.
-            </p>
-            <Link href="/fleet/setup" className="no-underline inline-block mt-4">
-              <PrimaryButton className="flex items-center gap-2">
-                <Plus size={16} />
-                Create Your Fleet
-              </PrimaryButton>
-            </Link>
-          </div>
-        </SkeuomorphicCard>
-      )}
-
-      {/* ── Vehicle Status Table ────────────────────────────────────────── */}
-      {hasFleet && (
-        <SkeuomorphicCard padding="lg" className="mt-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Truck size={16} className="text-[var(--fv-accent)]" />
-              <TechnicalLabel>VEHICLE STATUS</TechnicalLabel>
-            </div>
-            {totalVehicles > MAX_TABLE_ROWS && (
-              <button
-                onClick={() => setShowAllVehicles(!showAllVehicles)}
-                className="text-xs text-[var(--fv-accent)] hover:underline"
-              >
-                {showAllVehicles ? "Show less" : `Show all (${totalVehicles})`}
-              </button>
-            )}
-          </div>
-
-          {totalVehicles === 0 ? (
-            <div className="py-6 text-center">
-              <p className="text-sm text-[var(--fv-text-muted)]">
-                No vehicles in fleet yet. Add drivers with assigned trucks to populate this table.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="fv-table w-full">
-                <thead>
-                  <tr>
-                    <th>TRUCK MODEL</th>
-                    <th>BATTERY SoC</th>
-                    <th>STATUS</th>
-                    <th>ASSIGNED DRIVER</th>
-                    <th>ASSIGNED ROUTE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleVehicles.map((v, i) => (
-                    <tr key={i}>
-                      <td>{v.model}</td>
-                      <td className="font-mono">{v.soc}</td>
-                      <td>
-                        <StatusBadge variant={v.status === "ready" ? "ok" : "neutral"}>
-                          {v.status}
-                        </StatusBadge>
-                      </td>
-                      <td>{v.driver}</td>
-                      <td>{v.route}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </SkeuomorphicCard>
-      )}
-
-      {/* ── Fleet Summary + Primary CTA ────────────────────────────────── */}
-      {hasFleet && (
-        <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <SkeuomorphicCard padding="lg" className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-3">
-              <Users size={16} className="text-[var(--fv-accent)]" />
-              <TechnicalLabel>FLEET OVERVIEW</TechnicalLabel>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-2xl font-bold text-[var(--fv-graphite)]">{drivers.length}</p>
-                <p className="text-xs text-[var(--fv-text-muted)]">Drivers</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--fv-graphite)]">{routes.length}</p>
-                <p className="text-xs text-[var(--fv-text-muted)]">Routes</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--fv-graphite)]">{parkingLots.length}</p>
-                <p className="text-xs text-[var(--fv-text-muted)]">Parking Lots</p>
-              </div>
-            </div>
-          </SkeuomorphicCard>
-
+      <div className="px-5 py-5 md:px-8">
+        {/* Fleet Setup */}
+        <section id="fleets" className="scroll-mt-20">
           <SkeuomorphicCard padding="lg">
-            <div className="flex items-center gap-2 mb-3">
-              <Route size={16} className="text-[var(--fv-accent)]" />
-              <TechnicalLabel>CONTRACT PLANNING</TechnicalLabel>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/8 pb-4">
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="text-base font-bold text-[var(--fv-graphite)]">
+                  Fleet Setup
+                </span>
+                <TechnicalLabel>FLEET REGISTRATION & OPERATIONS</TechnicalLabel>
+              </div>
+              <StatusBadge variant={fleetId ? "ok" : "neutral"}>
+                {fleetId ? "Fleet Active" : "No Fleet Created"}
+              </StatusBadge>
             </div>
-            <p className="text-sm text-[var(--fv-text-muted)] mb-3">
-              Plan a new contract route with charger, schedule, and fleet assumptions on the map.
-            </p>
-            <Link href="/fleet/contract-plan" className="no-underline block">
-              <PrimaryButton block className="flex items-center justify-center gap-2">
-                <ArrowRight size={16} />
-                Plan Contract
-              </PrimaryButton>
-            </Link>
-          </SkeuomorphicCard>
-        </div>
-      )}
 
-      <div className="fv-footer-credit mt-3.5 text-right">
-        POWERED BY CLEVERWORK · ZERO EMISSION ADVISORS
+            <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <KpiCell
+                label="DRIVERS"
+                value={fleetOverview?.drivers?.length ?? 0}
+              />
+              <KpiCell
+                label="PARKING LOTS"
+                value={fleetOverview?.parkingLots?.length ?? 0}
+              />
+              <KpiCell
+                label="ROUTES"
+                value={fleetOverview?.routes?.length ?? 0}
+              />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {steps.map((s, i) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStep(i)}
+                  className={cn(
+                    "rounded-md border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition",
+                    step === i
+                      ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
+                      : "border-black/10 bg-white text-[var(--fv-steel)] hover:text-[var(--fv-graphite)]",
+                  )}
+                >
+                  {i + 1}. {s}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4">
+              {step === 0 && (
+                <div>
+                  <TechnicalLabel className="mb-3 block">
+                    FLEET / COMPANY NAME
+                  </TechnicalLabel>
+                  <div className="flex flex-wrap gap-3">
+                    <input
+                      value={fleetName}
+                      onChange={(e) => setFleetName(e.target.value)}
+                      placeholder="Acme Drayage Co."
+                      className="fv-input min-w-[220px] flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateFleet()}
+                      disabled={!fleetName}
+                      className="fv-btn-primary"
+                      style={{ width: "auto", padding: "10px 20px" }}
+                    >
+                      Create Fleet
+                    </button>
+                  </div>
+                  {selectedSlugs.size > 0 ? (
+                    <p className="mt-2 text-xs text-[var(--fv-text-muted)]">
+                      {selectedSlugs.size} catalog model
+                      {selectedSlugs.size === 1 ? "" : "s"} selected for this
+                      fleet.
+                    </p>
+                  ) : null}
+                  {fleetId ? (
+                    <div className="mt-3 flex items-center gap-1 font-mono text-[10px] text-[var(--fv-signal-green)]">
+                      <Check size={14} /> Fleet created: {fleetName || fleetId}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {step === 1 && (
+                <div id="parking">
+                  {!fleetId ? (
+                    <p className="text-sm text-[var(--fv-text-muted)]">
+                      Create a fleet first.
+                    </p>
+                  ) : (
+                    <>
+                      <TechnicalLabel className="mb-3 block">
+                        ADD PARKING LOT
+                      </TechnicalLabel>
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <input
+                          value={lotName}
+                          onChange={(e) => setLotName(e.target.value)}
+                          placeholder="Lot name"
+                          className="fv-input"
+                        />
+                        <input
+                          value={lotAddress}
+                          onChange={(e) => setLotAddress(e.target.value)}
+                          placeholder="Address"
+                          className="fv-input"
+                        />
+                        <input
+                          value={lotLat}
+                          onChange={(e) => setLotLat(e.target.value)}
+                          placeholder="Latitude"
+                          className="fv-input"
+                        />
+                        <input
+                          value={lotLng}
+                          onChange={(e) => setLotLng(e.target.value)}
+                          placeholder="Longitude"
+                          className="fv-input"
+                        />
+                        <input
+                          value={lotCapacity}
+                          onChange={(e) => setLotCapacity(e.target.value)}
+                          placeholder="Capacity (trucks)"
+                          type="number"
+                          className="fv-input"
+                        />
+                      </div>
+                      <div className="mt-3">
+                        <TechnicalLabel className="mb-2 block">
+                          AMENITIES
+                        </TechnicalLabel>
+                        <div className="flex flex-wrap gap-2">
+                          {AMENITIES.map((a) => (
+                            <button
+                              key={a}
+                              type="button"
+                              onClick={() =>
+                                setLotAmenities((p) =>
+                                  p.includes(a)
+                                    ? p.filter((x) => x !== a)
+                                    : [...p, a],
+                                )
+                              }
+                              className="fv-btn-secondary"
+                              style={{
+                                width: "auto",
+                                padding: "5px 10px",
+                                fontSize: "10px",
+                                background: lotAmenities.includes(a)
+                                  ? "linear-gradient(180deg, #2a2a2e, #141416)"
+                                  : undefined,
+                                color: lotAmenities.includes(a)
+                                  ? "#f5f5f7"
+                                  : undefined,
+                              }}
+                            >
+                              {a}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleAddLot()}
+                        disabled={!lotName}
+                        className="fv-btn-primary mt-3"
+                        style={{ width: "auto", padding: "10px 20px" }}
+                      >
+                        <Plus size={14} className="inline" /> Add Lot
+                      </button>
+                      {fleetOverview?.parkingLots?.map(
+                        (lot: {
+                          name: string;
+                          address?: string;
+                          capacityTrucks: number;
+                          amenities?: string[];
+                        }) => (
+                          <div
+                            key={lot.name}
+                            className="mt-2 rounded-lg border border-black/5 bg-[var(--fv-surface)] p-2 font-mono text-[11px] text-[var(--fv-slate)]"
+                          >
+                            <MapPin size={12} className="mr-1 inline" />{" "}
+                            {lot.name} — {lot.address} (cap:{" "}
+                            {lot.capacityTrucks}) [
+                            {lot.amenities?.join(", ")}]
+                          </div>
+                        ),
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {step === 2 && (
+                <div id="drivers">
+                  {!fleetId ? (
+                    <p className="text-sm text-[var(--fv-text-muted)]">
+                      Create a fleet first.
+                    </p>
+                  ) : (
+                    <>
+                      <TechnicalLabel className="mb-3 block">
+                        ADD DRIVER
+                      </TechnicalLabel>
+                      <div className="flex flex-wrap gap-3">
+                        <input
+                          value={driverName}
+                          onChange={(e) => setDriverName(e.target.value)}
+                          placeholder="Driver name"
+                          className="fv-input min-w-[220px] flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleAddDriver()}
+                          disabled={!driverName}
+                          className="fv-btn-primary"
+                          style={{ width: "auto", padding: "10px 20px" }}
+                        >
+                          <Plus size={14} className="inline" /> Add Driver
+                        </button>
+                      </div>
+                      {fleetOverview?.drivers?.map(
+                        (d: {
+                          driverName: string;
+                          driverId: string;
+                          assignedTruckSlug?: string;
+                        }) => (
+                          <div
+                            key={d.driverId}
+                            className="mt-2 rounded-lg border border-black/5 bg-[var(--fv-surface)] p-2 font-mono text-[11px] text-[var(--fv-slate)]"
+                          >
+                            <Users size={12} className="mr-1 inline" />{" "}
+                            {d.driverName}{" "}
+                            {d.assignedTruckSlug &&
+                              `→ ${d.assignedTruckSlug}`}
+                          </div>
+                        ),
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {step === 3 && (
+                <div id="routes">
+                  <TechnicalLabel className="mb-3 block">
+                    PLAN ROUTE
+                  </TechnicalLabel>
+                  <p className="text-sm text-[var(--fv-text-muted)]">
+                    Plan contract routes with charger, schedule, and fleet
+                    assumptions on the map.
+                  </p>
+                  <Link
+                    href="/fleet/contract-plan"
+                    className="fv-btn-primary mt-3 inline-block no-underline"
+                    style={{ width: "auto", padding: "12px 20px" }}
+                  >
+                    Open Contract Plan →
+                  </Link>
+                  {fleetOverview?.routes?.length === 0 && (
+                    <p className="mt-3 font-mono text-[10px] text-[var(--fv-steel)]">
+                      No routes planned yet.
+                    </p>
+                  )}
+                  {fleetOverview?.routes?.map(
+                    (r: { name: string; routeId: string }) => (
+                      <div
+                        key={r.routeId}
+                        className="mt-2 rounded-lg border border-black/5 bg-[var(--fv-surface)] p-2 font-mono text-[11px] text-[var(--fv-slate)]"
+                      >
+                        <Route size={12} className="mr-1 inline" /> {r.name}
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
+          </SkeuomorphicCard>
+        </section>
+
+        <div id="maintenance" className="scroll-mt-20" />
+
+        <FleetVehiclePicker
+          selectedSlugs={selectedSlugs}
+          onToggle={toggleSlug}
+          onClearSelection={clearSelection}
+        />
+
+        <div className="fv-footer-credit mt-8 pb-6 text-right">
+          POWERED BY CLEVERWORK · ZERO EMISSION ADVISORS
+        </div>
       </div>
-    </FramedPanel>
+    </div>
   );
 }
