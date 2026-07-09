@@ -100,4 +100,30 @@ test.describe("@smoke production e2e", () => {
       expect(bodyText).not.toMatch(/API error/i);
     }
   });
+
+  test("welcome page is the public entry for testers", async ({ page }) => {
+    await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /Plan EV Freight Routes/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole("link", { name: /Get Started/i })).toBeVisible();
+  });
+
+  test("unauthenticated workbench redirects to welcome", async ({ page }) => {
+    const res = await page.goto(`${BASE_URL}/workbench?mode=driver_day_plan`, {
+      waitUntil: "domcontentloaded",
+    });
+    expect(res?.status()).toBeLessThan(500);
+    await expect(page).toHaveURL(/\/(\?redirect=.*workbench)?/);
+    await expect(page.getByRole("heading", { name: /Plan EV Freight Routes/i })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
+  test("catalog is publicly reachable", async ({ page }) => {
+    const res = await page.goto(`${BASE_URL}/catalog`, { waitUntil: "domcontentloaded" });
+    expect(res?.status()).toBeLessThan(500);
+    const bodyText = await page.locator("body").textContent();
+    expect(bodyText).not.toContain("Something went wrong");
+  });
 });

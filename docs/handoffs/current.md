@@ -2,9 +2,9 @@
 **Project:** FleetVolt Route
 **Repo:** https://github.com/Clvrwrk/fleetvolt.git
 **Production URL:** https://fleetvolt.network (manual Vercel/DNS verify still pending)
-**Date:** 2026-07-08 21:27
+**Date:** 2026-07-09 07:40
 **Agent:** Lead Orchestrator
-**Reason:** User-requested — computer restart
+**Reason:** Prod live for external testing
 
 ---
 
@@ -54,7 +54,7 @@ UAT Test 4 — Fleet contract plan. Backend Calculate path verified; user had no
 
 ## Next Task — Start Here
 
-**Task:** Finish Phase 17 UAT Test 4 (Fleet contract plan from dashboard)
+**Task:** Invite testers + finish Phase 17 UAT Tests 4–9 on production
 
 **What to check / do:**
 1. Start local stack if needed: Next on `http://127.0.0.1:3000` (E2E cookie `fv_e2e=1` if auth gates), Convex via `npx convex dev` in `apps/web` against deployment `sensible-oriole-832`.

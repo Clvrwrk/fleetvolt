@@ -5,10 +5,10 @@ milestone_name: Progress
 current_phase: 17
 current_phase_name: role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map
 status: uat_in_progress
-stopped_at: "Prod map crash: apex Maps referrer fixed + workbench map soft-boundary. Deploy harden, then UAT Test 4."
-last_updated: "2026-07-09T14:05:00.000Z"
+stopped_at: "Prod live at fleetvolt.network (3293e34). Tester guide in docs/TESTING.md. Continue UAT Test 4 with logged-in walkthrough."
+last_updated: "2026-07-09T14:40:00.000Z"
 last_activity: 2026-07-09
-last_activity_desc: Fixed RefererNotAllowedMapError (apex allowlist) + map crash hardening
+last_activity_desc: Prod deploy verified; local workbenches smoke OK; external testing guide shipped
 progress:
   total_phases: 12
   completed_phases: 12
@@ -54,9 +54,9 @@ Last activity: 2026-07-08 — HVIP catalog merged; resume for Fleet UAT Test 4
 
 ## Pending Todos
 
-- Deploy map soft-boundary harden to Vercel; hard-refresh prod workbench
-- Finish Phase 17 UAT Test 4 (`17-UAT.md`) — user walkthrough Fleet contract plan
-- Then Tests 5–9 (CaaS, AI bar, hybrid routes, mobile, coverage)
+- Invite testers via WorkOS; share docs/TESTING.md
+- Finish Phase 17 UAT Test 4–9 with logged-in walkthroughs
+- Confirm OPENAI_API_KEY on Convex prod if AI bar should hit live LLM
 - Before final ship: corridor layer data sweep (parking/POI density); layer toggles verified
 - Optional polish: soft-fallback role nav on `/driver`|/fleet|/caas when role hydrates slowly
 - Manual deploy: Vercel, DNS `fleetvolt.network`, `OPENAI_API_KEY` in Convex prod

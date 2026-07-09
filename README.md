@@ -72,6 +72,8 @@ Quick summary:
 4. Add `fleetvolt.network` domain in Vercel + point DNS
 5. Verify `https://fleetvolt.network/health` returns 200
 
+External tester walkthrough: [docs/TESTING.md](./docs/TESTING.md).
+
 ### CI and local verification
 
 GitHub Actions runs lint, typecheck, and tests on every push to `main`:
