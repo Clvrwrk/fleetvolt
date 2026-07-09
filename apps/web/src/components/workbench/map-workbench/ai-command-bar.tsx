@@ -50,6 +50,14 @@ const BARSTOW = {
   kind: "manual" as const,
   source: "manual" as const,
 };
+const OTAY = {
+  id: "otay-mesa",
+  label: "Otay Mesa",
+  latitude: 32.555,
+  longitude: -116.938,
+  kind: "manual" as const,
+  source: "manual" as const,
+};
 const OAKLAND = {
   label: "Port of Oakland",
   latitude: 37.7955,
@@ -67,6 +75,127 @@ const TRACY = {
 
 function localAiFallback(mode: WorkbenchMode, message: string): WorkbenchAiResult {
   const lower = message.toLowerCase();
+
+  // CaaS route / gap intents must stay in caas_gap_map — do not fall through to driver.
+  if (mode === "caas_gap_map") {
+    const wantsRoute =
+      /otay|polb|barstow|route|gap|corridor|day.?plan|to\s+/.test(lower) &&
+      !/freight volume|west coast ports|census/.test(lower);
+    if (wantsRoute || /otay|polb\s*(→|->|to)/.test(lower)) {
+      const destination = /otay/.test(lower) ? OTAY : BARSTOW;
+      return {
+        id: `wbai_local_caas_route_${Date.now()}`,
+        mode: "caas_gap_map",
+        answerSummary: `Drafted ${POLB.label} → ${destination.label} corridor for Class 8 gap analysis. Map focused on the route.`,
+        draftPatch: {
+          origin: POLB,
+          destination,
+          vehicleClass: "Class 8 corridor",
+          notes: `AI draft: ${POLB.label} → ${destination.label}`,
+          metadata: {
+            truckSlug: "ecascadia_438",
+            driverProfile: "regional_drayage",
+            source: "workbench/ai:local_fallback",
+          },
+        },
+        mapActions: [
+          { type: "set_origin", place: POLB },
+          { type: "set_destination", place: destination },
+          {
+            type: "set_layers",
+            layers: [
+              "route",
+              "chargers",
+              "parking",
+              "class8-gaps",
+              "carriers",
+              "caas-zones",
+              "highways",
+            ],
+          },
+          {
+            type: "focus_bounds",
+            bounds: {
+              north: Math.max(POLB.latitude, destination.latitude) + 0.35,
+              south: Math.min(POLB.latitude, destination.latitude) - 0.35,
+              east: Math.max(POLB.longitude, destination.longitude) + 0.45,
+              west: Math.min(POLB.longitude, destination.longitude) - 0.45,
+            },
+          },
+        ],
+        routeGeometry: {
+          provider: "mock",
+          coordinates: [
+            { latitude: POLB.latitude, longitude: POLB.longitude },
+            {
+              latitude: (POLB.latitude + destination.latitude) / 2,
+              longitude: (POLB.longitude + destination.longitude) / 2,
+            },
+            {
+              latitude: destination.latitude,
+              longitude: destination.longitude,
+            },
+          ],
+          warnings: ["Preview corridor — snap to roads via Find Charger Gaps."],
+        },
+        cards: [
+          {
+            id: "ai-caas-route-draft",
+            title: "Corridor drafted",
+            summary: `${POLB.label} → ${destination.label}. Statewide geo boxes and freight arcs are cleared; gap layers stay on the corridor.`,
+            mode: "caas_gap_map",
+            severity: "success",
+            layerId: "route",
+            metrics: {
+              origin: POLB.label,
+              destination: destination.label,
+            },
+          },
+        ],
+        queriesRun: [],
+        fallback: true,
+        model: "workbench-local-fallback",
+      };
+    }
+
+    return {
+      id: `wbai_local_caas_${Date.now()}`,
+      mode: "caas_gap_map",
+      answerSummary:
+        "Enabled Class 8 gap and carrier layers for the opportunity map. Select origin and destination for route gap cards.",
+      mapActions: [
+        { type: "toggle_layer", layer: "class8-gaps", enabled: true },
+        { type: "toggle_layer", layer: "carriers", enabled: true },
+        {
+          type: "set_layers",
+          layers: [
+            "ports",
+            "freight-flow",
+            "geo-regions",
+            "class8-gaps",
+            "carriers",
+            "parking",
+            "caas-zones",
+          ],
+        },
+      ],
+      cards: [
+        {
+          id: "ai-caas-layers",
+          title: "Gap and carrier layers active",
+          summary:
+            "Class 8 gaps and carriers are toggled on. Detour time stays labeled unavailable unless provider detour data exists.",
+          mode: "caas_gap_map",
+          severity: "success",
+          layerId: "class8-gaps",
+        },
+      ],
+      queriesRun: [],
+      fallback: true,
+      model: "workbench-local-fallback",
+    };
+  }
+
   if (mode === "driver_day_plan" || /polb|barstow|day plan|charger layer/.test(lower)) {
     return {
       id: `wbai_local_driver_${Date.now()}`,
@@ -167,29 +296,11 @@ function localAiFallback(mode: WorkbenchMode, message: string): WorkbenchAiResul
     };
   }
   return {
-    id: `wbai_local_caas_${Date.now()}`,
-    mode: "caas_gap_map",
-    answerSummary:
-      "Enabled Class 8 gap and carrier layers for the opportunity map. Select origin and destination for route gap cards.",
-    mapActions: [
-      { type: "toggle_layer", layer: "class8-gaps", enabled: true },
-      { type: "toggle_layer", layer: "carriers", enabled: true },
-      {
-        type: "set_layers",
-        layers: ["geo-regions", "class8-gaps", "carriers", "parking", "freight-flow", "caas-zones"],
-      },
-    ],
-    cards: [
-      {
-        id: "ai-caas-layers",
-        title: "Gap and carrier layers active",
-        summary:
-          "Class 8 gaps and carriers are toggled on. Detour time stays labeled unavailable unless provider detour data exists.",
-        mode: "caas_gap_map",
-        severity: "success",
-        layerId: "class8-gaps",
-      },
-    ],
+    id: `wbai_local_${mode}_${Date.now()}`,
+    mode,
+    answerSummary: "No local draft matched — try an example prompt or Calculate.",
+    mapActions: [],
+    cards: [],
     queriesRun: [],
     fallback: true,
     model: "workbench-local-fallback",

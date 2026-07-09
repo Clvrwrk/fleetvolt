@@ -101,6 +101,12 @@ export function WorkbenchLeftPanel({
   );
   const caasPhase = useMapWorkbenchStore((state) => state.caasPhase);
   const setCaasPhase = useMapWorkbenchStore((state) => state.setCaasPhase);
+  const freightViaFilter = useMapWorkbenchStore(
+    (state) => state.freightViaFilter,
+  );
+  const setFreightViaFilter = useMapWorkbenchStore(
+    (state) => state.setFreightViaFilter,
+  );
   const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
 
   const truckSlug =
@@ -160,7 +166,7 @@ export function WorkbenchLeftPanel({
       useMapWorkbenchStore.setState({
         resultCards: caasOpportunity.cards as WorkbenchResultCard[],
         providerWarnings: [
-          "West-coast freight overview is static (port TEU + corridor intensity). Build a route with truck, A→B, and driver profile to run Class-8 gap analysis.",
+          "West-coast freight overview uses road-traced corridors + CalTrans truck AADT samples. Build a route with truck, A→B, and driver profile to run Class-8 gap analysis.",
         ],
       });
     }
@@ -215,9 +221,41 @@ export function WorkbenchLeftPanel({
           longitude: draft.destination.longitude,
         },
       });
+      const focus = {
+        north:
+          Math.max(draft.origin.latitude, draft.destination.latitude) + 0.35,
+        south:
+          Math.min(draft.origin.latitude, draft.destination.latitude) - 0.35,
+        east:
+          Math.max(draft.origin.longitude, draft.destination.longitude) + 0.45,
+        west:
+          Math.min(draft.origin.longitude, draft.destination.longitude) - 0.45,
+      };
+      // Prefer road-snapped bounds when we have a polyline.
+      const coords = geometry.coordinates ?? [];
+      if (coords.length >= 2) {
+        let north = coords[0]!.latitude;
+        let south = coords[0]!.latitude;
+        let east = coords[0]!.longitude;
+        let west = coords[0]!.longitude;
+        for (const c of coords) {
+          north = Math.max(north, c.latitude);
+          south = Math.min(south, c.latitude);
+          east = Math.max(east, c.longitude);
+          west = Math.min(west, c.longitude);
+        }
+        const latPad = Math.max(0.12, (north - south) * 0.22);
+        const lngPad = Math.max(0.12, (east - west) * 0.22);
+        focus.north = north + latPad;
+        focus.south = south - latPad;
+        focus.east = east + lngPad;
+        focus.west = west - lngPad;
+      }
       useMapWorkbenchStore.setState({
         routeGeometry: geometry,
         providerWarnings: geometry.warnings ?? [],
+        focusBounds: focus,
+        caasPhase: "route_analysis",
       });
     } catch (error) {
       setRunError(
@@ -232,6 +270,7 @@ export function WorkbenchLeftPanel({
 
   function applyQuickRoute(route: (typeof quickRoutes)[number]) {
     applyDraftPatch({ origin: route.origin, destination: route.destination });
+    setCaasPhase("route_analysis");
     // Immediate straight-line preview; WorkbenchBootstrap upgrades to Google roads.
     useMapWorkbenchStore.setState({
       routeGeometry: {
@@ -244,6 +283,16 @@ export function WorkbenchLeftPanel({
           },
         ],
         warnings: ["Snapping corridor to roads…"],
+      },
+      focusBounds: {
+        north:
+          Math.max(route.origin.latitude, route.destination.latitude) + 0.35,
+        south:
+          Math.min(route.origin.latitude, route.destination.latitude) - 0.35,
+        east:
+          Math.max(route.origin.longitude, route.destination.longitude) + 0.45,
+        west:
+          Math.min(route.origin.longitude, route.destination.longitude) - 0.45,
       },
     });
   }
@@ -528,9 +577,48 @@ export function WorkbenchLeftPanel({
               </div>
               <p className="text-xs leading-5 text-[var(--fv-steel)]">
                 {caasPhase === "freight_overview"
-                  ? "Showing static west-coast freight movement (green / yellow / red by daily truck volume). Toggle data layers below or ask AI about census / freight."
+                  ? "Road-traced freight corridors colored by CalTrans 5-axle truck AADT (green / yellow / red). Click a port tag for TEU + nearby generators. Compare POLB→Vegas via I-15 vs I-40."
                   : "Route analysis map — same road-snapped canvas as Driver / Fleet. Gap cards run on your A→B corridor."}
               </p>
+              {caasPhase === "freight_overview" ? (
+                <div className="space-y-2 rounded-xl border border-black/8 bg-[var(--fv-canvas)] p-3">
+                  <TechnicalLabel>Corridor compare</TechnicalLabel>
+                  <p className="text-[11px] text-[var(--fv-text-muted)]">
+                    POLB / POLA → Las Vegas dual paths
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(
+                      [
+                        ["all", "Both"],
+                        ["I-15", "I-15"],
+                        ["I-40", "I-40"],
+                      ] as const
+                    ).map(([value, label]) => {
+                      const active = freightViaFilter === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          data-testid={`freight-via-${value}`}
+                          onClick={() => setFreightViaFilter(value)}
+                          className={cn(
+                            "rounded-md border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider",
+                            active
+                              ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
+                              : "border-black/10 bg-white text-[var(--fv-steel)]",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] leading-4 text-[var(--fv-steel)]">
+                    Google geometry is not truck-restriction-certified. AADT is
+                    sampled from CalTrans postmiles along the path (CA coverage).
+                  </p>
+                </div>
+              ) : null}
               {caasPhase === "route_analysis" ? (
                 <button
                   type="button"

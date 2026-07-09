@@ -343,19 +343,21 @@ function buildCaasExample(message: string): WorkbenchAiResult {
     {
       type: "set_layers",
       layers: [
+        "ports",
+        "freight-flow",
         "geo-regions",
         "class8-gaps",
         "carriers",
         "parking",
-        "freight-flow",
         "caas-zones",
       ],
     },
     { type: "toggle_layer", layer: "class8-gaps", enabled: true },
     { type: "toggle_layer", layer: "carriers", enabled: true },
+    // Keep west-coast freight overview — do not zoom to CONUS for layer toggles.
     {
       type: "focus_bounds",
-      bounds: { north: 49.5, south: 24.4, east: -66.5, west: -125.0 },
+      bounds: { north: 42.2, south: 31.8, east: -114.0, west: -125.0 },
     },
   ];
   const cards: WorkbenchResultCard[] = [

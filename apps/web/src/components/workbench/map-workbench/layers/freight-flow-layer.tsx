@@ -5,27 +5,33 @@ import { useMap } from "@vis.gl/react-google-maps";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 
+export type FreightCompareFilter = "all" | "I-15" | "I-40";
+
 export type FreightFlowLayerProps = {
   visible?: boolean;
+  /** Filter dual corridors (I-15 vs I-40). Non-compare arcs always show. */
+  viaFilter?: FreightCompareFilter;
+  onSelectCorridor?: (corridorId: string) => void;
 };
 
 /**
- * Static animated dotted freight arcs from west-coast ports.
- * Green = low, yellow = medium, red = heavy daily truck traffic.
+ * Road-traced (or fallback straight) animated freight corridors.
+ * Green / yellow / red from truck AADT tier (or intensity proxy).
  */
-export function FreightFlowLayer({ visible = true }: FreightFlowLayerProps) {
+export function FreightFlowLayer({
+  visible = true,
+  viaFilter = "all",
+  onSelectCorridor,
+}: FreightFlowLayerProps) {
   const map = useMap();
   const flows = useQuery(api["faf/westCoastFlows"].westCoastFreightFlows, {});
   const linesRef = useRef<google.maps.Polyline[]>([]);
-  const markersRef = useRef<google.maps.Marker[]>([]);
   const animRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!map || !visible || !flows?.arcs?.length) {
       for (const line of linesRef.current) line.setMap(null);
-      for (const marker of markersRef.current) marker.setMap(null);
       linesRef.current = [];
-      markersRef.current = [];
       if (animRef.current != null) {
         window.clearInterval(animRef.current);
         animRef.current = null;
@@ -34,23 +40,32 @@ export function FreightFlowLayer({ visible = true }: FreightFlowLayerProps) {
     }
 
     for (const line of linesRef.current) line.setMap(null);
-    for (const marker of markersRef.current) marker.setMap(null);
     linesRef.current = [];
-    markersRef.current = [];
+
+    const arcs = flows.arcs.filter((arc) => {
+      if (!arc.compareGroup || viaFilter === "all") return true;
+      return arc.viaRouteLabel === viaFilter;
+    });
 
     const polylines: google.maps.Polyline[] = [];
 
-    for (const arc of flows.arcs) {
-      const path = [
-        { lat: arc.origin.lat, lng: arc.origin.lng },
-        { lat: arc.destination.lat, lng: arc.destination.lng },
-      ];
+    for (const arc of arcs) {
+      const path =
+        arc.path?.length >= 2
+          ? arc.path.map((p) => ({ lat: p.lat, lng: p.lng }))
+          : [
+              { lat: arc.origin.lat, lng: arc.origin.lng },
+              { lat: arc.destination.lat, lng: arc.destination.lng },
+            ];
+
+      const weight =
+        arc.tier === "heavy" ? 5 : arc.tier === "medium" ? 4 : 3;
       const line = new google.maps.Polyline({
         path,
         map,
         strokeColor: arc.color,
         strokeOpacity: 0,
-        strokeWeight: arc.tier === "heavy" ? 5 : arc.tier === "medium" ? 4 : 3,
+        strokeWeight: weight,
         clickable: true,
         zIndex: arc.tier === "heavy" ? 40 : arc.tier === "medium" ? 30 : 20,
         icons: [
@@ -62,31 +77,21 @@ export function FreightFlowLayer({ visible = true }: FreightFlowLayerProps) {
               scale: arc.tier === "heavy" ? 3.5 : 3,
             },
             offset: "0%",
-            repeat: "16px",
+            repeat: arc.roadTraced ? "14px" : "16px",
           },
         ],
       });
       line.set("freightId", arc.id);
       line.addListener("click", () => {
-        map.panTo({ lat: arc.origin.lat, lng: arc.origin.lng });
+        onSelectCorridor?.(arc.id);
+        const mid = path[Math.floor(path.length / 2)]!;
+        map.panTo(mid);
       });
       polylines.push(line);
-
-      const midLat = (arc.origin.lat + arc.destination.lat) / 2;
-      const midLng = (arc.origin.lng + arc.destination.lng) / 2;
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: midLat, lng: midLng },
-        clickable: false,
-        opacity: 0,
-        title: `${arc.portCode} → ${arc.destination.label} (${arc.tier})`,
-      });
-      markersRef.current.push(marker);
     }
 
     linesRef.current = polylines;
 
-    // Animate dash offset along the largest-direction arcs.
     let offset = 0;
     animRef.current = window.setInterval(() => {
       offset = (offset + 2) % 100;
@@ -104,11 +109,9 @@ export function FreightFlowLayer({ visible = true }: FreightFlowLayerProps) {
         animRef.current = null;
       }
       for (const line of linesRef.current) line.setMap(null);
-      for (const marker of markersRef.current) marker.setMap(null);
       linesRef.current = [];
-      markersRef.current = [];
     };
-  }, [map, visible, flows]);
+  }, [map, visible, flows, viaFilter, onSelectCorridor]);
 
   return null;
 }

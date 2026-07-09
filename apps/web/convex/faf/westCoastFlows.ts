@@ -1,7 +1,6 @@
 /**
- * Static west-coast port freight movement arcs for CaaS overview map.
- * Built from port TEU / corridor intensity — not live-dynamic; used until
- * the user builds a route and the map switches to route analysis.
+ * West-coast freight overview — prefers road-traced freightCorridors;
+ * falls back to straight arcs when corridors have not been built yet.
  */
 import { v } from "convex/values";
 import { query } from "../_generated/server";
@@ -20,11 +19,10 @@ const DESTINATIONS: Record<
   reno: { label: "Reno / I-80", lat: 39.5296, lng: -119.8138 },
   fresno: { label: "Fresno / CA-99", lat: 36.7378, lng: -119.7871 },
   tracy: { label: "Tracy / I-205", lat: 37.7397, lng: -121.4252 },
-  las_vegas: { label: "Las Vegas / I-15", lat: 36.1699, lng: -115.1398 },
+  las_vegas: { label: "Las Vegas", lat: 36.1699, lng: -115.1398 },
   sacramento: { label: "Sacramento / I-80", lat: 38.5816, lng: -121.4944 },
 };
 
-/** Curated OD arcs: port code → dest key → relative daily truck intensity 0–100. */
 const PORT_ARCS: Array<{
   portCode: string;
   destKey: string;
@@ -63,29 +61,42 @@ function colorForTier(tier: FreightTrafficTier): string {
   return "#3f9b6b";
 }
 
+const arcValidator = v.object({
+  id: v.string(),
+  portCode: v.string(),
+  portName: v.string(),
+  origin: v.object({ lat: v.number(), lng: v.number() }),
+  destination: v.object({
+    label: v.string(),
+    lat: v.number(),
+    lng: v.number(),
+  }),
+  path: v.array(v.object({ lat: v.number(), lng: v.number() })),
+  intensity: v.number(),
+  tier: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("heavy"),
+  ),
+  color: v.string(),
+  directionHint: v.string(),
+  dailyTruckIndex: v.number(),
+  viaRouteLabel: v.optional(v.string()),
+  compareGroup: v.optional(v.string()),
+  distanceMiles: v.optional(v.number()),
+  truckAadtMean: v.optional(v.number()),
+  roadTraced: v.boolean(),
+});
+
 export const westCoastFreightFlows = query({
   args: {},
   returns: v.object({
-    arcs: v.array(
+    arcs: v.array(arcValidator),
+    compareGroups: v.array(
       v.object({
         id: v.string(),
-        portCode: v.string(),
-        portName: v.string(),
-        origin: v.object({ lat: v.number(), lng: v.number() }),
-        destination: v.object({
-          label: v.string(),
-          lat: v.number(),
-          lng: v.number(),
-        }),
-        intensity: v.number(),
-        tier: v.union(
-          v.literal("low"),
-          v.literal("medium"),
-          v.literal("heavy"),
-        ),
-        color: v.string(),
-        directionHint: v.string(),
-        dailyTruckIndex: v.number(),
+        label: v.string(),
+        corridorKeys: v.array(v.string()),
       }),
     ),
     legend: v.object({
@@ -98,13 +109,80 @@ export const westCoastFreightFlows = query({
   handler: async (ctx) => {
     const ports = await ctx.db.query("ports").collect();
     const byCode = new Map(ports.map((p) => [p.code, p]));
+    const corridors = await ctx.db.query("freightCorridors").collect();
 
+    if (corridors.length > 0) {
+      const arcs = corridors.map((c) => {
+        const port = byCode.get(c.originPortCode);
+        const teuFactor = port?.annualTEU
+          ? Math.min(1.25, Math.max(0.55, port.annualTEU / 9_000_000))
+          : 0.7;
+        const dailyTruckIndex = Math.round(c.intensity * teuFactor);
+        return {
+          id: c.corridorKey,
+          portCode: c.originPortCode,
+          portName: port?.name ?? c.originPortCode,
+          origin: c.origin,
+          destination: {
+            label: c.destLabel,
+            lat: c.dest.lat,
+            lng: c.dest.lng,
+          },
+          path: c.path.length >= 2 ? c.path : [c.origin, c.dest],
+          intensity: c.intensity,
+          tier: c.tier,
+          color: c.color,
+          directionHint: c.directionHint,
+          dailyTruckIndex,
+          viaRouteLabel: c.viaRouteLabel,
+          ...(c.compareGroup ? { compareGroup: c.compareGroup } : {}),
+          ...(typeof c.distanceMiles === "number"
+            ? { distanceMiles: c.distanceMiles }
+            : {}),
+          ...(c.truckAadtStats
+            ? { truckAadtMean: c.truckAadtStats.mean }
+            : {}),
+          roadTraced: c.path.length >= 3,
+        };
+      });
+
+      const groupMap = new Map<string, string[]>();
+      for (const c of corridors) {
+        if (!c.compareGroup) continue;
+        const list = groupMap.get(c.compareGroup) ?? [];
+        list.push(c.corridorKey);
+        groupMap.set(c.compareGroup, list);
+      }
+      const compareGroups = [...groupMap.entries()].map(([id, keys]) => ({
+        id,
+        label:
+          id === "polb-vegas"
+            ? "POLB → Las Vegas (I-15 vs I-40)"
+            : id === "pola-vegas"
+              ? "POLA → Las Vegas (I-15 vs I-40)"
+              : id,
+        corridorKeys: keys,
+      }));
+
+      return {
+        arcs,
+        compareGroups,
+        legend: {
+          low: "Green — lower sampled 5-axle truck AADT along corridor",
+          medium: "Yellow — medium sampled truck AADT",
+          heavy: "Red — heavy sampled truck AADT",
+        },
+        note:
+          "Road-traced corridors (Google Routes via waypoints) colored by CalTrans 5-axle truck AADT samples. Geometry is not truck-restriction-certified. Switches to the live route map after you build a route.",
+      };
+    }
+
+    // Fallback: straight arcs until buildCorridors has been run.
     const arcs = PORT_ARCS.flatMap((arc) => {
       const port = byCode.get(arc.portCode);
       const dest = DESTINATIONS[arc.destKey];
       if (!port || !dest) return [];
       const tier = tierForIntensity(arc.intensity);
-      // Weight intensity by port TEU when available (normalize ~9M TEU → 1.0).
       const teuFactor = port.annualTEU
         ? Math.min(1.25, Math.max(0.55, port.annualTEU / 9_000_000))
         : 0.7;
@@ -120,24 +198,30 @@ export const westCoastFreightFlows = query({
             lat: dest.lat,
             lng: dest.lng,
           },
+          path: [
+            { lat: port.location.lat, lng: port.location.lng },
+            { lat: dest.lat, lng: dest.lng },
+          ],
           intensity: arc.intensity,
           tier,
           color: colorForTier(tier),
           directionHint: arc.directionHint,
           dailyTruckIndex,
+          roadTraced: false,
         },
       ];
     });
 
     return {
       arcs,
+      compareGroups: [],
       legend: {
-        low: "Green dotted — lower daily truck volume",
+        low: "Green dotted — lower daily truck volume (intensity proxy)",
         medium: "Yellow dotted — medium daily truck volume",
         heavy: "Red dotted — heavy daily truck volume",
       },
       note:
-        "Static west-coast freight movement overview from port TEU + corridor intensity. Switches to the live route map after you build a route.",
+        "Straight-arc fallback — run faf/buildCorridors:run for road-traced corridors with truck AADT. Switches to the live route map after you build a route.",
     };
   },
 });

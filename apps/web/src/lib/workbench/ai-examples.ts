@@ -185,7 +185,15 @@ export function localWorkbenchAiExample(
         { type: "toggle_layer", layer: "carriers", enabled: true },
         {
           type: "set_layers",
-          layers: ["geo-regions", "class8-gaps", "carriers", "parking", "freight-flow", "caas-zones"],
+          layers: [
+            "ports",
+            "freight-flow",
+            "geo-regions",
+            "class8-gaps",
+            "carriers",
+            "parking",
+            "caas-zones",
+          ],
         },
       ],
       cards: [

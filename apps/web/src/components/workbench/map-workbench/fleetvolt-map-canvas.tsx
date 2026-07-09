@@ -18,7 +18,9 @@ import { PortAnchors } from "@/components/pulse/port-anchors";
 import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
 import { DetourLegsLayer } from "./layers/detour-legs-layer";
 import { FreightFlowLayer } from "./layers/freight-flow-layer";
+import { GeneratorMarkers } from "./layers/generator-markers";
 import { GeoRegionLayer, type WorkbenchGeoRegion } from "./layers/geo-region-layer";
+import { PortDetailPopup } from "./layers/port-detail-popup";
 import { RouteLayer } from "./layers/route-layer";
 import { SelectedAssetCard } from "./layers/selected-asset-card";
 import type {
@@ -368,6 +370,10 @@ function MapCanvasBody({
   showFreightFlows,
   showPortAnchors,
   showRouteLayer,
+  showGeoRegions,
+  selectedPortCode,
+  onSelectPort,
+  freightViaFilter,
 }: {
   mode: WorkbenchMode;
   mapId: string;
@@ -382,6 +388,10 @@ function MapCanvasBody({
   showFreightFlows: boolean;
   showPortAnchors: boolean;
   showRouteLayer: boolean;
+  showGeoRegions: boolean;
+  selectedPortCode: string | null;
+  onSelectPort: (code: string | null) => void;
+  freightViaFilter: "all" | "I-15" | "I-40";
 }) {
   const status = useApiLoadingStatus();
 
@@ -423,9 +433,21 @@ function MapCanvasBody({
       />
       <FreightFlowLayer
         visible={showFreightFlows && visibleLayer(activeLayers, "freight-flow")}
+        viaFilter={freightViaFilter}
       />
       {showPortAnchors && visibleLayer(activeLayers, "ports") ? (
-        <PortAnchors />
+        <PortAnchors
+          selectedPortCode={selectedPortCode}
+          onSelect={(code) =>
+            onSelectPort(selectedPortCode === code ? null : code)
+          }
+        />
+      ) : null}
+      {showPortAnchors ? (
+        <GeneratorMarkers
+          portCode={selectedPortCode}
+          visible={Boolean(selectedPortCode)}
+        />
       ) : null}
       <RouteLayer
         coordinates={routeCoordinates}
@@ -438,7 +460,9 @@ function MapCanvasBody({
       />
       <GeoRegionLayer
         regions={SAMPLE_REGIONS}
-        visible={visibleLayer(activeLayers, "geo-regions")}
+        visible={
+          showGeoRegions && visibleLayer(activeLayers, "geo-regions")
+        }
         selectedAsset={selectedAsset}
         onSelectRegion={selectAsset}
       />
@@ -461,6 +485,15 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const focusBounds = useMapWorkbenchStore((state) => state.focusBounds);
   const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
   const caasPhase = useMapWorkbenchStore((state) => state.caasPhase);
+  const selectedPortCode = useMapWorkbenchStore(
+    (state) => state.selectedPortCode,
+  );
+  const setSelectedPortCode = useMapWorkbenchStore(
+    (state) => state.setSelectedPortCode,
+  );
+  const freightViaFilter = useMapWorkbenchStore(
+    (state) => state.freightViaFilter,
+  );
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -494,8 +527,26 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
     // Freight overview: hide sample route pins so arcs dominate.
     if (freightOverview && mapAssets.length === 0) return [];
     const source = mapAssets.length > 0 ? mapAssets : SAMPLE_ASSETS[mode];
-    return source.filter((asset) => isValidLatLng(asset.latitude, asset.longitude));
-  }, [freightOverview, mapAssets, mode]);
+    const valid = source.filter((asset) =>
+      isValidLatLng(asset.latitude, asset.longitude),
+    );
+    // Route analysis: keep only pins near the corridor (drop statewide samples).
+    if (
+      mode === "caas_gap_map" &&
+      !freightOverview &&
+      mapAssets.length === 0 &&
+      focusBounds
+    ) {
+      return valid.filter(
+        (asset) =>
+          asset.latitude >= focusBounds.south &&
+          asset.latitude <= focusBounds.north &&
+          asset.longitude >= focusBounds.west &&
+          asset.longitude <= focusBounds.east,
+      );
+    }
+    return valid;
+  }, [focusBounds, freightOverview, mapAssets, mode]);
   const defaultBounds =
     mode === "caas_gap_map"
       ? freightOverview
@@ -550,9 +601,20 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             }
             showPortAnchors={freightOverview}
             showRouteLayer={!freightOverview}
+            showGeoRegions={freightOverview}
+            selectedPortCode={selectedPortCode}
+            onSelectPort={setSelectedPortCode}
+            freightViaFilter={freightViaFilter}
           />
         </APIProvider>
       </MapSoftBoundary>
+
+      {freightOverview && selectedPortCode ? (
+        <PortDetailPopup
+          portCode={selectedPortCode}
+          onClose={() => setSelectedPortCode(null)}
+        />
+      ) : null}
 
       <div className="pointer-events-none absolute left-3 top-3 rounded-2xl border border-black/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur md:left-5 md:top-5">
         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--fv-steel)]">

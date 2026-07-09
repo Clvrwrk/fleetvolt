@@ -223,6 +223,66 @@ export default defineSchema({
     provenance,
   }).index("by_corridorKey", ["corridorKey"]),
 
+  // Major traffic generators (intermodal / rail / port facilities) from CalTrans CSV.
+  trafficGenerators: defineTable({
+    generatorId: v.string(),
+    name: v.string(),
+    assoc: v.string(),
+    address: v.string(),
+    city: v.string(),
+    zip: v.string(),
+    district: v.string(),
+    county: v.string(),
+    location: v.object({ lat: v.number(), lng: v.number() }),
+    portCode: v.optional(v.string()),
+    provenance,
+  })
+    .index("by_generatorId", ["generatorId"])
+    .index("by_portCode", ["portCode"])
+    .index("by_county", ["county"]),
+
+  // Road-traced freight overview corridors (Google via-waypoints + CalTrans AADT sample).
+  freightCorridors: defineTable({
+    corridorKey: v.string(),
+    name: v.string(),
+    originPortCode: v.string(),
+    destLabel: v.string(),
+    viaRouteLabel: v.string(),
+    compareGroup: v.optional(v.string()),
+    origin: v.object({ lat: v.number(), lng: v.number() }),
+    dest: v.object({ lat: v.number(), lng: v.number() }),
+    path: v.array(v.object({ lat: v.number(), lng: v.number() })),
+    distanceMiles: v.optional(v.number()),
+    durationSeconds: v.optional(v.number()),
+    intensity: v.number(),
+    tier: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("heavy"),
+    ),
+    color: v.string(),
+    directionHint: v.string(),
+    truckAadtStats: v.optional(
+      v.object({
+        min: v.number(),
+        max: v.number(),
+        mean: v.number(),
+        p90: v.number(),
+        sampleCount: v.number(),
+      }),
+    ),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    provenance,
+  })
+    .index("by_corridorKey", ["corridorKey"])
+    .index("by_compareGroup", ["compareGroup"])
+    .index("by_originPort", ["originPortCode"]),
+
   // BTS National Highway Freight Network segments (from nhfn_network).
   nhfnSegments: defineTable({
     segmentId: v.string(),

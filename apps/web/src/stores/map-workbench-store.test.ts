@@ -33,13 +33,10 @@ describe("useMapWorkbenchStore", () => {
 
     const state = useMapWorkbenchStore.getState();
     assert.equal(state.mode, "fleet_contract_plan");
-    assert.deepEqual(state.activeLayers, [
-      "route",
-      "chargers",
-      "fleet-yards",
-      "pois",
-      "highways",
-    ]);
+    assert.deepEqual(
+      state.activeLayers,
+      WORKBENCH_MODE_CONFIG.fleet_contract_plan.defaultLayers,
+    );
     assert.deepEqual(state.draft, WORKBENCH_MODE_CONFIG.fleet_contract_plan.defaultDraft);
   });
 
@@ -48,14 +45,43 @@ describe("useMapWorkbenchStore", () => {
 
     const state = useMapWorkbenchStore.getState();
     assert.equal(state.mode, "caas_gap_map");
-    assert.deepEqual(state.activeLayers, [
-      "geo-regions",
-      "class8-gaps",
-      "carriers",
-      "parking",
-      "freight-flow",
-      "caas-zones",
-    ]);
+    assert.equal(state.caasPhase, "freight_overview");
+    assert.ok(state.activeLayers.includes("freight-flow"));
+    assert.ok(state.activeLayers.includes("geo-regions"));
+    assert.ok(state.activeLayers.includes("ports"));
+  });
+
+  it("CaaS route analysis fits corridor and drops statewide overlays", () => {
+    useMapWorkbenchStore.getState().reset("caas_gap_map");
+    useMapWorkbenchStore.getState().applyDraftPatch({
+      origin: {
+        id: "polb",
+        label: "Port of Long Beach",
+        latitude: 33.7542,
+        longitude: -118.2165,
+        kind: "port",
+        source: "fleetvolt",
+      },
+      destination: {
+        id: "otay",
+        label: "Otay Mesa",
+        latitude: 32.555,
+        longitude: -116.938,
+        kind: "manual",
+        source: "manual",
+      },
+    });
+    useMapWorkbenchStore.getState().setCaasPhase("route_analysis");
+
+    const state = useMapWorkbenchStore.getState();
+    assert.equal(state.caasPhase, "route_analysis");
+    assert.ok(state.activeLayers.includes("route"));
+    assert.ok(state.activeLayers.includes("class8-gaps"));
+    assert.ok(!state.activeLayers.includes("geo-regions"));
+    assert.ok(!state.activeLayers.includes("freight-flow"));
+    assert.ok(state.focusBounds);
+    assert.ok(state.focusBounds!.south < 32.555);
+    assert.ok(state.focusBounds!.north > 33.7542);
   });
 
   it("toggles layers without mutating default mode config", () => {
