@@ -5,8 +5,15 @@
 // Usage (from apps/web, where the convex CLI is wired):
 //   npx tsx ../../scripts/catalog_load.ts
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildCatalogVehicleFromHvipRow,
@@ -19,6 +26,8 @@ const REPO = resolve(__dirname, "..");
 const WEB = resolve(REPO, "apps/web");
 const TRUCKS_DIR = resolve(REPO, "data/trucks");
 const CSV_REL = "data/raw/HVIP Vehicle Data/eligible-hvip-vehicles-070826.csv";
+/** Keep CLI JSON args small — full 209-row payload exceeds shell limits. */
+const INGEST_BATCH_SIZE = 40;
 
 const MODEL_HINT_STOP = new Set([
   "kwh",
@@ -149,6 +158,57 @@ function peerKwhPerMiBounds(
   return { min: Math.min(...typicals), max: Math.max(...typicals) };
 }
 
+function chunk<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size));
+  }
+  return batches;
+}
+
+type IngestResult = {
+  received: number;
+  inserted: number;
+  patched: number;
+};
+
+function parseIngestOutput(out: string): IngestResult | null {
+  const match = out.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  return JSON.parse(match[0]) as IngestResult;
+}
+
+function runIngestBatch(rows: unknown[], batchIndex: number, batchCount: number): IngestResult {
+  const tmpPath = join(
+    tmpdir(),
+    `fleetvolt-catalog-ingest-${process.pid}-${batchIndex}.json`,
+  );
+  writeFileSync(tmpPath, JSON.stringify({ rows }), "utf8");
+  try {
+    const arg = readFileSync(tmpPath, "utf8");
+    console.log(
+      `  batch ${batchIndex + 1}/${batchCount} (${rows.length} rows) ...`,
+    );
+    const out = execFileSync("npx", ["convex", "run", "catalog/ingest:run", arg], {
+      cwd: WEB,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    const result = parseIngestOutput(out);
+    if (!result) {
+      throw new Error(`No JSON result in batch ${batchIndex + 1} output: ${out.trim()}`);
+    }
+    return result;
+  } finally {
+    try {
+      unlinkSync(tmpPath);
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+}
+
 function toHvipCsvRow(record: Record<string, string>): HvipCsvRow {
   return {
     Model: record.Model ?? "",
@@ -203,38 +263,26 @@ const linked = rows.filter((row) => row.physicsTruckSlug != null).length;
 console.log(
   `  built ${rows.length} catalog rows (${linked} linked to physics trucks)`,
 );
-console.log("  ingesting via catalog/ingest:run ...");
+const batches = chunk(rows, INGEST_BATCH_SIZE);
+console.log(
+  `  ingesting via catalog/ingest:run (${batches.length} batches of up to ${INGEST_BATCH_SIZE}) ...`,
+);
 
-const arg = JSON.stringify({ rows });
-let out: string;
+const totals: IngestResult = { received: 0, inserted: 0, patched: 0 };
 try {
-  out = execFileSync("npx", ["convex", "run", "catalog/ingest:run", arg], {
-    cwd: WEB,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-    maxBuffer: 64 * 1024 * 1024,
-  });
+  for (let i = 0; i < batches.length; i++) {
+    const result = runIngestBatch(batches[i]!, i, batches.length);
+    totals.received += result.received;
+    totals.inserted += result.inserted;
+    totals.patched += result.patched;
+  }
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);
   console.error("catalog/ingest:run failed:", message);
   process.exit(1);
 }
 
-try {
-  const match = out.match(/\{[\s\S]*\}/);
-  if (match) {
-    const result = JSON.parse(match[0]) as {
-      received: number;
-      inserted: number;
-      patched: number;
-    };
-    console.log(
-      `\ncatalog_load DONE: received=${result.received} inserted=${result.inserted} ` +
-        `patched=${result.patched} linked=${linked}`,
-    );
-  } else {
-    console.log(out.trim());
-  }
-} catch {
-  console.log(out.trim());
-}
+console.log(
+  `\ncatalog_load DONE: received=${totals.received} inserted=${totals.inserted} ` +
+    `patched=${totals.patched} linked=${linked}`,
+);
