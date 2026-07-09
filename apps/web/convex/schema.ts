@@ -308,6 +308,60 @@ export default defineSchema({
     provenance,
   }).index("by_name", ["name"]),
 
+  // HVIP-eligible vehicle catalog (EPA-style energy card). Rows are built from
+  // the official California HVIP CSV + optional physics-truck links from
+  // data/trucks/*.json. provenance.source is ESTIMATE (derived catalog), with
+  // matchMethod:"hvip_csv" + method:"extracted" for honest lineage.
+  catalogVehicles: defineTable({
+    slug: v.string(),
+    oem: v.string(),
+    model: v.string(),
+    displayName: v.string(),
+    vehicleClassLabel: v.string(),
+    category: v.string(),
+    technology: v.string(),
+    packKwh: v.union(v.number(), v.null()),
+    hvipIncentiveUsd: v.union(v.number(), v.null()),
+    hvipVehicleUrl: v.union(v.string(), v.null()),
+    imageUrl: v.union(v.string(), v.null()),
+    kwhPerMiCombined: v.union(v.number(), v.null()),
+    kwhPerMiFullyLaden: v.union(v.number(), v.null()),
+    kwhPerMiDrayage: v.union(v.number(), v.null()),
+    peerKwhPerMiMin: v.union(v.number(), v.null()),
+    peerKwhPerMiMax: v.union(v.number(), v.null()),
+    annualEnergyCostUsd: v.union(v.number(), v.null()),
+    emissionsAnnual: v.union(
+      v.object({
+        milesPerYear: v.number(),
+        diesel: v.object({
+          co2eT: v.number(),
+          noxKg: v.number(),
+          pm25Kg: v.number(),
+        }),
+        bev: v.object({
+          co2eT: v.number(),
+          noxKg: v.number(),
+          pm25Kg: v.number(),
+        }),
+        avoided: v.object({
+          co2eT: v.number(),
+          noxKg: v.number(),
+          pm25Kg: v.number(),
+          pctCo2e: v.number(),
+        }),
+      }),
+      v.null(),
+    ),
+    physicsTruckSlug: v.union(v.string(), v.null()),
+    physicsTruckName: v.union(v.string(), v.null()),
+    energyEstimatePending: v.boolean(),
+    assumptionsHash: v.string(),
+    provenance,
+  })
+    .index("by_slug", ["slug"])
+    .index("by_oem", ["oem"])
+    .index("by_category", ["category"]),
+
   // Simulations — results now live in Convex (Phase 13 fulfilled the Phase-12
   // metadata-only split). inputsHash is the dedup/cache key. The `results`
   // field holds the full SimulateResponse JSON.
