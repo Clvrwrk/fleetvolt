@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  APILoadingStatus,
   APIProvider,
   Map,
   RenderingType,
+  useApiLoadingStatus,
   useMap,
 } from "@vis.gl/react-google-maps";
+import { MapSoftBoundary } from "@/components/map/map-soft-boundary";
 import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import { cn } from "@/lib/utils";
 import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
@@ -298,6 +302,133 @@ function visibleLayer(activeLayers: string[], layerId: string): boolean {
   return activeLayers.includes(layerId);
 }
 
+function isValidLatLng(latitude: unknown, longitude: unknown): boolean {
+  return (
+    typeof latitude === "number" &&
+    typeof longitude === "number" &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+  );
+}
+
+function MapsAuthFallback({ message }: { message: string | null }) {
+  return (
+    <div
+      data-testid="map-auth-failure"
+      className="flex h-full min-h-[420px] w-full items-center justify-center p-4"
+    >
+      <Alert className="max-w-lg border-[var(--fv-stroke)] bg-[var(--fv-surface)]">
+        <AlertTitle>Map blocked by Google API key</AlertTitle>
+        <AlertDescription className="space-y-2 text-muted-foreground">
+          <p>
+            The Maps JavaScript key rejected this site (usually a missing HTTP referrer). Tools and
+            result cards remain available.
+          </p>
+          <p className="text-xs">
+            Allowlist must include both <code>https://fleetvolt.network/*</code> and{" "}
+            <code>https://*.fleetvolt.network/*</code> (apex ≠ subdomain wildcard).
+          </p>
+          {message ? (
+            <p className="rounded-lg bg-black/5 px-3 py-2 font-mono text-xs">{message}</p>
+          ) : null}
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+}
+
+/**
+ * Only mount AdvancedMarker / Map children after Maps auth succeeds.
+ * AUTH_FAILURE still reports LOADED first; markers then crash with
+ * `Cannot read properties of undefined (reading 'get')`.
+ */
+function MapCanvasBody({
+  mode,
+  mapId,
+  routeCoordinates,
+  assets,
+  activeLayers,
+  selectedAsset,
+  focusBounds,
+  selectAsset,
+  defaultBounds,
+  authError,
+}: {
+  mode: WorkbenchMode;
+  mapId: string;
+  routeCoordinates: RouteCoordinate[];
+  assets: WorkbenchMapAsset[];
+  activeLayers: string[];
+  selectedAsset: WorkbenchSelection | null;
+  focusBounds: google.maps.LatLngBoundsLiteral | null;
+  selectAsset: (selection: WorkbenchSelection | null) => void;
+  defaultBounds: google.maps.LatLngBoundsLiteral;
+  authError: string | null;
+}) {
+  const status = useApiLoadingStatus();
+
+  // AUTH_FAILURE often arrives after a brief LOADED state; prefer explicit onError too.
+  if (
+    authError ||
+    status === APILoadingStatus.AUTH_FAILURE ||
+    status === APILoadingStatus.FAILED
+  ) {
+    return <MapsAuthFallback message={authError ?? status} />;
+  }
+
+  if (status !== APILoadingStatus.LOADED) {
+    return (
+      <div
+        data-testid="map-loading"
+        className="flex h-full min-h-[420px] w-full items-center justify-center text-sm text-[var(--fv-steel)]"
+      >
+        Loading map…
+      </div>
+    );
+  }
+
+  return (
+    <Map
+      mapId={mapId}
+      renderingType={RenderingType.VECTOR}
+      defaultBounds={defaultBounds}
+      gestureHandling="greedy"
+      disableDefaultUI
+      className="h-full w-full"
+      data-testid="fleetvolt-vector-map"
+    >
+      <MapFocusController
+        mode={mode}
+        routeCoordinates={routeCoordinates}
+        selectedAsset={selectedAsset}
+        focusBounds={focusBounds}
+      />
+      <RouteLayer
+        coordinates={routeCoordinates}
+        visible={visibleLayer(activeLayers, "route")}
+      />
+      <DetourLegsLayer
+        routeCoordinates={routeCoordinates}
+        selectedAsset={selectedAsset}
+        visible={visibleLayer(activeLayers, "route")}
+      />
+      <GeoRegionLayer
+        regions={SAMPLE_REGIONS}
+        visible={visibleLayer(activeLayers, "geo-regions")}
+        selectedAsset={selectedAsset}
+        onSelectRegion={selectAsset}
+      />
+      <AssetMarkerLayer
+        assets={assets.filter((asset) => visibleLayer(activeLayers, asset.layerId))}
+        selectedAsset={selectedAsset}
+        onSelectAsset={selectAsset}
+      />
+    </Map>
+  );
+}
+
 export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps) {
   const storeMode = useMapWorkbenchStore((state) => state.mode);
   const reset = useMapWorkbenchStore((state) => state.reset);
@@ -307,6 +438,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const mapAssets = useMapWorkbenchStore((state) => state.mapAssets);
   const focusBounds = useMapWorkbenchStore((state) => state.focusBounds);
   const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (storeMode !== mode) {
@@ -316,13 +448,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
 
   const routeCoordinates = useMemo(() => {
     const raw = routeGeometry?.coordinates ?? [];
-    const valid = raw.filter(
-      (c) =>
-        Number.isFinite(c.latitude) &&
-        Number.isFinite(c.longitude) &&
-        Math.abs(c.latitude) <= 90 &&
-        Math.abs(c.longitude) <= 180,
-    );
+    const valid = raw.filter((c) => isValidLatLng(c.latitude, c.longitude));
     return valid.length >= 2 ? valid : SAMPLE_ROUTES[mode];
   }, [mode, routeGeometry?.coordinates]);
 
@@ -335,8 +461,8 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
 
   const assets = useMemo(() => {
     // Prefer live Calculate pins; fall back to mode samples only before first run.
-    if (mapAssets.length > 0) return mapAssets;
-    return SAMPLE_ASSETS[mode];
+    const source = mapAssets.length > 0 ? mapAssets : SAMPLE_ASSETS[mode];
+    return source.filter((asset) => isValidLatLng(asset.latitude, asset.longitude));
   }, [mapAssets, mode]);
   const defaultBounds = mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS;
 
@@ -356,44 +482,35 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
       data-testid="fleetvolt-map-canvas"
       className={cn("relative h-full min-h-[420px] w-full overflow-hidden", className)}
     >
-      <APIProvider apiKey={API_KEY} version="quarterly">
-        <Map
-          mapId={MAP_ID}
-          renderingType={RenderingType.VECTOR}
-          defaultBounds={defaultBounds}
-          gestureHandling="greedy"
-          disableDefaultUI
-          className="h-full w-full"
-          data-testid="fleetvolt-vector-map"
+      <MapSoftBoundary label="workbench-map">
+        <APIProvider
+          apiKey={API_KEY}
+          version="quarterly"
+          onError={(error) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : typeof error === "string"
+                  ? error
+                  : "Google Maps failed to load";
+            console.warn("[FleetVoltMapCanvas] Maps API error:", message);
+            setAuthError(message);
+          }}
         >
-          <MapFocusController
+          <MapCanvasBody
             mode={mode}
+            mapId={MAP_ID}
             routeCoordinates={routeCoordinates}
+            assets={assets}
+            activeLayers={activeLayers}
             selectedAsset={selectedAsset}
             focusBounds={focusBounds}
+            selectAsset={selectAsset}
+            defaultBounds={defaultBounds}
+            authError={authError}
           />
-          <RouteLayer
-            coordinates={routeCoordinates}
-            visible={visibleLayer(activeLayers, "route")}
-          />
-          <DetourLegsLayer
-            routeCoordinates={routeCoordinates}
-            selectedAsset={selectedAsset}
-            visible={visibleLayer(activeLayers, "route")}
-          />
-          <GeoRegionLayer
-            regions={SAMPLE_REGIONS}
-            visible={visibleLayer(activeLayers, "geo-regions")}
-            selectedAsset={selectedAsset}
-            onSelectRegion={selectAsset}
-          />
-          <AssetMarkerLayer
-            assets={assets.filter((asset) => visibleLayer(activeLayers, asset.layerId))}
-            selectedAsset={selectedAsset}
-            onSelectAsset={selectAsset}
-          />
-        </Map>
-      </APIProvider>
+        </APIProvider>
+      </MapSoftBoundary>
 
       <div className="pointer-events-none absolute left-3 top-3 rounded-2xl border border-black/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur md:left-5 md:top-5">
         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--fv-steel)]">

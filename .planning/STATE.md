@@ -5,10 +5,10 @@ milestone_name: Progress
 current_phase: 17
 current_phase_name: role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map
 status: uat_in_progress
-stopped_at: "Session handoff written. Phase 17 UAT Test 4 awaiting user walkthrough (Fleet contract plan)."
-last_updated: "2026-07-09T04:27:45.000Z"
-last_activity: 2026-07-08
-last_activity_desc: End-of-session handoff before computer restart
+stopped_at: "Prod map crash: apex Maps referrer fixed + workbench map soft-boundary. Deploy harden, then UAT Test 4."
+last_updated: "2026-07-09T14:05:00.000Z"
+last_activity: 2026-07-09
+last_activity_desc: Fixed RefererNotAllowedMapError (apex allowlist) + map crash hardening
 progress:
   total_phases: 12
   completed_phases: 12
@@ -54,6 +54,7 @@ Last activity: 2026-07-08 — HVIP catalog merged; resume for Fleet UAT Test 4
 
 ## Pending Todos
 
+- Deploy map soft-boundary harden to Vercel; hard-refresh prod workbench
 - Finish Phase 17 UAT Test 4 (`17-UAT.md`) — user walkthrough Fleet contract plan
 - Then Tests 5–9 (CaaS, AI bar, hybrid routes, mobile, coverage)
 - Before final ship: corridor layer data sweep (parking/POI density); layer toggles verified
@@ -66,11 +67,14 @@ Last activity: 2026-07-08 — HVIP catalog merged; resume for Fleet UAT Test 4
 
 - Parallel Supabase database project — re-validate UAT when integrated
 - Playwright map-workbench e2e was flaky under EMFILE; re-run recommended
+- Google Maps: apex `https://fleetvolt.network/*` must stay on browser key (subdomain wildcard alone is insufficient)
 
 ## Session Continuity
 
-Last session: 2026-07-09T03:02:00.000Z
-Stopped at: Session resumed — ready for Phase 17 UAT Test 4 (Fleet contract plan)
+Last session: 2026-07-09T13:58:04.000Z
+Stopped at: Session resumed, proceeding to Phase 17 UAT Test 4 (Fleet contract plan)
 Resume file: .planning/phases/17-role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map/17-UAT.md
+Handoff: docs/handoffs/current.md
 Tool-rail contract: .planning/phases/17-role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map/TOOL-RAIL.md
 Catalog: `/catalog` + EPA card shipped (docs/superpowers/specs/2026-07-08-hvip-catalog-epa-truck-card-design.md)
+Git: `df91c6e` on origin/master (clean)

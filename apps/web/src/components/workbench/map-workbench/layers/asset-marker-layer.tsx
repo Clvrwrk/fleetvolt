@@ -70,6 +70,17 @@ function assetToSelection(asset: WorkbenchMapAsset): WorkbenchSelection {
   };
 }
 
+function hasValidPosition(asset: WorkbenchMapAsset): boolean {
+  return (
+    typeof asset.latitude === "number" &&
+    typeof asset.longitude === "number" &&
+    Number.isFinite(asset.latitude) &&
+    Number.isFinite(asset.longitude) &&
+    Math.abs(asset.latitude) <= 90 &&
+    Math.abs(asset.longitude) <= 180
+  );
+}
+
 export function AssetMarkerLayer({
   assets,
   visible = true,
@@ -82,7 +93,7 @@ export function AssetMarkerLayer({
 
   return (
     <>
-      {assets.map((asset) => {
+      {assets.filter(hasValidPosition).map((asset) => {
         const style = markerTone(asset);
         const isSelected = selectedAsset?.id === asset.id && selectedAsset.type === asset.type;
 
