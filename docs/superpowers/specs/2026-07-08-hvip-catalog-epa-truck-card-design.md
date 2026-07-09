@@ -1,7 +1,7 @@
 # HVIP Catalog EPA Truck Card — Design Spec
 
 **Date:** 2026-07-08  
-**Status:** Approved 2026-07-08  
+**Status:** Approved 2026-07-08 · Implemented on `feature/hvip-catalog-epa-card`  
 **Implementation plan:** `docs/superpowers/plans/2026-07-08-hvip-catalog-epa-truck-card.md`  
 **Visual companion:** [truck-id-card-concepts.canvas.tsx](/Users/chussey/.cursor/projects/Volumes-M4-Application-SSD-Projects-FleetVolt/canvases/truck-id-card-concepts.canvas.tsx)  
 **Related:** Phase 17 map workbench (vehicle selection), Phase 5 emissions/TCO (lookup tables), existing `data/trucks/*.json` + Convex `truckConfigs`
