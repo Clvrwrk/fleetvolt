@@ -48,7 +48,9 @@ export function simpleAssumptionsHash(parts: string[]): string {
 export function parseIncentiveUsd(value: string): number | null {
   const digits = value.replace(/[^0-9]/g, "");
   if (!digits) return null;
-  return Number(digits);
+  const amount = Number(digits);
+  if (!Number.isFinite(amount)) return null;
+  return amount;
 }
 
 export function parsePrimaryPackKwh(battery: string): number | null {
@@ -60,7 +62,7 @@ export function parsePrimaryPackKwh(battery: string): number | null {
 export function classLabelFromGvwr(gvwr: string, category: string): string {
   const classMatch = gvwr.match(/Class\s*(\d+)/i);
   if (classMatch) return `Class ${classMatch[1]}`;
-  if (category.trim().toLowerCase() === "tractor") return "Class 8";
+  if (/tractor/i.test(category)) return "Class 8";
   const trimmed = gvwr.trim();
   if (trimmed) return trimmed;
   return "HVIP eligible";
@@ -106,15 +108,24 @@ export function buildCatalogVehicleFromHvipRow(
   row: HvipCsvRow,
   opts: BuildCatalogVehicleOptions,
 ): CatalogVehicle {
+  const oem = row.OEM.trim();
+  const model = row.Model.trim();
+  const category = row.Category.trim();
+  const technology = row["Technology Type"].trim();
+
   const packKwh = parsePrimaryPackKwh(row.Battery);
   const hvipIncentiveUsd = parseIncentiveUsd(row["Vehicle Incentive"]);
-  const physicsTruck = findPhysicsTruckLink(row, packKwh, opts.physicsTrucks);
+  const physicsTruck = findPhysicsTruckLink(
+    { ...row, OEM: oem, Model: model },
+    packKwh,
+    opts.physicsTrucks,
+  );
 
-  const slug = catalogSlug(row.OEM, row.Model, packKwh);
+  const slug = catalogSlug(oem, model, packKwh);
   const displayName =
     packKwh != null
-      ? `${row.OEM} ${row.Model} ${packKwh} kWh`
-      : `${row.OEM} ${row.Model}`;
+      ? `${oem} ${model} ${packKwh} kWh`
+      : `${oem} ${model}`;
 
   let kwhPerMiCombined: number | null = null;
   let kwhPerMiFullyLaden: number | null = null;
@@ -139,12 +150,12 @@ export function buildCatalogVehicleFromHvipRow(
 
   return {
     slug,
-    oem: row.OEM,
-    model: row.Model,
+    oem,
+    model,
     displayName,
-    vehicleClassLabel: classLabelFromGvwr(row.GVWR, row.Category),
-    category: row.Category,
-    technology: row["Technology Type"],
+    vehicleClassLabel: classLabelFromGvwr(row.GVWR, category),
+    category,
+    technology,
     packKwh,
     hvipIncentiveUsd,
     hvipVehicleUrl,

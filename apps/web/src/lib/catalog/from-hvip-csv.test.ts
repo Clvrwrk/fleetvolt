@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildCatalogVehicleFromHvipRow } from "./from-hvip-csv.js";
+import {
+  buildCatalogVehicleFromHvipRow,
+  classLabelFromGvwr,
+  parseIncentiveUsd,
+  parsePrimaryPackKwh,
+} from "./from-hvip-csv.js";
+import { catalogSlug } from "./slug.js";
 
 describe("buildCatalogVehicleFromHvipRow", () => {
   it("parses incentive and pack from HVIP CSV row", () => {
@@ -66,5 +72,48 @@ describe("buildCatalogVehicleFromHvipRow", () => {
     assert.equal(vehicle.energyEstimatePending, true);
     assert.equal(vehicle.kwhPerMiCombined, null);
     assert.equal(vehicle.emissionsAnnual, null);
+  });
+});
+
+describe("parseIncentiveUsd", () => {
+  it("parses comma-formatted dollar amounts", () => {
+    assert.equal(parseIncentiveUsd("120,000"), 120_000);
+  });
+
+  it("returns null for empty strings", () => {
+    assert.equal(parseIncentiveUsd(""), null);
+  });
+
+  it("returns null for non-numeric values", () => {
+    assert.equal(parseIncentiveUsd("N/A"), null);
+  });
+});
+
+describe("parsePrimaryPackKwh", () => {
+  it("extracts kWh from battery strings", () => {
+    assert.equal(parsePrimaryPackKwh("438 kWh"), 438);
+  });
+
+  it("returns null when battery capacity is unknown", () => {
+    assert.equal(parsePrimaryPackKwh("TBD"), null);
+  });
+});
+
+describe("catalogSlug", () => {
+  it("builds a slug from OEM, model, and pack size", () => {
+    assert.equal(
+      catalogSlug("Freightliner", "eCascadia", 438),
+      "freightliner-ecascadia-438",
+    );
+  });
+});
+
+describe("classLabelFromGvwr", () => {
+  it("extracts class number from GVWR strings", () => {
+    assert.equal(classLabelFromGvwr("Class 8: $120,000", "Tractor"), "Class 8");
+  });
+
+  it("defaults tractors to Class 8 when GVWR is empty", () => {
+    assert.equal(classLabelFromGvwr("", "Tractor"), "Class 8");
   });
 });
