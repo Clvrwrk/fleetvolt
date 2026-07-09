@@ -5,10 +5,10 @@ milestone_name: Progress
 current_phase: 17
 current_phase_name: role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map
 status: uat_in_progress
-stopped_at: "Phase 17 UAT Tests 1–3 passed; HVIP catalog EPA card merged to master. Next: UAT Test 4 (Fleet contract plan)."
-last_updated: "2026-07-09T03:02:00.000Z"
+stopped_at: "Session handoff written. Phase 17 UAT Test 4 awaiting user walkthrough (Fleet contract plan)."
+last_updated: "2026-07-09T04:27:45.000Z"
 last_activity: 2026-07-08
-last_activity_desc: Resumed session; catalog shipped; UAT Test 4 next
+last_activity_desc: End-of-session handoff before computer restart
 progress:
   total_phases: 12
   completed_phases: 12
@@ -54,13 +54,13 @@ Last activity: 2026-07-08 — HVIP catalog merged; resume for Fleet UAT Test 4
 
 ## Pending Todos
 
-- Continue Phase 17 UAT from Test 4 (`17-UAT.md`) — Fleet contract plan
+- Finish Phase 17 UAT Test 4 (`17-UAT.md`) — user walkthrough Fleet contract plan
+- Then Tests 5–9 (CaaS, AI bar, hybrid routes, mobile, coverage)
 - Before final ship: corridor layer data sweep (parking/POI density); layer toggles verified
 - Optional polish: soft-fallback role nav on `/driver`|/fleet|/caas when role hydrates slowly
 - Manual deploy: Vercel, DNS `fleetvolt.network`, `OPENAI_API_KEY` in Convex prod
 - Deploy `workbench/ai` via `npx convex dev` for live LLM (client has local fallback)
 - Catalog follow-up: OEM alias matching so eCascadia links to physics trucks (Daimler vs Freightliner)
-- Commit or shelve uncommitted Phase 17 WIP still in working tree; master ahead of origin by 14
 
 ## Blockers/Concerns
 
