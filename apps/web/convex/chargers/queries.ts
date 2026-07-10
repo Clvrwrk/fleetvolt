@@ -18,36 +18,8 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
 import { nearestPoints } from "../lib/spatial";
-
-/** Shape a charger doc into the flagship "5 closest + config" row. */
-function toConfigRow(
-  doc: {
-    stationId: string;
-    name?: string | null;
-    location?: { lat: number; lng: number } | null;
-    powerKw: number;
-    maxVehicleClass?: "LD" | "MD" | "HD" | null;
-    connectorTypes: string[];
-    evDcFastNum?: number | null;
-    isClass8Capable: boolean;
-    operator?: string | null;
-  },
-  distanceM: number,
-) {
-  return {
-    stationId: doc.stationId,
-    name: doc.name ?? null,
-    // Required for workbench map pins — without lat/lng the canvas cannot place markers.
-    location: doc.location ?? null,
-    powerKw: doc.powerKw,
-    maxVehicleClass: doc.maxVehicleClass ?? null,
-    connectorTypes: doc.connectorTypes,
-    evDcFastNum: doc.evDcFastNum ?? null,
-    isClass8Capable: doc.isClass8Capable,
-    operator: doc.operator ?? null,
-    distanceM,
-  };
-}
+// Single source of truth for the Class-8 gap read (see chargers/class8.ts).
+import { toConfigRow, class8WithinRadius } from "./class8";
 
 /**
  * Nearest TRUE Class-8-capable chargers (≥350 kW AND MD/HD) within radius,
@@ -66,17 +38,14 @@ export const nearestClass8 = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { lat, lng, radiusM, limit }) => {
-    const results = await nearestPoints(ctx, {
-      table: "chargers",
+    // Delegates to the shared class8WithinRadius primitive (in-index filter +
+    // defense-in-depth predicate) so this can never diverge from class8Gap.
+    const { chargers } = await class8WithinRadius(ctx, {
       point: { lat, lng },
-      maxDistanceM: radiusM,
+      radiusM,
       limit: limit ?? 5,
-      filterEq: { field: "class8", value: true },
     });
-    // Defense in depth if an old index row drifted.
-    return results
-      .filter(({ doc }) => doc.isClass8Capable === true)
-      .map(({ doc, distanceM }) => toConfigRow(doc, distanceM));
+    return chargers;
   },
 });
 
@@ -128,22 +97,13 @@ export const class8Gap = query({
     const probes = sampleCorridorProbes(corridorPoints, 12);
 
     for (const pt of probes) {
-      const hits = await nearestPoints(ctx, {
-        table: "chargers",
-        point: { lat: pt.lat, lng: pt.lng },
-        maxDistanceM: radiusM,
-        // Small limit — gap analysis needs presence + closest, not a full catalog.
-        limit: 8,
-        filterEq: { field: "class8", value: true },
-      });
-      for (const { doc, distanceM } of hits) {
-        if (doc.isClass8Capable !== true) continue;
-        const prev = class8ByStation.get(doc.stationId);
-        if (!prev || distanceM < prev.distanceM) {
-          class8ByStation.set(doc.stationId, {
-            row: toConfigRow(doc, distanceM),
-            distanceM,
-          });
+      // Shared Class-8 read primitive — small limit: gap analysis needs presence
+      // + closest, not a full catalog.
+      const { chargers } = await class8WithinRadius(ctx, { point: pt, radiusM, limit: 8 });
+      for (const row of chargers) {
+        const prev = class8ByStation.get(row.stationId);
+        if (!prev || row.distanceM < prev.distanceM) {
+          class8ByStation.set(row.stationId, { row, distanceM: row.distanceM });
         }
       }
     }

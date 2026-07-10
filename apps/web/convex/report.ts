@@ -33,6 +33,8 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { nearestPoints } from "./lib/spatial";
+// Shared Class-8 gap primitive — the SAME in-index read as chargers/queries.class8Gap.
+import { class8WithinRadius } from "./chargers/class8";
 import {
   computeHotspotScore,
   HOTSPOT_SCORE_INPUTS,
@@ -104,14 +106,12 @@ export const hotspotReport = query({
       return { type: doc.type, name: doc.name ?? null, location: doc.location, distanceM };
     });
 
-    // ── chargers: fiveClosest + class8 gap within radius (12-04, spatial) ─────
-    const chargerHits = await nearestPoints(ctx, {
-      table: "chargers",
-      point,
-      maxDistanceM: radiusM,
-      limit: 64,
-    });
-    const class8InRadius = chargerHits.filter((h) => h.doc.isClass8Capable === true);
+    // ── chargers: fiveClosest (any-class) + class8 gap within radius ──────────
+    // fiveClosest stays ANY-class (the honest "wrong answer" reality check — LD
+    // stalls a Class-8 truck can't use). The Class-8 gap goes through the shared
+    // class8WithinRadius primitive (chargers/class8.ts) — the SAME in-index read
+    // as chargers/queries.class8Gap, so the report can no longer undercount by
+    // JS-filtering a nearest-N any-class fetch.
     const fiveClosestAll = await nearestPoints(ctx, {
       table: "chargers",
       point,
@@ -126,26 +126,12 @@ export const hotspotReport = query({
       isClass8Capable: doc.isClass8Capable,
       distanceM,
     }));
-    const class8WithinRadius = class8InRadius.length;
-    const closestClass8DistanceM =
-      class8InRadius.length > 0
-        ? Math.min(...class8InRadius.map((h) => h.distanceM))
-        : null;
+    const class8 = await class8WithinRadius(ctx, { point, radiusM, limit: 64 });
     const chargers = {
       fiveClosest,
-      class8WithinRadius,
-      closestClass8DistanceM,
-      class8Chargers: class8InRadius
-        .sort((a, b) => a.distanceM - b.distanceM)
-        .map(({ doc, distanceM }) => ({
-          stationId: doc.stationId,
-          name: doc.name ?? null,
-          powerKw: doc.powerKw,
-          maxVehicleClass: doc.maxVehicleClass ?? null,
-          connectorTypes: doc.connectorTypes,
-          isClass8Capable: doc.isClass8Capable,
-          distanceM,
-        })),
+      class8WithinRadius: class8.count,
+      closestClass8DistanceM: class8.closestDistanceM,
+      class8Chargers: class8.chargers,
     };
 
     // ── modeled score: READ the nearest persisted modeledDwell hotspot ────────
@@ -281,13 +267,13 @@ export const hotspotReport = query({
 
     // ── whatsMissing: DERIVED gaps (no fabricated physics numbers) ────────────
     const mobileEnergyOpportunity =
-      scorePayload.score >= OPPORTUNITY_SCORE_THRESHOLD && class8WithinRadius === 0;
+      scorePayload.score >= OPPORTUNITY_SCORE_THRESHOLD && class8.count === 0;
     const whatsMissing = {
       // high modeled demand + zero in-radius Class-8 charging = siting opportunity
       mobileEnergyOpportunity,
       opportunityThreshold: OPPORTUNITY_SCORE_THRESHOLD,
       // zero-coverage honesty flags
-      noClass8Charging: class8WithinRadius === 0,
+      noClass8Charging: class8.count === 0,
       noParkingCapacity: totalSpots === 0,
       noCarriersInRadius: carriers.length === 0,
       // DEFERRED to Phase 13 — the routing/physics layer, NOT computed here.
