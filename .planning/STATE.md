@@ -78,3 +78,9 @@ Handoff: docs/handoffs/current.md
 Tool-rail contract: .planning/phases/17-role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map/TOOL-RAIL.md
 Catalog: `/catalog` + EPA card shipped (docs/superpowers/specs/2026-07-08-hvip-catalog-epa-truck-card-design.md)
 Git: `df91c6e` on origin/master (clean)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260709-szr | Finish and validate the active CaaS geospatial and California choropleth WIP | 2026-07-09 | `e64e149`, `227ba15` | complete (live Convex smoke blocked by sandbox DNS) | [quick task](./quick/260709-szr-finish-and-validate-the-active-caas-geos/) |
