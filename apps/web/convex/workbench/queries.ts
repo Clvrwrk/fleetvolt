@@ -5,7 +5,7 @@ import { query } from "../_generated/server";
 
 const MAX_ASSET_RESULTS = 8;
 const DEFAULT_LAYER_LIMIT = 80;
-const MAX_LAYER_LIMIT = 200;
+const MAX_LAYER_LIMIT = 400;
 const MAX_HIGHWAY_RESULTS = 120;
 const MAX_GEO_REGION_RESULTS = 100;
 const MAX_ROUTE_POINTS = 12;

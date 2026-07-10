@@ -14,9 +14,28 @@ export type FreightFlowLayerProps = {
   onSelectCorridor?: (corridorId: string) => void;
 };
 
+type FreightArc = {
+  id: string;
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  path: Array<{ lat: number; lng: number }>;
+  tier: "low" | "medium" | "heavy";
+  color: string;
+  compareGroup?: string;
+  viaRouteLabel?: string;
+  roadTraced: boolean;
+};
+
+/** Inverse pulse: heavy traffic = slow red; light = fast green. */
+function pulseStepForTier(tier: "low" | "medium" | "heavy"): number {
+  if (tier === "heavy") return 0.6;
+  if (tier === "medium") return 1.4;
+  return 2.8;
+}
+
 /**
- * Road-traced (or fallback straight) animated freight corridors.
- * Green / yellow / red from truck AADT tier (or intensity proxy).
+ * Road-traced animated freight corridors.
+ * Green / yellow / red from truck AADT tier; dash speed inverse to volume.
  */
 export function FreightFlowLayer({
   visible = true,
@@ -26,12 +45,14 @@ export function FreightFlowLayer({
   const map = useMap();
   const flows = useQuery(api["faf/westCoastFlows"].westCoastFreightFlows, {});
   const linesRef = useRef<google.maps.Polyline[]>([]);
+  const tierRef = useRef<Map<string, "low" | "medium" | "heavy">>(new Map());
   const animRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!map || !visible || !flows?.arcs?.length) {
       for (const line of linesRef.current) line.setMap(null);
       linesRef.current = [];
+      tierRef.current = new Map();
       if (animRef.current != null) {
         window.clearInterval(animRef.current);
         animRef.current = null;
@@ -41,8 +62,9 @@ export function FreightFlowLayer({
 
     for (const line of linesRef.current) line.setMap(null);
     linesRef.current = [];
+    tierRef.current = new Map();
 
-    const arcs = flows.arcs.filter((arc) => {
+    const arcs = (flows.arcs as FreightArc[]).filter((arc) => {
       if (!arc.compareGroup || viaFilter === "all") return true;
       return arc.viaRouteLabel === viaFilter;
     });
@@ -52,7 +74,10 @@ export function FreightFlowLayer({
     for (const arc of arcs) {
       const path =
         arc.path?.length >= 2
-          ? arc.path.map((p) => ({ lat: p.lat, lng: p.lng }))
+          ? arc.path.map((p: { lat: number; lng: number }) => ({
+              lat: p.lat,
+              lng: p.lng,
+            }))
           : [
               { lat: arc.origin.lat, lng: arc.origin.lng },
               { lat: arc.destination.lat, lng: arc.destination.lng },
@@ -82,6 +107,8 @@ export function FreightFlowLayer({
         ],
       });
       line.set("freightId", arc.id);
+      line.set("freightTier", arc.tier);
+      tierRef.current.set(arc.id, arc.tier);
       line.addListener("click", () => {
         onSelectCorridor?.(arc.id);
         const mid = path[Math.floor(path.length / 2)]!;
@@ -92,13 +119,19 @@ export function FreightFlowLayer({
 
     linesRef.current = polylines;
 
-    let offset = 0;
+    const offsets = new Map<string, number>();
     animRef.current = window.setInterval(() => {
-      offset = (offset + 2) % 100;
       for (const line of linesRef.current) {
+        const id = String(line.get("freightId") ?? "");
+        const tier =
+          (line.get("freightTier") as "low" | "medium" | "heavy" | undefined) ??
+          "medium";
+        const step = pulseStepForTier(tier);
+        const next = ((offsets.get(id) ?? 0) + step) % 100;
+        offsets.set(id, next);
         const icons = line.get("icons") as google.maps.IconSequence[] | undefined;
         if (!icons?.[0]) continue;
-        icons[0].offset = `${offset}%`;
+        icons[0].offset = `${next}%`;
         line.set("icons", icons);
       }
     }, 80);

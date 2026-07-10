@@ -93,7 +93,9 @@ export const upsertFreightCorridor = internalMutation({
     };
 
     if (existing) {
-      await ctx.db.patch(existing._id, doc);
+      // Full replace so omitted optionals (distanceMiles, durationSeconds,
+      // truckAadtStats, compareGroup) do not survive rebuilds.
+      await ctx.db.replace(existing._id, doc);
       return { corridorKey: args.corridorKey, updated: true };
     }
     await ctx.db.insert("freightCorridors", doc);

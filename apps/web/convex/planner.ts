@@ -20,6 +20,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { withRoutePlanningSkill } from "./workbench/routePlanningSkill";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,16 +79,18 @@ The user manages a fleet. Focus on:
 - Use physics/simulate for energy/SoC/charging-stops when route+truck are specified
 Keep answers operational: truck count, charge timing, kW requirements, yard planning.`,
 
-  caas: `ROLE: CaaS (Charging-as-a-Service) PROVIDER
+  caas: withRoutePlanningSkill(`ROLE: CaaS (Charging-as-a-Service) PROVIDER
 The user is a CaaS operator/siting analyst. Focus on:
 - Charger gap analysis: where are Class-8 charging deserts? (use chargers/queries: class8Gap with corridorPoints)
 - Carrier density and outreach targets (use carriers/queries: topCarriersNear, carrierDensityByCorridorCity)
 - Deployment zones and siting recommendations (use caas/queries: listDeploymentZones, getZoneReport, getChargerGapByArea, listZonesByPriority)
 - Hotspot reports for siting opportunities (use report: hotspotReport)
-- Geo context (use geo/queries: listGeoRegions for state/county/air_district)
-- Freight flow context (use faf/queries: freightContext)
+- Geo context (use geo/queries: listGeoRegions for state/county/air_district; geo/choropleth for air-district/county/zip)
+- Freight flow context (use faf/queries: freightContext; faf/westCoastFlows; faf/zeCorridorSpecs)
+- Energy Forward ZE corridors: Long Beach→Shafter and Long Beach→Tijuana (60-truck interim + US/MX capacity)
 - Heatmap visualization for gap severity
-Keep answers strategic: gap size, carrier counts, zone priority, siting recommendations.`,
+- Route geometry must be PTV Class-8 truck routing (not Google)
+Keep answers strategic: gap size, carrier counts, zone priority, siting recommendations, interim vs MCS capacity.`),
 };
 
 const TOOL_LIST = `AVAILABLE CONVEX QUERIES (the LLM plans which to call; the action executes them):

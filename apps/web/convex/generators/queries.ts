@@ -124,6 +124,103 @@ export const listNearPort = query({
   },
 });
 
+/**
+ * Statewide generators with spokes to associated / nearest west-coast port.
+ * Tier/color mirrors freight corridors for comparative pulse animation.
+ */
+export const listWithPortSpokes = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  returns: v.object({
+    spokes: v.array(
+      v.object({
+        generatorId: v.string(),
+        name: v.string(),
+        city: v.string(),
+        county: v.string(),
+        zip: v.string(),
+        district: v.string(),
+        generator: v.object({ lat: v.number(), lng: v.number() }),
+        portCode: v.string(),
+        port: v.object({ lat: v.number(), lng: v.number() }),
+        tier: v.union(
+          v.literal("low"),
+          v.literal("medium"),
+          v.literal("heavy"),
+        ),
+        color: v.string(),
+        dailyTruckIndex: v.number(),
+      }),
+    ),
+    note: v.string(),
+  }),
+  handler: async (ctx, { limit }) => {
+    const max = Math.min(limit ?? 120, 200);
+    const ports = await ctx.db.query("ports").collect();
+    const westCoast = ports.filter((p) =>
+      ["POLB", "POLA", "OAK", "SF", "HUE", "SD"].includes(p.code),
+    );
+    const byCode = new Map(westCoast.map((p) => [p.code, p]));
+    const generators = await ctx.db.query("trafficGenerators").collect();
+
+    const spokes = generators
+      .slice(0, max * 2)
+      .map((g) => {
+        let port = g.portCode ? byCode.get(g.portCode) : undefined;
+        if (!port && westCoast.length > 0) {
+          let best = westCoast[0]!;
+          let bestD = haversineMeters(g.location, best.location);
+          for (const p of westCoast) {
+            const d = haversineMeters(g.location, p.location);
+            if (d < bestD) {
+              best = p;
+              bestD = d;
+            }
+          }
+          port = best;
+        }
+        if (!port) return null;
+
+        const teu = port.annualTEU ?? 2_000_000;
+        const intensity = Math.min(
+          100,
+          Math.round((teu / 9_000_000) * 70 + 20),
+        );
+        const tier =
+          intensity >= 70 ? "heavy" : intensity >= 40 ? "medium" : "low";
+        const color =
+          tier === "heavy"
+            ? "#c0392b"
+            : tier === "medium"
+              ? "#d4a017"
+              : "#3f9b6b";
+
+        return {
+          generatorId: g.generatorId,
+          name: g.name,
+          city: g.city,
+          county: g.county,
+          zip: g.zip,
+          district: g.district,
+          generator: g.location,
+          portCode: port.code,
+          port: port.location,
+          tier: tier as "low" | "medium" | "heavy",
+          color,
+          dailyTruckIndex: intensity,
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null)
+      .slice(0, max);
+
+    return {
+      spokes,
+      note: "Generator→port spokes; tier from port TEU. Road-trace deferred.",
+    };
+  },
+});
+
 /** Port detail for map popup: TEU + nearby generators. */
 export const portPopup = query({
   args: {
@@ -180,6 +277,7 @@ export const portPopup = query({
           _d: distanceM,
         };
       })
+      .filter((r) => r._d <= radiusM)
       .sort((a, b) => a._d - b._d)
       .slice(0, 25)
       .map(({ _d: _drop, ...rest }) => rest);

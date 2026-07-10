@@ -98,6 +98,14 @@ export function PortDetailPopup({ portCode, onClose }: PortDetailPopupProps) {
           ))
         )}
       </div>
+
+      <a
+        href={`/caas?view=summary&carriers=1&port=${encodeURIComponent(portCode)}`}
+        data-testid="port-carriers-link"
+        className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-[var(--fv-blueprint-blue)]/30 bg-[var(--fv-blueprint-blue)]/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--fv-blueprint-blue)] hover:bg-[var(--fv-blueprint-blue)]/15"
+      >
+        See carriers near this port
+      </a>
     </div>
   );
 }

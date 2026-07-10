@@ -333,7 +333,7 @@ type GoogleRouteResponse = {
 const routeCache = new Map<string, RouteGeometryResult>();
 
 function normalizeProvider(provider: RouteGeometryProvider | undefined): RouteGeometryProvider {
-  return provider ?? "google";
+  return provider ?? "ptv";
 }
 
 function normalizeRequest(request: RouteGeometryRequest): RouteGeometryRequest {
@@ -379,14 +379,6 @@ export const routeGeometry = action({
     const request = normalizeRequest(args as RouteGeometryRequest);
     const requestHash = await getRouteRequestHash(request);
 
-    if (request.provider !== "google") {
-      return routeGeometryFallback(
-        request,
-        `${request.provider?.toUpperCase()} route geometry provider is not configured yet`,
-        { requestHash },
-      );
-    }
-
     const cached = routeCache.get(requestHash);
     if (cached) {
       return {
@@ -398,88 +390,144 @@ export const routeGeometry = action({
       };
     }
 
-    const apiKey = process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      return routeGeometryFallback(request, "Google Routes API key is not configured", {
-        requestHash,
-      });
+    // Default: PTV Class-8 truck routing.
+    if (request.provider === "ptv" || request.provider === undefined) {
+      const { fetchPtvRouteGeometry } = await import("../../src/lib/maps/ptv-routes");
+      const ptvKey = process.env.PTV_DEVELOPER_API_KEY;
+      if (!ptvKey) {
+        // Fall back to Google with an explicit warning if PTV key missing.
+        const googleKey =
+          process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+        if (!googleKey) {
+          return routeGeometryFallback(
+            { ...request, provider: "ptv" },
+            "PTV_DEVELOPER_API_KEY is not configured (and no Google Routes fallback key)",
+            { requestHash },
+          );
+        }
+        const googleResult = await fetchGoogleRouteInternal(
+          { ...request, provider: "google" },
+          googleKey,
+          requestHash,
+        );
+        return {
+          ...googleResult,
+          warnings: [
+            ...(googleResult.warnings ?? []),
+            "PTV_DEVELOPER_API_KEY missing — used Google Routes fallback (not truck-certified).",
+          ],
+        };
+      }
+      const result = await fetchPtvRouteGeometry(
+        { ...request, provider: "ptv" },
+        { apiKey: ptvKey },
+      );
+      if (result.coordinates.length >= 2) {
+        routeCache.set(requestHash, result);
+      }
+      return result;
     }
 
-    const body = {
-      origin: { location: { latLng: request.origin } },
-      destination: { location: { latLng: request.destination } },
-      intermediates: request.waypoints?.map((waypoint) => ({
-        location: { latLng: waypoint },
-      })),
-      travelMode: "DRIVE",
-      routingPreference: "TRAFFIC_AWARE",
-      computeAlternativeRoutes: false,
-      polylineQuality: "HIGH_QUALITY",
-      polylineEncoding: "ENCODED_POLYLINE",
-      units: "IMPERIAL",
-    };
-
-    try {
-      const response = await fetch(GOOGLE_ROUTES_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": GOOGLE_ROUTES_FIELD_MASK,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const message = await readGoogleError(response);
+    if (request.provider === "google") {
+      const apiKey =
+        process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
         return routeGeometryFallback(
           request,
-          `Google Routes request failed: ${response.status} ${message}`,
+          "Google Routes API key is not configured",
           { requestHash },
         );
       }
-
-      const data = (await response.json()) as GoogleRouteResponse;
-      const route = data.routes?.[0];
-      const encodedPolyline = route?.polyline?.encodedPolyline;
-
-      if (!route || !encodedPolyline) {
-        return routeGeometryFallback(
-          request,
-          "Google Routes returned no route geometry",
-          { requestHash },
-        );
+      const result = await fetchGoogleRouteInternal(request, apiKey, requestHash);
+      if (result.coordinates.length >= 2) {
+        routeCache.set(requestHash, result);
       }
-
-      const decoded = decodeGoogleEncodedPolyline(encodedPolyline);
-      const coordinates = downsampleRouteCoordinates(decoded);
-      const result: RouteGeometryResult = {
-        provider: "google",
-        coordinates,
-        distanceMeters: route.distanceMeters,
-        durationSeconds: parseGoogleDurationSeconds(route.duration),
-        // Encoded polyline can exceed Convex return size; keep decoded sample only.
-        warnings: [GOOGLE_TRUCK_ROUTE_WARNING],
-        metadata: {
-          requestHash,
-          cacheStatus: "miss",
-          coordinateCountRaw: decoded.length,
-          coordinateCountReturned: coordinates.length,
-        },
-      };
-
-      routeCache.set(requestHash, result);
       return result;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+    }
+
+    return routeGeometryFallback(
+      request,
+      `${request.provider?.toUpperCase()} route geometry provider is not configured yet`,
+      { requestHash },
+    );
+  },
+});
+
+async function fetchGoogleRouteInternal(
+  request: RouteGeometryRequest,
+  apiKey: string,
+  requestHash: string,
+): Promise<RouteGeometryResult> {
+  const body = {
+    origin: { location: { latLng: request.origin } },
+    destination: { location: { latLng: request.destination } },
+    intermediates: request.waypoints?.map((waypoint) => ({
+      location: { latLng: waypoint },
+    })),
+    travelMode: "DRIVE",
+    routingPreference: "TRAFFIC_AWARE",
+    computeAlternativeRoutes: false,
+    polylineQuality: "HIGH_QUALITY",
+    polylineEncoding: "ENCODED_POLYLINE",
+    units: "IMPERIAL",
+  };
+
+  try {
+    const response = await fetch(GOOGLE_ROUTES_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": GOOGLE_ROUTES_FIELD_MASK,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const message = await readGoogleError(response);
       return routeGeometryFallback(
         request,
-        `Google Routes request failed: ${message}`,
+        `Google Routes request failed: ${response.status} ${message}`,
         { requestHash },
       );
     }
-  },
-});
+
+    const data = (await response.json()) as GoogleRouteResponse;
+    const route = data.routes?.[0];
+    const encodedPolyline = route?.polyline?.encodedPolyline;
+
+    if (!route || !encodedPolyline) {
+      return routeGeometryFallback(
+        request,
+        "Google Routes returned no route geometry",
+        { requestHash },
+      );
+    }
+
+    const decoded = decodeGoogleEncodedPolyline(encodedPolyline);
+    const coordinates = downsampleRouteCoordinates(decoded);
+    return {
+      provider: "google",
+      coordinates,
+      distanceMeters: route.distanceMeters,
+      durationSeconds: parseGoogleDurationSeconds(route.duration),
+      warnings: [GOOGLE_TRUCK_ROUTE_WARNING],
+      metadata: {
+        requestHash,
+        cacheStatus: "miss",
+        coordinateCountRaw: decoded.length,
+        coordinateCountReturned: coordinates.length,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return routeGeometryFallback(
+      request,
+      `Google Routes request failed: ${message}`,
+      { requestHash },
+    );
+  }
+}
 
 export const driverDayPlan = action({
   args: {
@@ -506,7 +554,7 @@ export const driverDayPlan = action({
     const routeRequest = normalizeRequest({
       origin: coordinateFromPlace(args.origin),
       destination: coordinateFromPlace(args.destination),
-      provider: "google" as const,
+      provider: "ptv" as const,
     });
     const routeHash = await getRouteRequestHash(routeRequest);
     let route = routeGeometryFallback(
@@ -515,7 +563,7 @@ export const driverDayPlan = action({
       { requestHash: routeHash },
     );
     try {
-      // Road-snapped Google Routes polyline (same path as fleet contract plan).
+      // Road-snapped PTV Class-8 truck polyline (same path as fleet contract plan).
       route = await ctx.runAction(api["workbench/actions"].routeGeometry, routeRequest);
     } catch {
       // Keep labeled fallback — providerWarnings surface the assumption.
@@ -825,7 +873,7 @@ export const fleetContractPlan = action({
     const routeRequest = normalizeRequest({
       origin: coordinateFromPlace(args.origin),
       destination: coordinateFromPlace(args.destination),
-      provider: "google" as const,
+      provider: "ptv" as const,
     });
     const routeHash = await getRouteRequestHash(routeRequest);
     let route = routeGeometryFallback(

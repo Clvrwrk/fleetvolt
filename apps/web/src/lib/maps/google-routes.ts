@@ -88,7 +88,7 @@ function canonicalizeRouteRequest(
   waypoints: RoutePoint[];
 } {
   return {
-    provider: request.provider ?? "google",
+    provider: request.provider ?? "ptv",
     origin: normalizeCoordinate(request.origin),
     destination: normalizeCoordinate(request.destination),
     waypoints: (request.waypoints ?? []).map(normalizeCoordinate),
@@ -192,7 +192,7 @@ export function routeGeometryFallback(
   warning: string,
   metadata: Record<string, unknown> = {},
 ): RouteGeometryResult {
-  const provider = request.provider ?? "google";
+  const provider = request.provider ?? "ptv";
   const warnings =
     provider === "google" ? [GOOGLE_TRUCK_ROUTE_WARNING, warning] : [warning];
 

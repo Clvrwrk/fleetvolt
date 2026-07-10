@@ -214,7 +214,7 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
           const snapped = (await fetchRouteGeometry({
             origin: { latitude: originLat, longitude: originLng },
             destination: { latitude: destLat, longitude: destLng },
-            provider: "google",
+            provider: "ptv",
           })) as RouteGeometryResult;
 
           if (cancelled) return;

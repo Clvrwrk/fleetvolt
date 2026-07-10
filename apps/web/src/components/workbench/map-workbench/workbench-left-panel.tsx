@@ -107,6 +107,12 @@ export function WorkbenchLeftPanel({
   const setFreightViaFilter = useMapWorkbenchStore(
     (state) => state.setFreightViaFilter,
   );
+  const caasGeoLevel = useMapWorkbenchStore((state) => state.caasGeoLevel);
+  const setCaasGeoLevel = useMapWorkbenchStore((state) => state.setCaasGeoLevel);
+  const energyForward = useQuery(
+    api["faf/zeCorridorSpecs"].energyForwardZeCorridors,
+    mode === "caas_gap_map" ? {} : "skip",
+  );
   const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
 
   const truckSlug =
@@ -196,7 +202,7 @@ export function WorkbenchLeftPanel({
       // Immediate preview; then snap to roads like driver/fleet.
       useMapWorkbenchStore.setState({
         routeGeometry: {
-          provider: "google",
+          provider: "ptv",
           coordinates: [
             {
               latitude: draft.origin.latitude,
@@ -274,7 +280,7 @@ export function WorkbenchLeftPanel({
     // Immediate straight-line preview; WorkbenchBootstrap upgrades to Google roads.
     useMapWorkbenchStore.setState({
       routeGeometry: {
-        provider: "google",
+        provider: "ptv",
         coordinates: [
           { latitude: route.origin.latitude, longitude: route.origin.longitude },
           {
@@ -577,59 +583,214 @@ export function WorkbenchLeftPanel({
               </div>
               <p className="text-xs leading-5 text-[var(--fv-steel)]">
                 {caasPhase === "freight_overview"
-                  ? "Road-traced freight corridors colored by CalTrans 5-axle truck AADT (green / yellow / red). Click a port tag for TEU + nearby generators. Compare POLB→Vegas via I-15 vs I-40."
-                  : "Route analysis map — same road-snapped canvas as Driver / Fleet. Gap cards run on your A→B corridor."}
+                  ? "Full-state freight view (San Diego → Crescent City). Heavy truck corridors pulse slowly in red; light corridors pulse faster in green. Geo fill never exceeds 50% opacity."
+                  : "Route analysis keeps freight arcs, geo fill, and asset pins on — A→B corridor is drawn on top. Gap cards still run on your selected corridor."}
               </p>
-              {caasPhase === "freight_overview" ? (
-                <div className="space-y-2 rounded-xl border border-black/8 bg-[var(--fv-canvas)] p-3">
-                  <TechnicalLabel>Corridor compare</TechnicalLabel>
-                  <p className="text-[11px] text-[var(--fv-text-muted)]">
-                    POLB / POLA → Las Vegas dual paths
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(
-                      [
-                        ["all", "Both"],
-                        ["I-15", "I-15"],
-                        ["I-40", "I-40"],
-                      ] as const
-                    ).map(([value, label]) => {
-                      const active = freightViaFilter === value;
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          data-testid={`freight-via-${value}`}
-                          onClick={() => setFreightViaFilter(value)}
-                          className={cn(
-                            "rounded-md border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider",
-                            active
-                              ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
-                              : "border-black/10 bg-white text-[var(--fv-steel)]",
-                          )}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
+              <>
+                  <div
+                    className="space-y-2 rounded-xl border border-black/8 bg-[var(--fv-canvas)] p-3"
+                    data-testid="caas-map-layers"
+                  >
+                    <TechnicalLabel>Map layers</TechnicalLabel>
+                    <p className="text-[11px] text-[var(--fv-text-muted)]">
+                      Freight arcs, geo fill, and asset pins
+                    </p>
+                    <div
+                      className="flex flex-wrap gap-1.5"
+                      role="group"
+                      aria-label="Freight map layer toggles"
+                    >
+                      {(
+                        [
+                          ["freight-flow", "Freight"],
+                          ["geo-regions", "Geo"],
+                          ["chargers", "Chargers"],
+                          ["parking", "Parking"],
+                          ["carriers", "Carriers"],
+                        ] as const
+                      ).map(([layerId, label]) => {
+                        const active = activeLayers.includes(layerId);
+                        return (
+                          <button
+                            key={layerId}
+                            type="button"
+                            data-testid={`caas-layer-${layerId}`}
+                            onClick={() => toggleLayer(layerId)}
+                            aria-pressed={active}
+                            className={cn(
+                              "rounded-md border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider",
+                              active
+                                ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
+                                : "border-black/10 bg-white text-[var(--fv-steel)]",
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <p className="text-[10px] leading-4 text-[var(--fv-steel)]">
-                    Google geometry is not truck-restriction-certified. AADT is
-                    sampled from CalTrans postmiles along the path (CA coverage).
-                  </p>
-                </div>
-              ) : null}
+                  <div className="space-y-2 rounded-xl border border-black/8 bg-[var(--fv-canvas)] p-3">
+                    <TechnicalLabel>Geo boundaries</TechnicalLabel>
+                    <p className="text-[11px] text-[var(--fv-text-muted)]">
+                      Air districts → counties → ZIP (percentile red / yellow / green)
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          ["air-district", "Air districts"],
+                          ["county", "Counties"],
+                          ["zip", "ZIP"],
+                        ] as const
+                      ).map(([value, label]) => {
+                        const active = caasGeoLevel === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            data-testid={`caas-geo-${value}`}
+                            onClick={() => setCaasGeoLevel(value)}
+                            className={cn(
+                              "rounded-md border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider",
+                              active
+                                ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
+                                : "border-black/10 bg-white text-[var(--fv-steel)]",
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2 rounded-xl border border-black/8 bg-[var(--fv-canvas)] p-3">
+                    <TechnicalLabel>Corridor compare</TechnicalLabel>
+                    <p className="text-[11px] text-[var(--fv-text-muted)]">
+                      POLB / POLA → Las Vegas dual paths
+                    </p>
+                    <div
+                      className="flex flex-wrap gap-1.5"
+                      role="group"
+                      aria-label="Corridor compare via route"
+                      aria-describedby="freight-via-hint"
+                    >
+                      {(
+                        [
+                          ["all", "Both"],
+                          ["I-15", "I-15"],
+                          ["I-40", "I-40"],
+                        ] as const
+                      ).map(([value, label]) => {
+                        const active = freightViaFilter === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            data-testid={`freight-via-${value}`}
+                            onClick={() => setFreightViaFilter(value)}
+                            aria-pressed={active}
+                            className={cn(
+                              "rounded-md border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider",
+                              active
+                                ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
+                                : "border-black/10 bg-white text-[var(--fv-steel)]",
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p
+                      id="freight-via-hint"
+                      className="text-[10px] leading-4 text-[var(--fv-steel)]"
+                    >
+                      PTV Class-8 geometry (USA_8_SEMITRAILER_5AXLE). AADT is
+                      sampled from CalTrans postmiles along the path (CA coverage).
+                    </p>
+                  </div>
+                  {energyForward ? (
+                    <div
+                      className="space-y-2 rounded-xl border border-[var(--fv-accent)]/25 bg-[var(--fv-accent)]/5 p-3"
+                      data-testid="energy-forward-ze"
+                    >
+                      <TechnicalLabel>Energy Forward ZE</TechnicalLabel>
+                      <p className="text-[11px] text-[var(--fv-text-muted)]">
+                        {energyForward.fleetSizeTrucks}-truck fleet — interim +
+                        border capacity
+                      </p>
+                      <div className="space-y-2">
+                        {energyForward.corridors.map(
+                          (c: {
+                            id: string;
+                            name: string;
+                            origin: string;
+                            destination: string;
+                            borderSides: string[];
+                            analysisHooks: {
+                              originLat: number;
+                              originLng: number;
+                              destLat: number;
+                              destLng: number;
+                            };
+                          }) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            data-testid={`ze-corridor-${c.id}`}
+                            onClick={() => {
+                              applyDraftPatch({
+                                origin: {
+                                  id: "polb",
+                                  label: c.origin,
+                                  latitude: c.analysisHooks.originLat,
+                                  longitude: c.analysisHooks.originLng,
+                                  kind: "port",
+                                  source: "fleetvolt",
+                                },
+                                destination: {
+                                  id: c.id,
+                                  label: c.destination,
+                                  latitude: c.analysisHooks.destLat,
+                                  longitude: c.analysisHooks.destLng,
+                                  kind: "manual",
+                                  source: "manual",
+                                },
+                                metadata: {
+                                  ...draft.metadata,
+                                  zeCorridorId: c.id,
+                                  fleetSizeTrucks: energyForward.fleetSizeTrucks,
+                                  borderSides: c.borderSides.join(", "),
+                                },
+                              });
+                              setCaasPhase("route_analysis");
+                            }}
+                            className="w-full rounded-lg border border-black/10 bg-white px-2.5 py-2 text-left"
+                          >
+                            <span className="block text-xs font-semibold text-[var(--fv-graphite)]">
+                              {c.name}
+                            </span>
+                            <span className="block text-[10px] text-[var(--fv-steel)]">
+                              {c.borderSides.join(" · ")} · analyze charging
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+              </>
               {caasPhase === "route_analysis" ? (
                 <button
                   type="button"
                   onClick={() => setCaasPhase("freight_overview")}
                   className="text-[11px] font-mono uppercase tracking-wider text-[var(--fv-blueprint-blue)] hover:underline"
                 >
-                  ← Back to freight overview
+                  ← Back to freight overview (hide A→B, keep statewide frame)
                 </button>
               ) : null}
               <div className="space-y-1.5">
-                {caasDrilldown.map((step) => (
+                {caasDrilldown.map(
+                  (step: { label: string; enabled: boolean; reason: string }) => (
                   <div
                     key={step.label}
                     className={cn(

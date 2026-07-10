@@ -532,6 +532,28 @@ export default defineSchema({
     .index("by_fips", ["fips"])
     .index("by_parent", ["parentFips"]),
 
+  // Census TIGER ZCTA5 (2020 vintage, tl_2022_us_zcta520) — CA only.
+  // Simplified exterior rings for CaaS ZIP choropleth (fill ≤50%).
+  geoZcta: defineTable({
+    zcta: v.string(),
+    name: v.string(),
+    centroid: v.object({ lat: v.number(), lng: v.number() }),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    /** Simplified exterior ring (open; UI closes). Cap ~48 pts at ingest. */
+    ring: v.array(v.object({ lat: v.number(), lng: v.number() })),
+    aggregateScore: v.optional(v.number()),
+    countyFips: v.optional(v.string()),
+    airDistrict: v.optional(v.string()),
+    provenance,
+  })
+    .index("by_zcta", ["zcta"])
+    .index("by_county", ["countyFips"]),
+
   // ── Driver profiles (P-DRIVER) ──────────────────────────────────────────────
   //
   // Captures the FULL set of preferences a driver uses for physics calculations:

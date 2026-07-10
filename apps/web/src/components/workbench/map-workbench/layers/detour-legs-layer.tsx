@@ -130,7 +130,7 @@ export function DetourLegsLayer({
             latitude: asset.lat,
             longitude: asset.lng,
           },
-          provider: "google",
+          provider: "ptv",
         });
 
         if (cancelled) return;

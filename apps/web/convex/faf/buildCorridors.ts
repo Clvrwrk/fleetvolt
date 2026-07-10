@@ -1,32 +1,24 @@
 "use node";
 
 /**
- * Build road-traced freight corridors via Google Routes + CalTrans AADT sample.
+ * Build road-traced freight corridors via PTV Class-8 routing + CalTrans AADT sample.
  *
  *   npx convex run faf/buildCorridors:run
  *
- * Requires GOOGLE_MAPS_API_KEY (or NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) on Convex.
+ * Requires PTV_DEVELOPER_API_KEY on Convex.
  */
 import { v } from "convex/values";
 import { action } from "../_generated/server";
 import { internal } from "../_generated/api";
-import {
-  decodeGoogleEncodedPolyline,
-  downsampleRouteCoordinates,
-  GOOGLE_TRUCK_ROUTE_WARNING,
-} from "../../src/lib/maps/google-routes";
+import { fetchPtvRouteGeometry } from "../../src/lib/maps/ptv-routes";
+import { PTV_TRUCK_ROUTE_NOTE } from "../../src/lib/maps/ptv-routes";
 import {
   bboxFromPath,
   colorForTier,
   sampleAadtAlongPath,
-  tierFromTruckAadtMean,
+  tierFromAadtPercentile,
   type LatLng,
 } from "./aadtSample";
-
-const GOOGLE_ROUTES_URL =
-  "https://routes.googleapis.com/directions/v2:computeRoutes";
-const GOOGLE_ROUTES_FIELD_MASK =
-  "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline";
 
 type CorridorSpec = {
   corridorKey: string;
@@ -140,9 +132,107 @@ const CORRIDOR_SPECS: CorridorSpec[] = [
     origin: { lat: 37.8, lng: -122.32 },
     dest: { lat: 37.7397, lng: -121.4252 },
   },
+  // Statewide spine — San Diego → Crescent City framing
+  {
+    corridorKey: "sd-la-i5",
+    name: "San Diego → LA Basin via I-5",
+    originPortCode: "SD",
+    destLabel: "LA Basin / I-5",
+    viaRouteLabel: "I-5",
+    intensity: 76,
+    directionHint: "I-5 north",
+    origin: { lat: 32.7157, lng: -117.1611 },
+    dest: { lat: 33.75, lng: -118.2 },
+  },
+  {
+    corridorKey: "polb-bakersfield-i5",
+    name: "POLB → Bakersfield via I-5",
+    originPortCode: "POLB",
+    destLabel: "Bakersfield / CA-99",
+    viaRouteLabel: "I-5",
+    intensity: 55,
+    directionHint: "I-5 / CA-99 north",
+    origin: { lat: 33.75, lng: -118.2 },
+    dest: { lat: 35.3733, lng: -119.0187 },
+    via: { lat: 34.8527, lng: -118.886 },
+  },
+  {
+    corridorKey: "oak-redding-i5",
+    name: "Oakland → Redding via I-5",
+    originPortCode: "OAK",
+    destLabel: "Redding / I-5",
+    viaRouteLabel: "I-5",
+    intensity: 42,
+    directionHint: "I-5 north",
+    origin: { lat: 37.8, lng: -122.32 },
+    dest: { lat: 40.5865, lng: -122.3917 },
+    via: { lat: 38.5816, lng: -121.4944 },
+  },
+  {
+    corridorKey: "oak-crescent-city-us101",
+    name: "Bay Area → Crescent City via US-101",
+    originPortCode: "OAK",
+    destLabel: "Crescent City / US-101",
+    viaRouteLabel: "US-101",
+    intensity: 28,
+    directionHint: "US-101 north coast",
+    origin: { lat: 37.8, lng: -122.32 },
+    dest: { lat: 41.7558, lng: -124.2016 },
+    via: { lat: 40.8021, lng: -124.1637 }, // Eureka
+  },
+  {
+    corridorKey: "oak-sacramento-i80",
+    name: "Oakland → Sacramento via I-80",
+    originPortCode: "OAK",
+    destLabel: "Sacramento / I-80",
+    viaRouteLabel: "I-80",
+    intensity: 52,
+    directionHint: "I-80 east",
+    origin: { lat: 37.8, lng: -122.32 },
+    dest: { lat: 38.5816, lng: -121.4944 },
+  },
+  {
+    corridorKey: "pola-fresno-ca99",
+    name: "POLA → Fresno via CA-99",
+    originPortCode: "POLA",
+    destLabel: "Fresno / CA-99",
+    viaRouteLabel: "CA-99",
+    intensity: 42,
+    directionHint: "I-5 / CA-99",
+    origin: { lat: 33.74, lng: -118.26 },
+    dest: { lat: 36.7378, lng: -119.7871 },
+    via: { lat: 35.3733, lng: -119.0187 },
+  },
+  // Energy Forward ZE corridors — 60-truck fleet planning
+  {
+    corridorKey: "polb-shafter-ze",
+    name: "Long Beach → Shafter (ZE corridor)",
+    originPortCode: "POLB",
+    destLabel: "Shafter / CA-99",
+    viaRouteLabel: "I-5",
+    compareGroup: "energy-forward-ze",
+    intensity: 85,
+    directionHint: "I-710 / I-5 / CA-99 — Energy Forward 60-truck",
+    origin: { lat: 33.7542, lng: -118.2165 },
+    dest: { lat: 35.5005, lng: -119.2718 }, // Shafter, CA
+    via: { lat: 35.3733, lng: -119.0187 }, // Bakersfield approach
+  },
+  {
+    corridorKey: "polb-tijuana-ze",
+    name: "Long Beach → Tijuana / Otay Mesa (ZE corridor)",
+    originPortCode: "POLB",
+    destLabel: "Otay Mesa / Tijuana border",
+    viaRouteLabel: "I-5",
+    compareGroup: "energy-forward-ze",
+    intensity: 80,
+    directionHint: "I-5 / I-805 — US side to Otay Mesa; MX capacity separate",
+    origin: { lat: 33.7542, lng: -118.2165 },
+    dest: { lat: 32.555, lng: -116.938 }, // Otay Mesa POE
+    via: { lat: 32.7157, lng: -117.1611 }, // San Diego
+  },
 ];
 
-async function fetchGoogleRoute(args: {
+async function fetchPtvCorridorRoute(args: {
   apiKey: string;
   origin: LatLng;
   dest: LatLng;
@@ -153,76 +243,34 @@ async function fetchGoogleRoute(args: {
   durationSeconds?: number;
   warnings: string[];
 }> {
-  const body: Record<string, unknown> = {
-    origin: {
-      location: {
-        latLng: { latitude: args.origin.lat, longitude: args.origin.lng },
-      },
+  const result = await fetchPtvRouteGeometry(
+    {
+      origin: { latitude: args.origin.lat, longitude: args.origin.lng },
+      destination: { latitude: args.dest.lat, longitude: args.dest.lng },
+      waypoints: args.via
+        ? [{ latitude: args.via.lat, longitude: args.via.lng }]
+        : [],
+      provider: "ptv",
     },
-    destination: {
-      location: {
-        latLng: { latitude: args.dest.lat, longitude: args.dest.lng },
-      },
-    },
-    travelMode: "DRIVE",
-    routingPreference: "TRAFFIC_AWARE",
-    computeAlternativeRoutes: false,
-    polylineQuality: "HIGH_QUALITY",
-    polylineEncoding: "ENCODED_POLYLINE",
-    units: "IMPERIAL",
-  };
-  if (args.via) {
-    body.intermediates = [
-      {
-        location: {
-          latLng: { latitude: args.via.lat, longitude: args.via.lng },
-        },
-      },
-    ];
+    { apiKey: args.apiKey },
+  );
+
+  if (result.coordinates.length < 2) {
+    throw new Error(
+      result.warnings.join("; ") || "PTV returned no route geometry",
+    );
   }
 
-  const response = await fetch(GOOGLE_ROUTES_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": args.apiKey,
-      "X-Goog-FieldMask": GOOGLE_ROUTES_FIELD_MASK,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Google Routes ${response.status}: ${text.slice(0, 200)}`);
-  }
-
-  const json = (await response.json()) as {
-    routes?: Array<{
-      distanceMeters?: number;
-      duration?: string;
-      polyline?: { encodedPolyline?: string };
-    }>;
-  };
-  const route = json.routes?.[0];
-  const encoded = route?.polyline?.encodedPolyline;
-  if (!encoded) {
-    throw new Error("Google Routes returned no polyline");
-  }
-
-  const decoded = decodeGoogleEncodedPolyline(encoded);
-  const down = downsampleRouteCoordinates(decoded, 600);
-  const path = down.map((c) => ({ lat: c.latitude, lng: c.longitude }));
-  let durationSeconds: number | undefined;
-  if (route?.duration) {
-    const m = /^(\d+(?:\.\d+)?)s$/.exec(route.duration);
-    if (m) durationSeconds = Math.round(parseFloat(m[1]!));
-  }
+  const path = result.coordinates.map((c) => ({
+    lat: c.latitude,
+    lng: c.longitude,
+  }));
 
   return {
     path,
-    distanceMeters: route?.distanceMeters,
-    durationSeconds,
-    warnings: [GOOGLE_TRUCK_ROUTE_WARNING],
+    distanceMeters: result.distanceMeters,
+    durationSeconds: result.durationSeconds,
+    warnings: result.warnings.length > 0 ? result.warnings : [PTV_TRUCK_ROUTE_NOTE],
   };
 }
 
@@ -241,13 +289,9 @@ export const run = action({
     warnings: v.array(v.string()),
   }),
   handler: async (ctx, args) => {
-    const apiKey =
-      process.env.GOOGLE_MAPS_API_KEY ??
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.PTV_DEVELOPER_API_KEY;
     if (!apiKey) {
-      throw new Error(
-        "GOOGLE_MAPS_API_KEY (or NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) required on Convex",
-      );
+      throw new Error("PTV_DEVELOPER_API_KEY required on Convex for corridor rebuild");
     }
 
     const specs = args.corridorKeys?.length
@@ -257,7 +301,18 @@ export const run = action({
     const fetchedAt = Date.now();
     const failed: string[] = [];
     const warnings: string[] = [];
-    let built = 0;
+
+    type BuiltRow = {
+      spec: (typeof CORRIDOR_SPECS)[number];
+      path: LatLng[];
+      distanceMeters?: number;
+      durationSeconds?: number;
+      bbox: ReturnType<typeof bboxFromPath>;
+      stats: ReturnType<typeof sampleAadtAlongPath>;
+      intensityTierFallback: "low" | "medium" | "heavy";
+    };
+
+    const rows: BuiltRow[] = [];
 
     for (const spec of specs) {
       try {
@@ -265,7 +320,7 @@ export const run = action({
         let distanceMeters: number | undefined;
         let durationSeconds: number | undefined;
         try {
-          const routed = await fetchGoogleRoute({
+          const routed = await fetchPtvCorridorRoute({
             apiKey,
             origin: spec.origin,
             dest: spec.dest,
@@ -278,7 +333,7 @@ export const run = action({
         } catch (err) {
           path = straightFallback(spec.origin, spec.dest, spec.via);
           warnings.push(
-            `${spec.corridorKey}: Google Routes failed — using straight fallback (${
+            `${spec.corridorKey}: PTV routing failed — using straight fallback (${
               err instanceof Error ? err.message : String(err)
             })`,
           );
@@ -297,42 +352,69 @@ export const run = action({
         );
 
         const stats = sampleAadtAlongPath(path, segments);
-        const tier = stats
-          ? tierFromTruckAadtMean(stats.mean)
-          : spec.intensity >= 70
-            ? "heavy"
-            : spec.intensity >= 40
-              ? "medium"
-              : "low";
+        // Intensity fallback when AADT sample is missing (raised cutoffs).
+        const intensityTierFallback =
+          spec.intensity >= 85
+            ? ("heavy" as const)
+            : spec.intensity >= 50
+              ? ("medium" as const)
+              : ("low" as const);
 
-        await ctx.runMutation(internal.faf.corridorMutations.upsertFreightCorridor, {
-          corridorKey: spec.corridorKey,
-          name: spec.name,
-          originPortCode: spec.originPortCode,
-          destLabel: spec.destLabel,
-          viaRouteLabel: spec.viaRouteLabel,
-          ...(spec.compareGroup ? { compareGroup: spec.compareGroup } : {}),
-          origin: spec.origin,
-          dest: spec.dest,
+        rows.push({
+          spec,
           path,
-          ...(typeof distanceMeters === "number"
-            ? { distanceMiles: Math.round((distanceMeters / 1609.344) * 10) / 10 }
-            : {}),
-          ...(typeof durationSeconds === "number" ? { durationSeconds } : {}),
-          intensity: spec.intensity,
-          tier,
-          color: colorForTier(tier),
-          directionHint: spec.directionHint,
-          ...(stats ? { truckAadtStats: stats } : {}),
+          distanceMeters,
+          durationSeconds,
           bbox,
-          fetchedAt,
+          stats,
+          intensityTierFallback,
         });
-        built += 1;
       } catch (err) {
         failed.push(
           `${spec.corridorKey}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
+    }
+
+    const sortedMeans = rows
+      .map((r) => r.stats?.mean)
+      .filter((m): m is number => typeof m === "number")
+      .sort((a, b) => a - b);
+
+    let built = 0;
+    for (const row of rows) {
+      const tier = row.stats
+        ? tierFromAadtPercentile(row.stats.mean, sortedMeans)
+        : row.intensityTierFallback;
+
+      await ctx.runMutation(internal.faf.corridorMutations.upsertFreightCorridor, {
+        corridorKey: row.spec.corridorKey,
+        name: row.spec.name,
+        originPortCode: row.spec.originPortCode,
+        destLabel: row.spec.destLabel,
+        viaRouteLabel: row.spec.viaRouteLabel,
+        ...(row.spec.compareGroup ? { compareGroup: row.spec.compareGroup } : {}),
+        origin: row.spec.origin,
+        dest: row.spec.dest,
+        path: row.path,
+        ...(typeof row.distanceMeters === "number"
+          ? {
+              distanceMiles:
+                Math.round((row.distanceMeters / 1609.344) * 10) / 10,
+            }
+          : {}),
+        ...(typeof row.durationSeconds === "number"
+          ? { durationSeconds: row.durationSeconds }
+          : {}),
+        intensity: row.spec.intensity,
+        tier,
+        color: colorForTier(tier),
+        directionHint: row.spec.directionHint,
+        ...(row.stats ? { truckAadtStats: row.stats } : {}),
+        bbox: row.bbox,
+        fetchedAt,
+      });
+      built += 1;
     }
 
     return { built, failed, warnings };

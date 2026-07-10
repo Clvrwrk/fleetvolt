@@ -22,8 +22,9 @@ const EXAMPLE_PROMPTS: Record<WorkbenchMode, string[]> = {
   ],
   caas_gap_map: [
     "Show freight volume out of west coast ports",
+    "Energy Forward 60-truck Long Beach to Shafter charging needs",
+    "Long Beach to Tijuana interim capacity US and Mexico",
     "Highlight Class 8 charger gaps near POLB",
-    "Query census counties with high truck traffic",
   ],
 };
 
@@ -52,9 +53,17 @@ const BARSTOW = {
 };
 const OTAY = {
   id: "otay-mesa",
-  label: "Otay Mesa",
+  label: "Otay Mesa / Tijuana border",
   latitude: 32.555,
   longitude: -116.938,
+  kind: "manual" as const,
+  source: "manual" as const,
+};
+const SHAFTER = {
+  id: "shafter",
+  label: "Shafter, CA",
+  latitude: 35.5005,
+  longitude: -119.2718,
   kind: "manual" as const,
   source: "manual" as const,
 };
@@ -78,24 +87,60 @@ function localAiFallback(mode: WorkbenchMode, message: string): WorkbenchAiResul
 
   // CaaS route / gap intents must stay in caas_gap_map — do not fall through to driver.
   if (mode === "caas_gap_map") {
+    // Explicit supported pairs + Energy Forward ZE (skill-backed).
+    const mentionsPolb = /\bpolb\b|long beach|port of long beach/.test(lower);
+    const mentionsOtay = /\botay\b|tijuana/.test(lower);
+    const mentionsBarstow = /\bbarstow\b/.test(lower);
+    const mentionsShafter = /\bshafter\b/.test(lower);
+    const energyForward =
+      /energy\s*forward|60[- ]?truck|zero[- ]emission|ze\s+corridor/.test(lower);
+    const supportedPair =
+      (mentionsPolb && mentionsOtay) ||
+      (mentionsPolb && mentionsBarstow) ||
+      (mentionsPolb && mentionsShafter) ||
+      (energyForward && (mentionsOtay || mentionsShafter || mentionsPolb));
     const wantsRoute =
-      /otay|polb|barstow|route|gap|corridor|day.?plan|to\s+/.test(lower) &&
-      !/freight volume|west coast ports|census/.test(lower);
-    if (wantsRoute || /otay|polb\s*(→|->|to)/.test(lower)) {
-      const destination = /otay/.test(lower) ? OTAY : BARSTOW;
+      supportedPair &&
+      /route|gap|corridor|day.?plan|charg|capacity|\bto\b|→|->|fleet/.test(
+        lower,
+      ) &&
+      !/freight volume|west coast ports|census|seattle/.test(lower);
+    if (wantsRoute) {
+      const destination = mentionsOtay
+        ? OTAY
+        : mentionsShafter || (energyForward && !mentionsBarstow)
+          ? SHAFTER
+          : BARSTOW;
+      const zeMeta =
+        destination === SHAFTER || destination === OTAY
+          ? {
+              zeCorridorId: destination === SHAFTER ? "lb-shafter" : "lb-tijuana",
+              fleetSizeTrucks: 60,
+              borderSides:
+                destination === OTAY ? "US, Mexico" : "US",
+              routingProvider: "ptv",
+            }
+          : { routingProvider: "ptv" };
+      const skillSummary =
+        destination === SHAFTER
+          ? "Energy Forward ZE: Long Beach → Shafter. Model interim depot + en-route charging for a 60-truck Class 8 fleet (US only). PTV truck routing on Calculate."
+          : destination === OTAY
+            ? "Energy Forward ZE: Long Beach → Otay/Tijuana. Separate US-side and Mexico-side interim capacity; border dwell SoC reserve. PTV truck routing on Calculate."
+            : `Drafted ${POLB.label} → ${destination.label} for Class 8 gap analysis. PTV truck routing on Calculate.`;
       return {
         id: `wbai_local_caas_route_${Date.now()}`,
         mode: "caas_gap_map",
-        answerSummary: `Drafted ${POLB.label} → ${destination.label} corridor for Class 8 gap analysis. Map focused on the route.`,
+        answerSummary: skillSummary,
         draftPatch: {
           origin: POLB,
           destination,
           vehicleClass: "Class 8 corridor",
-          notes: `AI draft: ${POLB.label} → ${destination.label}`,
+          notes: `AI draft (route-planning skill): ${POLB.label} → ${destination.label}`,
           metadata: {
             truckSlug: "ecascadia_438",
             driverProfile: "regional_drayage",
             source: "workbench/ai:local_fallback",
+            ...zeMeta,
           },
         },
         mapActions: [
@@ -123,8 +168,9 @@ function localAiFallback(mode: WorkbenchMode, message: string): WorkbenchAiResul
             },
           },
         ],
+        // Preview only — Calculate / bootstrap snaps via PTV (provider: ptv).
         routeGeometry: {
-          provider: "mock",
+          provider: "ptv",
           coordinates: [
             { latitude: POLB.latitude, longitude: POLB.longitude },
             {
@@ -136,25 +182,37 @@ function localAiFallback(mode: WorkbenchMode, message: string): WorkbenchAiResul
               longitude: destination.longitude,
             },
           ],
-          warnings: ["Preview corridor — snap to roads via Find Charger Gaps."],
+          warnings: [
+            "Preview endpoints — Calculate snaps Class-8 geometry via PTV.",
+          ],
         },
         cards: [
           {
             id: "ai-caas-route-draft",
-            title: "Corridor drafted",
-            summary: `${POLB.label} → ${destination.label}. Statewide geo boxes and freight arcs are cleared; gap layers stay on the corridor.`,
+            title:
+              destination === SHAFTER || destination === OTAY
+                ? "ZE corridor drafted"
+                : "Corridor drafted",
+            summary: skillSummary,
             mode: "caas_gap_map",
             severity: "success",
             layerId: "route",
             metrics: {
               origin: POLB.label,
               destination: destination.label,
+              routing: "ptv",
+              ...(typeof zeMeta.fleetSizeTrucks === "number"
+                ? { fleetSizeTrucks: zeMeta.fleetSizeTrucks }
+                : {}),
             },
           },
         ],
         queriesRun: [],
         fallback: true,
         model: "workbench-local-fallback",
+        providerWarnings: [
+          "Route geometry uses PTV Class-8 truck profile on Calculate — not Google.",
+        ],
       };
     }
 
@@ -162,7 +220,7 @@ function localAiFallback(mode: WorkbenchMode, message: string): WorkbenchAiResul
       id: `wbai_local_caas_${Date.now()}`,
       mode: "caas_gap_map",
       answerSummary:
-        "Enabled Class 8 gap and carrier layers for the opportunity map. Select origin and destination for route gap cards.",
+        "Enabled Class 8 gap and carrier layers. For Energy Forward ZE, ask about Long Beach→Shafter or Long Beach→Tijuana (60-truck interim capacity).",
       mapActions: [
         { type: "toggle_layer", layer: "class8-gaps", enabled: true },
         { type: "toggle_layer", layer: "carriers", enabled: true },

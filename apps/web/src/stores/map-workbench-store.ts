@@ -23,6 +23,9 @@ export type CaasMapPhase = "freight_overview" | "route_analysis";
 /** Dual-corridor filter for road-traced freight (I-15 vs I-40). */
 export type FreightViaFilter = "all" | "I-15" | "I-40";
 
+/** CaaS choropleth drilldown: air districts → counties → zip markers. */
+export type CaasGeoLevel = "air-district" | "county" | "zip";
+
 export type MapWorkbenchState = {
   mode: WorkbenchMode;
   draft: WorkbenchPlanDraft;
@@ -46,6 +49,8 @@ export type MapWorkbenchState = {
   selectedPortCode: string | null;
   /** I-15 / I-40 compare filter for freight corridors. */
   freightViaFilter: FreightViaFilter;
+  /** Choropleth level for CaaS freight overview. */
+  caasGeoLevel: CaasGeoLevel;
   reset: (mode?: WorkbenchMode) => void;
   applyDraftPatch: (patch: Partial<WorkbenchPlanDraft>) => void;
   toggleLayer: (layerId: WorkbenchLayerId) => void;
@@ -55,6 +60,7 @@ export type MapWorkbenchState = {
   setCaasPhase: (phase: CaasMapPhase) => void;
   setSelectedPortCode: (code: string | null) => void;
   setFreightViaFilter: (filter: FreightViaFilter) => void;
+  setCaasGeoLevel: (level: CaasGeoLevel) => void;
   applyMapActions: (actions: WorkbenchMapAction[]) => void;
   applyAiResult: (result: WorkbenchAiResult) => void;
 };
@@ -74,20 +80,16 @@ const ALLOWED_LAYERS = new Set<WorkbenchLayerId>([
   "caas-zones",
 ]);
 
-/** Statewide overview layers — hide once a CaaS route is built. */
-const CAAS_OVERVIEW_ONLY_LAYERS = new Set<WorkbenchLayerId>([
-  "geo-regions",
-  "freight-flow",
+/** Full CaaS layer stack — kept on in both freight overview and route analysis. */
+const CAAS_FULL_LAYERS: WorkbenchLayerId[] = [
   "ports",
-]);
-
-/** Corridor-focused layers for CaaS route / gap analysis. */
-const CAAS_ROUTE_ANALYSIS_LAYERS: WorkbenchLayerId[] = [
+  "freight-flow",
   "route",
   "chargers",
   "parking",
   "class8-gaps",
   "carriers",
+  "geo-regions",
   "caas-zones",
   "highways",
 ];
@@ -130,14 +132,14 @@ function boundsFromPlaces(
   };
 }
 
-function stripCaasOverviewLayers(
+/** Ensure CaaS AI layer patches still include the full data stack the user expects. */
+function ensureCaasFullLayers(
   mode: WorkbenchMode,
   layers: WorkbenchLayerId[],
 ): WorkbenchLayerId[] {
   if (mode !== "caas_gap_map") return layers;
-  const filtered = layers.filter((id) => !CAAS_OVERVIEW_ONLY_LAYERS.has(id));
-  if (!filtered.includes("route")) filtered.push("route");
-  return sortLayersForMode(mode, filtered.length > 0 ? filtered : CAAS_ROUTE_ANALYSIS_LAYERS);
+  const merged = new Set<WorkbenchLayerId>([...layers, ...CAAS_FULL_LAYERS]);
+  return sortLayersForMode(mode, [...merged]);
 }
 
 function cloneDraft(draft: WorkbenchPlanDraft): WorkbenchPlanDraft {
@@ -161,24 +163,12 @@ function cloneDraft(draft: WorkbenchPlanDraft): WorkbenchPlanDraft {
 
 function initialStateForMode(mode: WorkbenchMode) {
   const config = WORKBENCH_MODE_CONFIG[mode];
-  const caasOverviewLayers: WorkbenchLayerId[] = [
-    "ports",
-    "freight-flow",
-    "chargers",
-    "parking",
-    "class8-gaps",
-    "carriers",
-    "geo-regions",
-    "caas-zones",
-    "highways",
-  ];
-
   return {
     mode,
     draft: cloneDraft(config.defaultDraft),
     activeLayers:
       mode === "caas_gap_map"
-        ? sortLayersForMode(mode, caasOverviewLayers)
+        ? sortLayersForMode(mode, CAAS_FULL_LAYERS.filter((id) => id !== "route"))
         : [...config.defaultLayers],
     selectedAsset: null,
     routeGeometry: null,
@@ -193,6 +183,7 @@ function initialStateForMode(mode: WorkbenchMode) {
         : ("route_analysis" as CaasMapPhase),
     selectedPortCode: null,
     freightViaFilter: "all" as FreightViaFilter,
+    caasGeoLevel: "air-district" as CaasGeoLevel,
   };
 }
 
@@ -344,6 +335,9 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
   setFreightViaFilter: (filter) => {
     set({ freightViaFilter: filter });
   },
+  setCaasGeoLevel: (level) => {
+    set({ caasGeoLevel: level });
+  },
   setCaasPhase: (phase) => {
     set((state) => {
       if (state.mode !== "caas_gap_map") return {};
@@ -353,25 +347,20 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
           state.draft.destination,
           state.routeGeometry?.coordinates,
         );
+        // Keep freight / geo / assets on — route analysis adds focus, it does not blank the map.
         return {
           caasPhase: phase,
-          activeLayers: sortLayersForMode(state.mode, CAAS_ROUTE_ANALYSIS_LAYERS),
+          activeLayers: ensureCaasFullLayers(state.mode, state.activeLayers),
           focusBounds,
-          // Drop statewide sample pins; Calculate / AI can re-seed corridor assets.
-          mapAssets: [],
         };
       }
       return {
         caasPhase: phase,
         focusBounds: null,
-        activeLayers: sortLayersForMode(state.mode, [
-          "ports",
-          "freight-flow",
-          ...state.activeLayers.filter(
-            (id) => id !== "route" && !CAAS_OVERVIEW_ONLY_LAYERS.has(id),
-          ),
-          "geo-regions",
-        ]),
+        activeLayers: ensureCaasFullLayers(
+          state.mode,
+          state.activeLayers.filter((id) => id !== "route"),
+        ),
       };
     });
   },
@@ -415,14 +404,20 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
     ];
 
     const nextDraft = get().draft;
+    const hasBothEndpoints = Boolean(nextDraft.origin && nextDraft.destination);
+    const hasUsableGeometry = Boolean(
+      result.routeGeometry?.coordinates &&
+        result.routeGeometry.coordinates.length >= 2,
+    );
+    const patchCompletesRoute = Boolean(
+      result.draftPatch?.origin && result.draftPatch?.destination,
+    );
+    // Only leave freight overview when AI produced a complete OD pair
+    // (not origin-only, destination-only, or notes-only patches).
     const aiBuiltRoute =
       state.mode === "caas_gap_map" &&
-      Boolean(
-        result.routeGeometry ||
-          result.draftPatch?.origin ||
-          result.draftPatch?.destination ||
-          (nextDraft.origin && nextDraft.destination && result.draftPatch),
-      );
+      hasBothEndpoints &&
+      (hasUsableGeometry || patchCompletesRoute);
 
     if (aiBuiltRoute && get().caasPhase === "freight_overview") {
       get().setCaasPhase("route_analysis");
@@ -439,8 +434,8 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
           result.activeLayers.filter((layer) => ALLOWED_LAYERS.has(layer)),
         )
       : undefined;
-    if (nextLayers && inRouteAnalysis) {
-      nextLayers = stripCaasOverviewLayers(afterPhase.mode, nextLayers);
+    if (nextLayers && afterPhase.mode === "caas_gap_map") {
+      nextLayers = ensureCaasFullLayers(afterPhase.mode, nextLayers);
     }
 
     const routeFocus =

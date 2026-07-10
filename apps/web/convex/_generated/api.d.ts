@@ -41,13 +41,16 @@ import type * as faf_lookups from "../faf/lookups.js";
 import type * as faf_mutations from "../faf/mutations.js";
 import type * as faf_queries from "../faf/queries.js";
 import type * as faf_westCoastFlows from "../faf/westCoastFlows.js";
+import type * as faf_zeCorridorSpecs from "../faf/zeCorridorSpecs.js";
 import type * as fleet_mutations from "../fleet/mutations.js";
 import type * as fleet_queries from "../fleet/queries.js";
 import type * as generators_ingest from "../generators/ingest.js";
 import type * as generators_mutations from "../generators/mutations.js";
 import type * as generators_queries from "../generators/queries.js";
+import type * as geo_choropleth from "../geo/choropleth.js";
 import type * as geo_ingest from "../geo/ingest.js";
 import type * as geo_ingestAirDistricts from "../geo/ingestAirDistricts.js";
+import type * as geo_ingestZcta from "../geo/ingestZcta.js";
 import type * as geo_mutations from "../geo/mutations.js";
 import type * as geo_queries from "../geo/queries.js";
 import type * as geo_rollup from "../geo/rollup.js";
@@ -104,6 +107,7 @@ import type * as users_queries from "../users/queries.js";
 import type * as workbench_actions from "../workbench/actions.js";
 import type * as workbench_ai from "../workbench/ai.js";
 import type * as workbench_queries from "../workbench/queries.js";
+import type * as workbench_routePlanningSkill from "../workbench/routePlanningSkill.js";
 import type * as workbench_runs from "../workbench/runs.js";
 
 import type {
@@ -146,13 +150,16 @@ declare const fullApi: ApiFromModules<{
   "faf/mutations": typeof faf_mutations;
   "faf/queries": typeof faf_queries;
   "faf/westCoastFlows": typeof faf_westCoastFlows;
+  "faf/zeCorridorSpecs": typeof faf_zeCorridorSpecs;
   "fleet/mutations": typeof fleet_mutations;
   "fleet/queries": typeof fleet_queries;
   "generators/ingest": typeof generators_ingest;
   "generators/mutations": typeof generators_mutations;
   "generators/queries": typeof generators_queries;
+  "geo/choropleth": typeof geo_choropleth;
   "geo/ingest": typeof geo_ingest;
   "geo/ingestAirDistricts": typeof geo_ingestAirDistricts;
+  "geo/ingestZcta": typeof geo_ingestZcta;
   "geo/mutations": typeof geo_mutations;
   "geo/queries": typeof geo_queries;
   "geo/rollup": typeof geo_rollup;
@@ -209,6 +216,7 @@ declare const fullApi: ApiFromModules<{
   "workbench/actions": typeof workbench_actions;
   "workbench/ai": typeof workbench_ai;
   "workbench/queries": typeof workbench_queries;
+  "workbench/routePlanningSkill": typeof workbench_routePlanningSkill;
   "workbench/runs": typeof workbench_runs;
 }>;
 

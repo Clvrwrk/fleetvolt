@@ -123,7 +123,9 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
 
       {rows.length > 0 ? (
         <dl className="mt-3 divide-y divide-black/10 overflow-hidden rounded-xl border border-black/10">
-          {rows.map((row) => (
+          {rows
+            .filter((row) => row.key !== "carrierHref")
+            .map((row) => (
             <div key={row.key} className="grid grid-cols-[6rem_minmax(0,1fr)] gap-2 bg-white px-3 py-2 text-xs">
               <dt className="font-bold text-[var(--fv-steel)]">{row.label}</dt>
               <dd className="truncate text-right text-[var(--fv-graphite)]" title={row.value}>
@@ -136,6 +138,29 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
         <p className="mt-3 text-xs leading-5 text-[var(--fv-steel)]">
           Metadata card ready. Detailed Convex asset payloads attach through the workbench aggregation layer.
         </p>
+      )}
+
+      {typeof selection.metadata?.carrierHref === "string" ? (
+        <a
+          href={selection.metadata.carrierHref}
+          data-testid="carriers-in-region-link"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-[var(--fv-blueprint-blue)]/30 bg-[var(--fv-blueprint-blue)]/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--fv-blueprint-blue)] hover:bg-[var(--fv-blueprint-blue)]/15"
+        >
+          See carriers in this region
+        </a>
+      ) : (
+        <a
+          href={`/caas?view=summary&carriers=1${
+            typeof selection.latitude === "number" &&
+            typeof selection.longitude === "number"
+              ? `&lat=${selection.latitude.toFixed(3)}&lng=${selection.longitude.toFixed(3)}`
+              : ""
+          }`}
+          data-testid="carriers-in-region-link"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-[var(--fv-blueprint-blue)]/30 bg-[var(--fv-blueprint-blue)]/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--fv-blueprint-blue)] hover:bg-[var(--fv-blueprint-blue)]/15"
+        >
+          See carriers near this point
+        </a>
       )}
     </aside>
   );
