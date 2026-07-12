@@ -22,8 +22,22 @@ const placeValidator = v.object({
   label: v.string(),
   latitude: v.number(),
   longitude: v.number(),
-  kind: v.string(),
-  source: v.string(),
+  kind: v.union(
+    v.literal("address"),
+    v.literal("port"),
+    v.literal("charger"),
+    v.literal("parking"),
+    v.literal("fleet-yard"),
+    v.literal("carrier"),
+    v.literal("poi"),
+    v.literal("geo-region"),
+    v.literal("manual"),
+  ),
+  source: v.union(
+    v.literal("fleetvolt"),
+    v.literal("google"),
+    v.literal("manual"),
+  ),
   id: v.optional(v.string()),
 });
 
@@ -35,18 +49,27 @@ type RoutePair = {
     label: string;
     latitude: number;
     longitude: number;
-    kind: string;
-    source: string;
+    kind: "address" | "port" | "charger" | "parking" | "fleet-yard" | "carrier" | "poi" | "geo-region" | "manual";
+    source: "fleetvolt" | "google" | "manual";
     id?: string;
   };
   destination: {
     label: string;
     latitude: number;
     longitude: number;
-    kind: string;
-    source: string;
+    kind: "address" | "port" | "charger" | "parking" | "fleet-yard" | "carrier" | "poi" | "geo-region" | "manual";
+    source: "fleetvolt" | "google" | "manual";
     id?: string;
   };
+};
+
+type CatalogStoredPlace = {
+  label: string;
+  latitude: number;
+  longitude: number;
+  kind: string;
+  source: string;
+  id?: string;
 };
 
 function requestHashFromGeometry(geometry: unknown): string | null {
@@ -88,8 +111,8 @@ async function catalogItem(
   args: {
     id: string;
     label: string;
-    origin: RoutePair["origin"];
-    destination: RoutePair["destination"];
+    origin: CatalogStoredPlace;
+    destination: CatalogStoredPlace;
     requestHash: string;
     createdAt: number;
   },
@@ -173,7 +196,7 @@ export const resolveGeneratorRoute = internalQuery({
         label: generator.name,
         latitude: generator.location.lat,
         longitude: generator.location.lng,
-        kind: "traffic-generator",
+        kind: "poi",
         source: "fleetvolt",
       },
     };
@@ -330,13 +353,13 @@ export const list = query({
             label: `${row.origin.label} → ${row.destination.label}`,
             origin: {
               ...row.origin,
-              kind: "recent",
-              source: "fleetvolt",
+              kind: "manual" as const,
+              source: "fleetvolt" as const,
             },
             destination: {
               ...row.destination,
-              kind: "recent",
-              source: "fleetvolt",
+              kind: "manual" as const,
+              source: "fleetvolt" as const,
             },
             requestHash: row.requestHash!,
             createdAt: row.createdAt,
