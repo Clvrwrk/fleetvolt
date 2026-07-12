@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Persistent Route Intelligence
-current_phase: 18
-current_phase_name: persistent-ptv-route-cache
+current_phase: 19
+current_phase_name: road-level-route-intelligence
 status: phase_complete
-stopped_at: "Phase 18 complete. Next: plan Phase 19 road-level route intelligence."
-last_updated: "2026-07-11T21:32:00.000Z"
-last_activity: 2026-07-11
-last_activity_desc: Persistent 90-day PTV cache shipped to Convex dev and verified miss/write then database hit
+stopped_at: "Phase 19 complete. Next: plan Phase 20 Freight POI Route Catalog."
+last_updated: "2026-07-12T04:54:00.000Z"
+last_activity: 2026-07-12
+last_activity_desc: Seven-day road-level intelligence snapshots verified refresh then database hit without changing geometry cache
 progress:
-  total_phases: 12
-  completed_phases: 12
-  total_plans: 21
-  completed_plans: 21
-  percent: 100
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
 
-**Current focus:** Phase 18 complete — next is Phase 19 road-level route intelligence
+**Current focus:** Phase 19 complete — next is Phase 20 Freight POI Route Catalog
 
 ## Current Position
 
-Phase: 18 (persistent PTV route cache) — complete
-Status: 90-day directional cache, stale-while-refresh lease, stale failure retention, and receipts verified
-Last activity: 2026-07-11 — live PTV miss/write followed by database hit with no second refresh
+Phase: 19 (road-level-route-intelligence) — complete
+Status: Seven-day route intelligence and provenance receipts verified
+Last activity: 2026-07-12 — live refresh, database hit, geometry isolation, Docker, and responsive regression passed
 
 ## Shipped phases (summaries present)
 
@@ -50,12 +50,13 @@ Last activity: 2026-07-11 — live PTV miss/write followed by database hit with 
 | 16 UX navigation overhaul | complete |
 | 17 Role-based map workbench | complete (UAT 1–3 pass; 4–9 pending) |
 | 18 Persistent PTV route cache | complete (live Convex cache reuse verified) |
+| 19 Road-level route intelligence | complete (live full-source snapshot reuse verified) |
 
 **Not started / deferred:** Phase 5–6 (v1 emissions/TCO), Phase 8–10 (Freight Pulse flow/hotspots/time — largely superseded by 15/17)
 
 ## Pending Todos
 
-- Plan and execute Phase 19 road-level route intelligence
+- Plan and execute Phase 20 Freight POI Route Catalog
 - Invite testers via WorkOS; share docs/TESTING.md
 - Finish Phase 17 UAT Test 4–9 with logged-in walkthroughs
 - Confirm OPENAI_API_KEY on Convex prod if AI bar should hit live LLM

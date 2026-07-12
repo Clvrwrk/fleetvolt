@@ -578,10 +578,10 @@ Plans:
 4. Enrichment has an independent seven-day lifetime and single-refresh lease; route geometry remains usable when enrichment refresh fails.
 5. Live verification proves a persisted PTV route can be enriched and then served from the enrichment cache without changing its 90-day geometry receipt.
 
-**Plans**: 1 planned
+**Plans**: 1/1 plans complete
 
 Plans:
-- [ ] 19-01-PLAN.md — Route-enrichment repository, road-proximity aggregation, provenance, cache policy, tests, and live verification
+- [x] 19-01-PLAN.md — Route-enrichment repository, road-proximity aggregation, provenance, cache policy, tests, and live verification (completed 2026-07-11)
 
 ### Phase 20: Freight POI Route Catalog
 

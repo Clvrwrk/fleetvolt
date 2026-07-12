@@ -13,10 +13,10 @@
 
 1. Add `routeEnrichments`, keyed by Phase-18 `requestHash`, with a seven-day expiry and two-minute refresh lease.
 2. Use a pure policy module for freshness, sampling, corridor bbox expansion, and deterministic coverage summaries.
-3. Use one internal aggregation query to read the persisted road polyline and source tables transactionally.
-4. Sample at most 16 evenly distributed road points for point-source proximity; deduplicate assets by stable source key and keep the minimum route distance.
+3. Use one coordinating action with independent internal queries per dataset so each source has its own Convex document/time budget.
+4. Preserve 16 audit probes and use a 128-point deterministic simplification of the persisted 800-point road path for point-source distance; the 8 km matching radius remains wider than the simplification interval.
 5. Fetch Caltrans segments once by expanded route bbox, then refine membership against the road polyline so crossing-but-distant bbox segments are excluded.
-6. Persist a bounded snapshot containing summaries plus the nearest/relevant rows needed by later route cards and selectors.
+6. Persist a bounded snapshot containing complete category counts/summaries plus capped detail rows needed by later route cards and selectors.
 7. Expose one action that claims cache, aggregates only for the refresh owner, persists success, and serves stale on failure.
 
 ## Freshness policy
