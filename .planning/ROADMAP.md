@@ -569,7 +569,19 @@ Plans:
 
 **Goal**: Enrich the actual persisted road polyline with truck AADT, labeled FAF context, chargers, Class 8 gaps, parking, amenities, carriers, and fleet yards.
 **Depends on**: Phase 18
-**Plans**: TBD
+**Requirements**: ROUTE-INTEL-01, ROUTE-INTEL-02, ROUTE-INTEL-03, ROUTE-INTEL-04, ROUTE-INTEL-05
+**Success Criteria**:
+
+1. An existing persisted PTV request hash produces a stored enrichment snapshot derived from its actual road polyline, never an endpoint chord or whole-bbox assumption.
+2. Snapshot covers Caltrans 5-axle truck AADT, explicitly regional FAF annual context, AFDC chargers and honest Class 8 gap, NATD parking, OSM truck amenities, carriers, and fleet yards.
+3. Every category carries source, method/scope, freshness, coverage, and unavailable reasons; unknown data is never converted to zero.
+4. Enrichment has an independent seven-day lifetime and single-refresh lease; route geometry remains usable when enrichment refresh fails.
+5. Live verification proves a persisted PTV route can be enriched and then served from the enrichment cache without changing its 90-day geometry receipt.
+
+**Plans**: 1 planned
+
+Plans:
+- [ ] 19-01-PLAN.md — Route-enrichment repository, road-proximity aggregation, provenance, cache policy, tests, and live verification
 
 ### Phase 20: Freight POI Route Catalog
 

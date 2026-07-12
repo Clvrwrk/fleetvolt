@@ -342,3 +342,17 @@ Net-new requirements for the Convex Data + Spatial Layer. **Prefix `CVX-*` is de
 | FLAGSHIP-01 | North-star flagship query answerable from Convex (charger gap, 5 closest+config, carrier targeting, congested-route ranking, FAF context); detour/CO₂ deferred to Phase 13 | 12 | 12-08 | Pending |
 
 *v3.0 Phase-12 requirements registered: 2026-07-07*
+
+---
+
+## v3.1 Persistent Route Intelligence — Phase 19 Requirements
+
+| ID | Requirement | Phase | Plan | Status |
+|----|-------------|-------|------|--------|
+| ROUTE-INTEL-01 | Persist one independently freshened enrichment snapshot per directional route request hash without modifying cached geometry | 19 | 19-01 | Pending |
+| ROUTE-INTEL-02 | Match Caltrans 5-axle truck AADT and route labels to the actual persisted road polyline within a documented corridor tolerance | 19 | 19-01 | Pending |
+| ROUTE-INTEL-03 | Attach AFDC chargers, honest Class 8 gap, NATD parking, OSM truck amenities, carriers, and FleetVolt fleet yards by road-polyline proximity | 19 | 19-01 | Pending |
+| ROUTE-INTEL-04 | Attach FAF annual freight context with explicit regional scope and units; never present it as road-segment or daily measured traffic | 19 | 19-01 | Pending |
+| ROUTE-INTEL-05 | Return provenance, coverage, unavailable reasons, freshness, access/refresh counters, and cache receipts for every enrichment snapshot | 19 | 19-01 | Pending |
+
+*v3.1 Phase-19 requirements registered: 2026-07-11*
