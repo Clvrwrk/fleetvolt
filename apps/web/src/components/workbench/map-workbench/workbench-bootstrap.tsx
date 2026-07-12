@@ -67,7 +67,7 @@ function geometryFromRun(
           typeof record.durationSeconds === "number" ? record.durationSeconds : undefined,
         warnings: Array.isArray(record.warnings)
           ? record.warnings.filter((w): w is string => typeof w === "string")
-          : undefined,
+          : [],
       };
     }
   }
@@ -104,10 +104,10 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
   const { user } = useWorkOSAuth();
   const appliedKey = useRef<string | null>(null);
   const snapInFlight = useRef<string | null>(null);
-  const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
+  const fetchRouteGeometry = useAction(api.workbench.actions.routeGeometry);
 
   const latestRun = useQuery(
-    api["workbench/runs"].getLatestRun,
+    api.workbench.runs.getLatestRun,
     isAuthenticated ? { mode } : "skip",
   );
 

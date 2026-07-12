@@ -110,9 +110,12 @@ export function MapWorkbenchShell({ mode = "driver_day_plan" }: MapWorkbenchShel
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setInputsOpen(readBool(INPUTS_KEY, true));
-    setSummaryOpen(readBool(SUMMARY_KEY, false));
-    setMounted(true);
+    const timeoutId = window.setTimeout(() => {
+      setInputsOpen(readBool(INPUTS_KEY, true));
+      setSummaryOpen(readBool(SUMMARY_KEY, false));
+      setMounted(true);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   function toggleInputs() {

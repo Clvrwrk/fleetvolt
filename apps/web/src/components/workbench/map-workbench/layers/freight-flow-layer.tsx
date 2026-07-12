@@ -43,7 +43,7 @@ export function FreightFlowLayer({
   onSelectCorridor,
 }: FreightFlowLayerProps) {
   const map = useMap();
-  const flows = useQuery(api["faf/westCoastFlows"].westCoastFreightFlows, {});
+  const flows = useQuery(api.faf.westCoastFlows.westCoastFreightFlows, {});
   const linesRef = useRef<google.maps.Polyline[]>([]);
   const tierRef = useRef<Map<string, "low" | "medium" | "heavy">>(new Map());
   const animRef = useRef<number | null>(null);

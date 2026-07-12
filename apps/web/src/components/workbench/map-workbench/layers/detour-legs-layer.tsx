@@ -71,7 +71,7 @@ export function DetourLegsLayer({
   visible = true,
 }: DetourLegsLayerProps) {
   const map = useMap();
-  const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
+  const fetchRouteGeometry = useAction(api.workbench.actions.routeGeometry);
   const linesRef = useRef<google.maps.Polyline[]>([]);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const [paths, setPaths] = useState<DetourPaths | null>(null);
@@ -87,9 +87,9 @@ export function DetourLegsLayer({
       !Number.isFinite(selectedAsset.longitude) ||
       routeCoordinates.length < 2
     ) {
-      setPaths(null);
       requestKey.current = null;
-      return;
+      const timeoutId = window.setTimeout(() => setPaths(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     const corridor: LatLng[] = routeCoordinates.map((c) => ({
@@ -102,15 +102,15 @@ export function DetourLegsLayer({
     };
     const nearest = nearestPointOnPolyline(asset, corridor);
     if (!nearest) {
-      setPaths(null);
-      return;
+      const timeoutId = window.setTimeout(() => setPaths(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     // On-route assets don't need a spur.
     if (nearest.distanceM <= ON_ROUTE_MAX_M) {
-      setPaths(null);
       requestKey.current = null;
-      return;
+      const timeoutId = window.setTimeout(() => setPaths(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     const key = `${selectedAsset.id}:${asset.lat.toFixed(5)},${asset.lng.toFixed(5)}:${nearest.point.lat.toFixed(5)},${nearest.point.lng.toFixed(5)}`;

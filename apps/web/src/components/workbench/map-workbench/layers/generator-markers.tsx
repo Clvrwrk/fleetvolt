@@ -17,7 +17,7 @@ export function GeneratorMarkers({
   onSelectGenerator,
 }: GeneratorMarkersProps) {
   const near = useQuery(
-    api["generators/queries"].listNearPort,
+    api.generators.queries.listNearPort,
     portCode ? { portCode, radiusMiles: 20, limit: 30 } : "skip",
   );
 

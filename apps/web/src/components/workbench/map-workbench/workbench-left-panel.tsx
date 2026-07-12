@@ -96,11 +96,11 @@ export function WorkbenchLeftPanel({
       return next;
     });
   }
-  const runDriverDayPlan = useAction(api["workbench/actions"].driverDayPlan);
-  const runFleetContractPlan = useAction(api["workbench/actions"].fleetContractPlan);
-  const saveWorkbenchRun = useMutation(api["workbench/runs"].saveRun);
+  const runDriverDayPlan = useAction(api.workbench.actions.driverDayPlan);
+  const runFleetContractPlan = useAction(api.workbench.actions.fleetContractPlan);
+  const saveWorkbenchRun = useMutation(api.workbench.runs.saveRun);
   const caasOpportunity = useQuery(
-    api["workbench/queries"].caasOpportunityMap,
+    api.workbench.queries.caasOpportunityMap,
     mode === "caas_gap_map" ? { limit: 12 } : "skip",
   );
   const caasPhase = useMapWorkbenchStore((state) => state.caasPhase);
@@ -114,10 +114,10 @@ export function WorkbenchLeftPanel({
   const caasGeoLevel = useMapWorkbenchStore((state) => state.caasGeoLevel);
   const setCaasGeoLevel = useMapWorkbenchStore((state) => state.setCaasGeoLevel);
   const energyForward = useQuery(
-    api["faf/zeCorridorSpecs"].energyForwardZeCorridors,
+    api.faf.zeCorridorSpecs.energyForwardZeCorridors,
     mode === "caas_gap_map" ? {} : "skip",
   );
-  const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
+  const fetchRouteGeometry = useAction(api.workbench.actions.routeGeometry);
 
   const truckSlug =
     typeof draft.metadata?.truckSlug === "string"
@@ -137,7 +137,7 @@ export function WorkbenchLeftPanel({
   );
 
   const caasRouteOpportunity = useQuery(
-    api["workbench/queries"].analyzeCaasRouteOpportunity,
+    api.workbench.queries.analyzeCaasRouteOpportunity,
     mode === "caas_gap_map" &&
       caasPhase === "route_analysis" &&
       draft.origin &&

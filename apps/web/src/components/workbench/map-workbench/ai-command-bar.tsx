@@ -372,7 +372,7 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastSummary, setLastSummary] = useState<string | null>(null);
   const applyAiResult = useMapWorkbenchStore((state) => state.applyAiResult);
-  const runWorkbenchAi = useAction(api["workbench/ai"].workbenchPlanWithAi);
+  const runWorkbenchAi = useAction(api.workbench.ai.workbenchPlanWithAi);
   const examples = useMemo(() => EXAMPLE_PROMPTS[mode], [mode]);
 
   async function submit(message: string) {

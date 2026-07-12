@@ -18,7 +18,7 @@ function formatTeu(n: number | undefined): string {
 /** Card overlay with port TEU + nearby Major Traffic Generators. */
 export function PortDetailPopup({ portCode, onClose }: PortDetailPopupProps) {
   const detail = useQuery(
-    api["generators/queries"].portPopup,
+    api.generators.queries.portPopup,
     portCode ? { portCode, radiusMiles: 20 } : "skip",
   );
 
@@ -73,7 +73,7 @@ export function PortDetailPopup({ portCode, onClose }: PortDetailPopupProps) {
         <TechnicalLabel>Nearby traffic generators</TechnicalLabel>
         {detail === undefined ? (
           <p className="text-xs text-[var(--fv-text-muted)]">Loading…</p>
-        ) : detail.generators.length === 0 ? (
+        ) : !detail || detail.generators.length === 0 ? (
           <p className="text-xs text-[var(--fv-text-muted)]">
             No generators loaded yet — run generators ingest.
           </p>
