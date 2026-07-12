@@ -21,6 +21,7 @@ import type * as catalog_enrichQueries from "../catalog/enrichQueries.js";
 import type * as catalog_ingest from "../catalog/ingest.js";
 import type * as catalog_mutations from "../catalog/mutations.js";
 import type * as catalog_queries from "../catalog/queries.js";
+import type * as chargers_class8 from "../chargers/class8.js";
 import type * as chargers_classify from "../chargers/classify.js";
 import type * as chargers_ingest from "../chargers/ingest.js";
 import type * as chargers_mutations from "../chargers/mutations.js";
@@ -130,6 +131,7 @@ declare const fullApi: ApiFromModules<{
   "catalog/ingest": typeof catalog_ingest;
   "catalog/mutations": typeof catalog_mutations;
   "catalog/queries": typeof catalog_queries;
+  "chargers/class8": typeof chargers_class8;
   "chargers/classify": typeof chargers_classify;
   "chargers/ingest": typeof chargers_ingest;
   "chargers/mutations": typeof chargers_mutations;

@@ -2,6 +2,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { NextResponse } from "next/server";
 import { handleAuth } from "@workos-inc/authkit-nextjs";
 import { api } from "../../../../../convex/_generated/api";
+import { configuredAuthBaseUrl } from "@/lib/auth-origin";
 
 function roleFromState(state?: string): "driver" | "fleet_manager" | "caas" {
   if (state === "driver" || state === "fleet_manager" || state === "caas") return state;
@@ -9,6 +10,12 @@ function roleFromState(state?: string): "driver" | "fleet_manager" | "caas" {
 }
 
 export const GET = handleAuth({
+  // WorkOS documents baseURL for container/bind-address environments where
+  // the request hostname differs from the public browser hostname. Next dev
+  // binds to 0.0.0.0; the configured redirect is localhost.
+  baseURL: configuredAuthBaseUrl(
+    process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI,
+  ),
   async onSuccess({ user, state }) {
     const role = roleFromState(state);
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
