@@ -587,7 +587,20 @@ Plans:
 
 **Goal**: Precompute associated-port routes for curated freight POIs and expose grouped Preconfigured and Recent route selectors without amenity clutter.
 **Depends on**: Phase 19
-**Plans**: TBD
+**Requirements**: ROUTE-CATALOG-01, ROUTE-CATALOG-02, ROUTE-CATALOG-03, ROUTE-CATALOG-04, ROUTE-CATALOG-05
+**Success Criteria**:
+
+1. A one-route-at-a-time action resolves a curated traffic generator to its associated or nearest California freight port, reuses/persists PTV geometry, refreshes route intelligence, and upserts a promoted catalog record.
+2. The Alpha catalog contains five verified freight-generator routes with road geometry and Phase-19 intelligence receipts; no mass PTV batch action exists.
+3. The workbench route selector groups shared `Preconfigured` routes and authenticated deduplicated `Recent` routes while retaining manual origin/destination entry.
+4. Selecting a catalog route immediately restores its road geometry and shows a compact ROAD / TRAFFIC / CHARGE manifest; amenity detail remains outside the selector.
+5. Selector and manifest pass Desktop 1440x900, iPad 1024x1366, and Mobile 390x844 visual/interaction gates, keyboard focus, and honest empty/loading states.
+
+**Plans**: 2 planned
+
+Plans:
+- [ ] 20-01-PLAN.md — Catalog schema, policy, query, one-at-a-time precompute action, and five-route Alpha seed
+- [ ] 20-02-PLAN.md — Grouped Preconfigured/Recent selector, route manifest, responsive interaction, and visual verification
 
 ### Phase 21: Overlapping Route Chooser
 

@@ -356,3 +356,17 @@ Net-new requirements for the Convex Data + Spatial Layer. **Prefix `CVX-*` is de
 | ROUTE-INTEL-05 | Return provenance, coverage, unavailable reasons, freshness, access/refresh counters, and cache receipts for every enrichment snapshot | 19 | 19-01 | Complete |
 
 *v3.1 Phase-19 requirements registered: 2026-07-11*
+
+---
+
+## v3.1 Persistent Route Intelligence — Phase 20 Requirements
+
+| ID | Requirement | Phase | Plan | Status |
+|----|-------------|-------|------|--------|
+| ROUTE-CATALOG-01 | Persist promoted freight-POI routes that reference Phase-18 geometry and Phase-19 intelligence by directional request hash | 20 | 20-01 | Pending |
+| ROUTE-CATALOG-02 | Precompute one curated generator route per explicit action, resolving associated/nearest port without a mass provider-call path | 20 | 20-01 | Pending |
+| ROUTE-CATALOG-03 | Return grouped shared Preconfigured and authenticated deduplicated Recent routes with usable cached road geometry | 20 | 20-01/20-02 | Pending |
+| ROUTE-CATALOG-04 | Selecting a route restores endpoints and road geometry and exposes concise road/traffic/Class-8 status without amenity clutter | 20 | 20-02 | Pending |
+| ROUTE-CATALOG-05 | Route catalog passes accessibility, loading/empty/error, desktop, iPad, mobile, local Docker, and ScreenshotOne visual evidence gates | 20 | 20-02 | Pending |
+
+*v3.1 Phase-20 requirements registered: 2026-07-11*
