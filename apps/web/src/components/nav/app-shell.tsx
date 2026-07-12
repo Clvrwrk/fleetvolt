@@ -58,6 +58,7 @@ function getPageTitle(pathname: string): string {
     "/load": "Load Management",
     "/status": "System Status",
     "/catalog": "Vehicle Catalog",
+    "/design-system": "Enterprise Design System",
   };
   // Exact match first
   if (map[pathname]) return map[pathname];
@@ -70,7 +71,7 @@ function getPageTitle(pathname: string): string {
 
 function TopBar({ pageTitle }: { pageTitle: string }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-black/8 bg-[var(--fv-paper)] px-4">
+    <header className="fv-command-topbar sticky top-0 z-30 flex h-14 items-center gap-3 px-4">
       <PageHeader title={pageTitle} />
       {/* Right: UserMenu */}
       <div className="flex shrink-0 items-center gap-3">
@@ -103,7 +104,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const mapFirst = isMapWorkbenchRoute(pathname);
 
   return (
-    <div className="min-h-screen bg-[var(--fv-bg)]">
+    <div className={mapFirst ? "min-h-screen bg-[var(--fv-bg)]" : "fv-enterprise-shell min-h-screen"}>
       {!mapFirst ? <Sidebar /> : null}
       <div className={mapFirst ? "pl-0" : "pl-14 md:pl-[260px]"}>
         <TopBar pageTitle={pageTitle} />

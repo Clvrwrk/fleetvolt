@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 // ── Phase 16 / Wave 3: PageHeader ───────────────────────────────────────────
@@ -70,7 +69,7 @@ export function PageHeader({ title, breadcrumbs, actions }: PageHeaderProps) {
         <h1
           className="truncate text-[16px] font-semibold leading-tight"
           style={{
-            fontFamily: "var(--font-inter), sans-serif",
+            fontFamily: "var(--font-arcline), var(--font-inter), sans-serif",
             color: "var(--fv-graphite)",
           }}
         >
