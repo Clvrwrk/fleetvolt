@@ -524,3 +524,67 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 Plans:
 - [x] 17-00-PLAN.md — Hybrid map workbench: launchers, shell, layers, Routes, autocomplete, Convex aggregation, Driver/Fleet/CaaS vertical slices, map-first AI, Playwright verification (completed 2026-07-08)
 
+---
+
+# Milestone v3.1 — Persistent Route Intelligence
+
+## Overview
+
+Turn every PTV-planned route into a reusable FleetVolt data asset. PTV geometry is persisted for 90 days, route enrichment refreshes independently, curated routes become dropdown options, overlapping road clicks resolve through a route chooser, and the CaaS workspace is reorganized for desktop, iPad, and mobile.
+
+## Locked Decisions
+
+1. Successful PTV geometry is reused for 90 days; the same directional canonical request cannot call PTV during that window.
+2. At expiry, serve stale geometry while one refresh lease permits a single PTV refresh. Failed refreshes retain stale geometry and record the error.
+3. Geometry freshness is independent from charger, parking, amenity, fleet-yard, carrier, gap, AADT, and freight enrichment freshness.
+4. Cache every planned route; show only curated/promoted shared routes plus user Recents in selectors.
+5. A→B and B→A are distinct cache/catalog routes.
+6. Convex is the system of record behind a route-repository boundary; do not dual-write to the parallel Supabase effort.
+7. Mandatory UI viewports: Desktop 1440×900, iPad 1024×1366, Mobile 390×844.
+
+## Execution Order
+
+18 → 19 → 20 → 21 → 22
+
+### Phase 18: Persistent PTV Route Cache
+
+**Goal**: Every successful PTV route is persisted and reused for 90 days, with directional canonical identity, single-refresh leasing, stale recovery, and auditable cache receipts.
+**Mode:** mvp
+**Depends on**: Phase 17
+**Requirements**: ROUTE-CACHE-01, ROUTE-CACHE-02, ROUTE-CACHE-03, ROUTE-CACHE-04, ROUTE-CACHE-05
+**Success Criteria**:
+
+1. Successful PTV results persist request inputs, geometry, pulled/expiry timestamps, warnings, source metadata, and access/refresh counters.
+2. Identical directional requests before expiry perform zero PTV fetches.
+3. Expired geometry is served stale while only one caller receives a refresh lease.
+4. Failed refresh preserves stale geometry; missing-route failure never fabricates geometry.
+5. Tests cover direction-sensitive hashing, fresh hits, expiry boundary, lease contention, refresh success, and refresh failure.
+
+**Plans**: 1/1 plans complete
+
+Plans:
+- [x] 18-01-PLAN.md — Convex schema/repository, PTV action integration, policy tests, deployment verification (completed 2026-07-11)
+
+### Phase 19: Road-Level Route Intelligence
+
+**Goal**: Enrich the actual persisted road polyline with truck AADT, labeled FAF context, chargers, Class 8 gaps, parking, amenities, carriers, and fleet yards.
+**Depends on**: Phase 18
+**Plans**: TBD
+
+### Phase 20: Freight POI Route Catalog
+
+**Goal**: Precompute associated-port routes for curated freight POIs and expose grouped Preconfigured and Recent route selectors without amenity clutter.
+**Depends on**: Phase 19
+**Plans**: TBD
+
+### Phase 21: Overlapping Route Chooser
+
+**Goal**: Resolve cached route membership on road click and ask which route to open when several overlap.
+**Depends on**: Phase 20
+**Plans**: TBD
+
+### Phase 22: Responsive CaaS Workspace
+
+**Goal**: Move CaaS mode/opportunity panels right on wide desktop, use a drawer on iPad, retain a Plan/CaaS/Results sheet on mobile, and pass all three viewport gates.
+**Depends on**: Phase 21
+**Plans**: TBD

@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Progress
-current_phase: 17
-current_phase_name: role-based-map-workbench-driver-day-plan-fleet-contract-plan-caas-gap-map
-status: uat_in_progress
-stopped_at: "Prod live at fleetvolt.network (3293e34). Tester guide in docs/TESTING.md. Continue UAT Test 4 with logged-in walkthrough."
-last_updated: "2026-07-09T14:40:00.000Z"
-last_activity: 2026-07-09
-last_activity_desc: Prod deploy verified; local workbenches smoke OK; external testing guide shipped
+milestone: v3.1
+milestone_name: Persistent Route Intelligence
+current_phase: 18
+current_phase_name: persistent-ptv-route-cache
+status: phase_complete
+stopped_at: "Phase 18 complete. Next: plan Phase 19 road-level route intelligence."
+last_updated: "2026-07-11T21:32:00.000Z"
+last_activity: 2026-07-11
+last_activity_desc: Persistent 90-day PTV cache shipped to Convex dev and verified miss/write then database hit
 progress:
   total_phases: 12
   completed_phases: 12
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
 
-**Current focus:** Phase 17 UAT — Tests 1–3 passed; next is Test 4 (Fleet contract plan)
+**Current focus:** Phase 18 complete — next is Phase 19 road-level route intelligence
 
 ## Current Position
 
-Phase: 17 (role-based-map-workbench) — UAT in progress (3/9 tests pass)
-Status: Tool-rail UX locked (`TOOL-RAIL.md`); Calculate day plan verified; catalog EPA card on master
-Last activity: 2026-07-08 — HVIP catalog merged; resume for Fleet UAT Test 4
+Phase: 18 (persistent PTV route cache) — complete
+Status: 90-day directional cache, stale-while-refresh lease, stale failure retention, and receipts verified
+Last activity: 2026-07-11 — live PTV miss/write followed by database hit with no second refresh
 
 ## Shipped phases (summaries present)
 
@@ -49,11 +49,13 @@ Last activity: 2026-07-08 — HVIP catalog merged; resume for Fleet UAT Test 4
 | 15 Hotspot Explorer + AI brief | complete |
 | 16 UX navigation overhaul | complete |
 | 17 Role-based map workbench | complete (UAT 1–3 pass; 4–9 pending) |
+| 18 Persistent PTV route cache | complete (live Convex cache reuse verified) |
 
 **Not started / deferred:** Phase 5–6 (v1 emissions/TCO), Phase 8–10 (Freight Pulse flow/hotspots/time — largely superseded by 15/17)
 
 ## Pending Todos
 
+- Plan and execute Phase 19 road-level route intelligence
 - Invite testers via WorkOS; share docs/TESTING.md
 - Finish Phase 17 UAT Test 4–9 with logged-in walkthroughs
 - Confirm OPENAI_API_KEY on Convex prod if AI bar should hit live LLM

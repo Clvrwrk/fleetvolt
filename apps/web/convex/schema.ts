@@ -843,6 +843,50 @@ export default defineSchema({
     .index("by_userId_updatedAt", ["userId", "updatedAt"])
     .index("by_fleetId", ["fleetId"]),
 
+  // Persistent provider geometry. PTV rows are authoritative for 90 days;
+  // enrichment snapshots intentionally live outside this table so they can
+  // refresh without purchasing another route pull.
+  routeGeometries: defineTable({
+    requestHash: v.string(),
+    provider: v.union(
+      v.literal("ptv"),
+      v.literal("google"),
+      v.literal("valhalla"),
+      v.literal("mock"),
+    ),
+    origin: v.object({ latitude: v.number(), longitude: v.number() }),
+    destination: v.object({ latitude: v.number(), longitude: v.number() }),
+    waypoints: v.array(
+      v.object({ latitude: v.number(), longitude: v.number() }),
+    ),
+    coordinates: v.array(
+      v.object({ latitude: v.number(), longitude: v.number() }),
+    ),
+    distanceMeters: v.optional(v.number()),
+    durationSeconds: v.optional(v.number()),
+    encodedPolyline: v.optional(v.string()),
+    warnings: v.array(v.string()),
+    providerMetadata: v.optional(v.any()),
+    pulledAt: v.number(),
+    expiresAt: v.number(),
+    refreshLeaseUntil: v.optional(v.number()),
+    refreshState: v.union(
+      v.literal("fresh"),
+      v.literal("refreshing"),
+      v.literal("failed"),
+    ),
+    lastRefreshAttemptAt: v.optional(v.number()),
+    lastRefreshError: v.optional(v.string()),
+    accessCount: v.number(),
+    refreshCount: v.number(),
+    lastAccessedAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_requestHash", ["requestHash"])
+    .index("by_expiresAt", ["expiresAt"])
+    .index("by_refreshState", ["refreshState"]),
+
   // Last successful map-workbench Calculate runs (driver / fleet / caas).
   // Used to restore route geometry + draft on "Start Day Plan" for returning users.
   workbenchRuns: defineTable({

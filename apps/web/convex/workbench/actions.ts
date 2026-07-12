@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { action } from "../_generated/server";
 import {
   GOOGLE_TRUCK_ROUTE_WARNING,
@@ -364,16 +364,16 @@ export const routeGeometry = action({
       ),
     ),
   },
-  handler: async (_ctx, args): Promise<RouteGeometryResult> => {
+  handler: async (ctx, args): Promise<RouteGeometryResult> => {
     const request = normalizeRequest(args as RouteGeometryRequest);
     const requestHash = await getRouteRequestHash(request);
 
-    const cached = routeCache.get(requestHash);
-    if (cached) {
+    const processCached = routeCache.get(requestHash);
+    if (request.provider !== "ptv" && processCached) {
       return {
-        ...cached,
+        ...processCached,
         metadata: {
-          ...(cached.metadata ?? {}),
+          ...(processCached.metadata ?? {}),
           cacheStatus: "hit",
         },
       };
@@ -381,9 +381,45 @@ export const routeGeometry = action({
 
     // Default: PTV Class-8 truck routing.
     if (request.provider === "ptv" || request.provider === undefined) {
+      const now = Date.now();
+      const claim = await ctx.runMutation(internal.routes.cache.claim, {
+        requestHash,
+        provider: "ptv",
+        origin: request.origin,
+        destination: request.destination,
+        waypoints: request.waypoints ?? [],
+        now,
+      });
+
+      if (claim.state === "fresh" && claim.cached) {
+        return claim.cached as RouteGeometryResult;
+      }
+      if (claim.state === "stale-refreshing") {
+        if (claim.cached) return claim.cached as RouteGeometryResult;
+        return routeGeometryFallback(
+          request,
+          "PTV route refresh is already in progress; retry shortly",
+          { requestHash, cacheStatus: "database-refreshing" },
+        );
+      }
+
       const { fetchPtvRouteGeometry } = await import("../../src/lib/maps/ptv-routes");
       const ptvKey = process.env.PTV_DEVELOPER_API_KEY;
       if (!ptvKey) {
+        const stale = await ctx.runMutation(internal.routes.cache.fail, {
+          requestHash,
+          error: "PTV_DEVELOPER_API_KEY is not configured",
+          now,
+        });
+        if (stale) {
+          return {
+            ...(stale as RouteGeometryResult),
+            warnings: [
+              ...(stale.warnings ?? []),
+              "PTV refresh skipped because credentials are unavailable; serving stale geometry.",
+            ],
+          };
+        }
         // Fall back to Google with an explicit warning if PTV key missing.
         const googleKey =
           process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
@@ -412,8 +448,48 @@ export const routeGeometry = action({
         { apiKey: ptvKey },
       );
       if (result.coordinates.length >= 8) {
-        routeCache.set(requestHash, result);
-        return result;
+        const receipt = await ctx.runMutation(internal.routes.cache.complete, {
+          requestHash,
+          provider: "ptv",
+          coordinates: result.coordinates,
+          distanceMeters: result.distanceMeters,
+          durationSeconds: result.durationSeconds,
+          encodedPolyline: result.encodedPolyline,
+          warnings: result.warnings,
+          providerMetadata: result.metadata,
+          now: Date.now(),
+        });
+        return {
+          ...result,
+          metadata: {
+            ...(result.metadata ?? {}),
+            requestHash,
+            cacheStatus: claim.cached
+              ? "database-refreshed"
+              : "database-miss-write",
+            freshness: "fresh",
+            pulledAt: receipt.pulledAt,
+            expiresAt: receipt.expiresAt,
+            refreshCount: receipt.refreshCount,
+          },
+        };
+      }
+
+      const ptvFailure =
+        result.warnings.join("; ") || "PTV returned no usable road geometry";
+      const stale = await ctx.runMutation(internal.routes.cache.fail, {
+        requestHash,
+        error: ptvFailure,
+        now: Date.now(),
+      });
+      if (stale) {
+        return {
+          ...(stale as RouteGeometryResult),
+          warnings: [
+            ...(stale.warnings ?? []),
+            `PTV refresh failed; serving stale geometry. ${ptvFailure}`,
+          ],
+        };
       }
 
       // PTV may return an endpoint fallback on provider/profile failures. Use
@@ -436,7 +512,6 @@ export const routeGeometry = action({
               "PTV road geometry was unavailable — used Google road geometry (not truck-certified).",
             ],
           };
-          routeCache.set(requestHash, fallback);
           return fallback;
         }
       }

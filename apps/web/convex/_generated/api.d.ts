@@ -95,6 +95,8 @@ import type * as pois_mutations from "../pois/mutations.js";
 import type * as pois_queries from "../pois/queries.js";
 import type * as ports from "../ports.js";
 import type * as report from "../report.js";
+import type * as routes_cache from "../routes/cache.js";
+import type * as routes_cachePolicy from "../routes/cachePolicy.js";
 import type * as seed_ports from "../seed/ports.js";
 import type * as spatial from "../spatial.js";
 import type * as spatial_reindex from "../spatial/reindex.js";
@@ -205,6 +207,8 @@ declare const fullApi: ApiFromModules<{
   "pois/queries": typeof pois_queries;
   ports: typeof ports;
   report: typeof report;
+  "routes/cache": typeof routes_cache;
+  "routes/cachePolicy": typeof routes_cachePolicy;
   "seed/ports": typeof seed_ports;
   spatial: typeof spatial;
   "spatial/reindex": typeof spatial_reindex;
