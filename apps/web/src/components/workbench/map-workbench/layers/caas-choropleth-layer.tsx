@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { WorkbenchSelection } from "../types";
 import { cn } from "@/lib/utils";
+import { getChoroplethRing } from "@/lib/maps/choropleth-geometry";
 
 export type CaasGeoLevel = "air-district" | "county" | "zip";
 
@@ -37,20 +38,6 @@ export type CaasChoroplethLayerProps = {
   selectedAsset?: WorkbenchSelection | null;
   onSelectRegion?: (selection: WorkbenchSelection) => void;
 };
-
-function bboxToBounds(bbox: {
-  minLat: number;
-  minLng: number;
-  maxLat: number;
-  maxLng: number;
-}): google.maps.LatLngBoundsLiteral {
-  return {
-    north: bbox.maxLat,
-    south: bbox.minLat,
-    east: bbox.maxLng,
-    west: bbox.minLng,
-  };
-}
 
 /** Cap fill at 50% so basemap always shows through. */
 function cappedOpacity(fillOpacity: number): number {
@@ -95,9 +82,7 @@ export function CaasChoroplethLayer({
 }: CaasChoroplethLayerProps) {
   const map = useMap();
   const data = useQuery(api.geo.choropleth.listCaasChoropleth, { level });
-  const shapesRef = useRef<Array<google.maps.Polygon | google.maps.Rectangle>>(
-    [],
-  );
+  const shapesRef = useRef<google.maps.Polygon[]>([]);
 
   const regions = useMemo(
     () => (data?.regions ?? []) as ChoroplethRegion[],
@@ -106,16 +91,10 @@ export function CaasChoroplethLayer({
 
   const shapeInputs = useMemo(
     () =>
-      regions
-        .filter(
-          (r: ChoroplethRegion) =>
-            (r.ring && r.ring.length >= 3) || r.bbox,
-        )
-        .map((r: ChoroplethRegion) => ({
-          region: r,
-          ring: r.ring && r.ring.length >= 3 ? r.ring : null,
-          bounds: r.bbox ? bboxToBounds(r.bbox) : null,
-        })),
+      regions.flatMap((region: ChoroplethRegion) => {
+        const ring = getChoroplethRing(region.ring);
+        return ring ? [{ region, ring }] : [];
+      }),
     [regions],
   );
 
@@ -127,40 +106,23 @@ export function CaasChoroplethLayer({
     }
 
     for (const s of shapesRef.current) s.setMap(null);
-    const shapes: Array<google.maps.Polygon | google.maps.Rectangle> = [];
+    const shapes: google.maps.Polygon[] = [];
 
-    for (const { region, ring, bounds } of shapeInputs) {
+    for (const { region, ring } of shapeInputs) {
       const opacity = cappedOpacity(region.fillOpacity);
       const zIndex =
         level === "air-district" ? 4 : level === "county" ? 5 : 6;
-      let shape: google.maps.Polygon | google.maps.Rectangle;
-      if (ring) {
-        shape = new google.maps.Polygon({
-          map,
-          paths: ring,
-          clickable: true,
-          strokeColor: region.color,
-          strokeOpacity: 0.8,
-          strokeWeight: level === "zip" ? 0.8 : 1.2,
-          fillColor: region.color,
-          fillOpacity: opacity,
-          zIndex,
-        });
-      } else if (bounds) {
-        shape = new google.maps.Rectangle({
-          map,
-          bounds,
-          clickable: true,
-          strokeColor: region.color,
-          strokeOpacity: 0.75,
-          strokeWeight: level === "air-district" ? 1.5 : 1,
-          fillColor: region.color,
-          fillOpacity: opacity,
-          zIndex,
-        });
-      } else {
-        continue;
-      }
+      const shape = new google.maps.Polygon({
+        map,
+        paths: ring,
+        clickable: true,
+        strokeColor: region.color,
+        strokeOpacity: 0.8,
+        strokeWeight: level === "zip" ? 0.8 : 1.2,
+        fillColor: region.color,
+        fillOpacity: opacity,
+        zIndex,
+      });
       shape.addListener("click", () => {
         onSelectRegion?.(selectionPayload(region));
       });
