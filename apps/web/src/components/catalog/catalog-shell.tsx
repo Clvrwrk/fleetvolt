@@ -7,6 +7,7 @@ import { api } from "../../../convex/_generated/api";
 import { CatalogVehicleList } from "@/components/catalog/catalog-vehicle-list";
 import {
   CatalogActiveChips,
+  CatalogInlineFilters,
   catalogFiltersToQueryArgs,
   useCatalogFilterParams,
 } from "@/components/catalog/catalog-filters";
@@ -52,6 +53,7 @@ function CatalogShellInner({ children }: { children?: ReactNode }) {
             onClearOne={clearOne}
           />
         </div>
+        <CatalogInlineFilters />
       </div>
 
       <div className="px-5 py-5 md:px-8">

@@ -91,6 +91,48 @@ test.describe("FleetVolt enterprise design compliance", () => {
     );
     expect(tooSmall).toEqual([]);
   });
+
+  for (const viewport of VIEWPORTS) {
+    test(`${viewport.name} catalog filter drawer stays inside the viewport without menu scrolling`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/catalog", { waitUntil: "domcontentloaded" });
+
+      const visibleDock = page.locator('[data-testid="catalog-filter-rail"]:visible');
+      for (const group of ["type", "oem", "class", "technology"] as const) {
+        await visibleDock.locator(`button[data-filter-group="${group}"]`).click();
+        const drawer = page.getByTestId("catalog-filter-drawer");
+        await expect(drawer).toBeVisible();
+
+        const geometry = await drawer.evaluate((element) => ({
+          top: element.getBoundingClientRect().top,
+          bottom: element.getBoundingClientRect().bottom,
+          viewportHeight: window.innerHeight,
+          clientHeight: element.clientHeight,
+          scrollHeight: element.scrollHeight,
+        }));
+        expect(geometry.top, group).toBeGreaterThanOrEqual(0);
+        expect(geometry.bottom, group).toBeLessThanOrEqual(geometry.viewportHeight);
+        expect(geometry.scrollHeight, group).toBeLessThanOrEqual(geometry.clientHeight);
+        await expectNoHorizontalOverflow(page);
+        await expectNoSeriousAxeViolations(page);
+
+        await page.getByRole("button", { name: new RegExp(`Close ${group}`, "i") }).click();
+        await expect(drawer).toBeHidden();
+      }
+    });
+  }
+
+  test("desktop catalog filter dock supports deliberate hover intent and Escape", async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS[0]);
+    await page.goto("/catalog", { waitUntil: "domcontentloaded" });
+    const dock = page.locator('[data-testid="catalog-filter-rail"]:visible');
+    await dock.locator('button[data-filter-group="technology"]').hover();
+    await page.waitForTimeout(420);
+    await expect(page.getByTestId("catalog-filter-drawer")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("catalog-filter-drawer")).toBeHidden();
+  });
 });
 
 test.describe("FleetVolt protected-surface compliance", () => {
