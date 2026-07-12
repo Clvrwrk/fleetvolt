@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, ChevronUp, SlidersHorizontal } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
+import type { WorkbenchMode } from "./types";
+import { WorkbenchLeftPanel } from "./workbench-left-panel";
+import { WorkbenchRightPanel } from "./workbench-right-panel";
 
 type MobileWorkbenchSheetProps = {
+  mode: WorkbenchMode;
   className?: string;
 };
 
@@ -16,7 +20,7 @@ const mobileSteps: Array<{ id: SheetStep; label: string }> = [
   { id: "results", label: "Results" },
 ];
 
-export function MobileWorkbenchSheet({ className }: MobileWorkbenchSheetProps) {
+export function MobileWorkbenchSheet({ mode, className }: MobileWorkbenchSheetProps) {
   const [activeStep, setActiveStep] = useState<SheetStep>("tools");
 
   return (
@@ -60,34 +64,22 @@ export function MobileWorkbenchSheet({ className }: MobileWorkbenchSheetProps) {
         })}
       </div>
 
-      <div className="max-h-[34dvh] overflow-y-auto px-4 py-3">
+      <div className="max-h-[46dvh] overflow-y-auto px-3 py-3">
         {activeStep === "tools" ? (
-          <div className="grid grid-cols-2 gap-2">
-            <button className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-3 text-sm font-semibold text-[var(--fv-graphite)] shadow-sm">
-              <SlidersHorizontal size={16} />
-              Layers
-            </button>
-            <button className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--fv-accent)] px-3 text-sm font-bold text-white shadow-sm">
-              Calculate
-            </button>
-            <button className="col-span-2 min-h-11 rounded-xl border border-black/10 bg-white px-3 text-left text-sm text-[var(--fv-graphite)] shadow-sm">
-              POLB → Barstow quick corridor
-            </button>
-          </div>
+          <WorkbenchLeftPanel
+            mode={mode}
+            chrome="embedded"
+            testId="mobile-workbench-left-panel"
+            panelId="mobile-workbench-left-panel"
+            className="h-auto min-h-0 w-full border-0 bg-transparent shadow-none"
+          />
         ) : (
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              ["ETA", "2h 34m"],
-              ["Energy", "312 kWh"],
-              ["Stops", "2"],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-black/10 bg-white p-3 text-center shadow-sm">
-                <BarChart3 size={15} className="mx-auto mb-1 text-[var(--fv-accent)]" />
-                <TechnicalLabel>{label}</TechnicalLabel>
-                <div className="mt-1 text-sm font-bold text-[var(--fv-graphite)]">{value}</div>
-              </div>
-            ))}
-          </div>
+          <WorkbenchRightPanel
+            chrome="embedded"
+            testId="mobile-workbench-right-panel"
+            panelId="mobile-workbench-right-panel"
+            className="h-auto min-h-0 w-full border-0 bg-transparent shadow-none"
+          />
         )}
       </div>
     </section>

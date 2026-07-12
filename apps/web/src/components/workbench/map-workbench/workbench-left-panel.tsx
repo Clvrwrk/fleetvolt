@@ -26,6 +26,8 @@ import {
 type WorkbenchLeftPanelProps = {
   mode?: WorkbenchMode;
   className?: string;
+  testId?: string;
+  panelId?: string;
   /** When embedded in the stacked tool rail accordion, hide duplicate chrome. */
   chrome?: "standalone" | "embedded";
 };
@@ -63,6 +65,8 @@ const caasDrilldownLabels = ["US", "State", "County", "Air district", "ZIP", "Ci
 export function WorkbenchLeftPanel({
   mode: modeProp,
   className,
+  testId = "workbench-left-panel",
+  panelId = "workbench-left-panel",
   chrome = "standalone",
 }: WorkbenchLeftPanelProps) {
   const searchParams = useSearchParams();
@@ -495,8 +499,8 @@ export function WorkbenchLeftPanel({
 
   return (
     <aside
-      id="workbench-left-panel"
-      data-testid="workbench-left-panel"
+      id={panelId}
+      data-testid={testId}
       className={cn(
         "flex min-h-0 flex-col overflow-hidden",
         chrome === "standalone" &&

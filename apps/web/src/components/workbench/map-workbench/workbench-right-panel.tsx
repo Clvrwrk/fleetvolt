@@ -9,6 +9,8 @@ import type { WorkbenchResultCard } from "./types";
 
 type WorkbenchRightPanelProps = {
   className?: string;
+  testId?: string;
+  panelId?: string;
   chrome?: "standalone" | "embedded";
 };
 
@@ -146,6 +148,8 @@ function resolveResultMode(storeMode: string, rawMode: string | null) {
 
 export function WorkbenchRightPanel({
   className,
+  testId = "workbench-right-panel",
+  panelId = "workbench-right-panel",
   chrome = "standalone",
 }: WorkbenchRightPanelProps) {
   const searchParams = useSearchParams();
@@ -160,8 +164,8 @@ export function WorkbenchRightPanel({
 
   return (
     <aside
-      id="workbench-right-panel"
-      data-testid="workbench-right-panel"
+      id={panelId}
+      data-testid={testId}
       className={cn(
         "flex min-h-0 flex-col overflow-hidden",
         chrome === "standalone" &&

@@ -39,7 +39,7 @@ export default function RootLayout({
     >
       {/* Extensions (Grammarly, Dashlane, etc.) inject attrs on body before hydrate. */}
       <body
-        className={`${inter.className} min-w-[1024px] antialiased`}
+        className={`${inter.className} min-w-0 antialiased`}
         suppressHydrationWarning
       >
         <ConvexClientProvider>

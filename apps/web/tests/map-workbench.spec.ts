@@ -6,7 +6,8 @@ import { test, expect, type Page } from "@playwright/test";
  */
 
 async function withWorkbenchSession(page: Page) {
-  const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+  const baseURL =
+    process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3017";
   await page.context().addCookies([
     {
       name: "fv_session",
@@ -94,11 +95,21 @@ test.describe("map workbench — desktop and mobile layout", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoWorkbench(page, "driver_day_plan");
 
-    await expect(page.getByTestId("mobile-workbench-sheet")).toBeVisible();
+    const mobileSheet = page.getByTestId("mobile-workbench-sheet");
+    await expect(mobileSheet).toBeVisible();
+    await expect(
+      mobileSheet.getByRole("button", { name: /Calculate day plan/i }),
+    ).toBeVisible();
     await expect(page.getByTestId("fleetvolt-map-canvas")).toBeVisible();
     // Side panels use hidden md:flex — not visible on mobile
     await expect(page.getByTestId("workbench-left-panel")).toBeHidden();
     await expect(page.getByTestId("workbench-right-panel")).toBeHidden();
+
+    const dimensions = await page.evaluate(() => ({
+      viewportWidth: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.documentWidth).toBeLessThanOrEqual(dimensions.viewportWidth);
   });
 });
 

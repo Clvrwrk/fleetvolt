@@ -222,7 +222,7 @@ export function MapWorkbenchShell({ mode = "driver_day_plan" }: MapWorkbenchShel
         </div>
       </main>
 
-      <MobileWorkbenchSheet />
+      <MobileWorkbenchSheet mode={mode} />
     </section>
   );
 }
