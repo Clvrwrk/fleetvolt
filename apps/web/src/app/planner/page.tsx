@@ -8,11 +8,11 @@ import { TechnicalLabel } from "@/components/design/technical-label";
 
 export default function PlannerCompatibilityPage() {
   return (
-    <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center bg-[var(--fv-paper)] p-4">
-      <section className="w-full max-w-[720px] rounded-3xl border border-black/10 bg-white/70 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.12)] backdrop-blur">
-        <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-4">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] items-center justify-center bg-[var(--fv-bg)] p-4">
+      <section className="w-full max-w-[720px] rounded-sm border border-white/12 bg-[#121820]/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur">
+        <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-black/10 bg-[var(--fv-surface)] p-3">
+            <div className="rounded-sm border border-[#42a5d9]/30 bg-[#42a5d9]/10 p-3">
               <Map size={22} className="text-[var(--fv-accent)]" />
             </div>
             <div>

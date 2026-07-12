@@ -118,17 +118,19 @@ function AppShellInner({ children }: { children: ReactNode }) {
       {!mapFirst ? <Sidebar /> : null}
       <div className={mapFirst ? "pl-0" : "fv-shell-content pl-0 md:pl-[260px]"}>
         <TopBar pageTitle={pageTitle} />
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className={
-            mapFirst
-              ? "fv-app-main fv-app-main--map min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0"
-              : "fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0 pb-14 md:pb-0"
-          }
-        >
-          {children}
-        </main>
+        {mapFirst ? (
+          <div className="fv-app-main fv-app-main--map min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0">
+            {children}
+          </div>
+        ) : (
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0 pb-14 md:pb-0"
+          >
+            {children}
+          </main>
+        )}
       </div>
       {!mapFirst ? <MobileTabBar /> : null}
     </div>

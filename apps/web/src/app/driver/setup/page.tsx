@@ -11,7 +11,7 @@
 //   Step 4: Charging strategy — SoC trigger/floor/target/min_arrival
 //   Step 5: Physics overrides (optional, advanced) — ±20% OEM bounds + reset
 //   Step 6: Carrier association — carrier-finder near home terminal
-import { useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { RoutePlannerFrame } from "@/components/design/route-planner-frame";
@@ -174,7 +174,9 @@ export default function DriverSetupPage() {
   const [driverId, setDriverId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
+    // The persistent browser identity is intentionally initialized after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDriverId(getOrCreateDriverId());
   }, []);
 
@@ -289,8 +291,10 @@ export default function DriverSetupPage() {
         {step === 0 && (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Display name *</label>
+              <label htmlFor="driver-display-name" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Display name *</label>
               <input
+                id="driver-display-name"
+                name="displayName"
                 type="text"
                 value={form.displayName}
                 onChange={(e) => setForm({ ...form, displayName: e.target.value })}
@@ -299,8 +303,10 @@ export default function DriverSetupPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Email (optional)</label>
+              <label htmlFor="driver-email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Email (optional)</label>
               <input
+                id="driver-email"
+                name="email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -309,8 +315,10 @@ export default function DriverSetupPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Home terminal — label</label>
+              <label htmlFor="driver-home-terminal" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Home terminal — label</label>
               <input
+                id="driver-home-terminal"
+                name="homeTerminalLabel"
                 type="text"
                 value={form.homeTerminal.label}
                 onChange={(e) => setForm({ ...form, homeTerminal: { ...form.homeTerminal, label: e.target.value } })}
@@ -320,8 +328,10 @@ export default function DriverSetupPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Latitude</label>
+                <label htmlFor="driver-home-latitude" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Latitude</label>
                 <input
+                  id="driver-home-latitude"
+                  name="homeTerminalLatitude"
                   type="number"
                   step="0.0001"
                   value={form.homeTerminal.lat}
@@ -330,8 +340,10 @@ export default function DriverSetupPage() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Longitude</label>
+                <label htmlFor="driver-home-longitude" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Longitude</label>
                 <input
+                  id="driver-home-longitude"
+                  name="homeTerminalLongitude"
                   type="number"
                   step="0.0001"
                   value={form.homeTerminal.lng}
@@ -347,13 +359,15 @@ export default function DriverSetupPage() {
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Preferred truck *</label>
+              <label htmlFor="driver-preferred-truck" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Preferred truck *</label>
               {trucks === undefined ? (
                 <p className="text-sm text-[var(--fv-text-muted)]">Loading trucks…</p>
               ) : trucks.length === 0 ? (
                 <p className="text-sm text-[var(--fv-text-muted)]">No truck configs found in Convex. Enter slug manually:</p>
               ) : null}
               <select
+                id="driver-preferred-truck"
+                name="preferredTruck"
                 value={form.preferredTruckSlug}
                 onChange={(e) => setForm({ ...form, preferredTruckSlug: e.target.value })}
                 className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-[var(--fv-text)] focus:border-[var(--fv-accent)] focus:outline-none"
@@ -413,6 +427,8 @@ export default function DriverSetupPage() {
               </div>
               <button
                 type="button"
+                aria-label="Toggle port drayage"
+                aria-pressed={form.portDrayageEnabled}
                 onClick={() => setForm({ ...form, portDrayageEnabled: !form.portDrayageEnabled })}
                 className={`relative h-6 w-11 rounded-full transition-colors ${form.portDrayageEnabled ? "bg-[var(--fv-accent)]" : "bg-[var(--fv-surface-muted)]"}`}
               >
@@ -420,8 +436,10 @@ export default function DriverSetupPage() {
               </button>
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Preferred corridor (optional)</label>
+              <label htmlFor="driver-preferred-corridor" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--fv-text-muted)]">Preferred corridor (optional)</label>
               <select
+                id="driver-preferred-corridor"
+                name="preferredCorridor"
                 value={form.preferredCorridorKey}
                 onChange={(e) => setForm({ ...form, preferredCorridorKey: e.target.value })}
                 className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-[var(--fv-text)] focus:border-[var(--fv-accent)] focus:outline-none"

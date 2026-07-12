@@ -221,6 +221,8 @@ export function MapWorkbenchShell({ mode = "driver_day_plan" }: MapWorkbenchShel
 
       {/* Map owns remaining viewport — must stay full-bleed (global main max-width does not apply). */}
       <main
+        id="main-content"
+        tabIndex={-1}
         className="relative min-h-0 min-w-0 flex-1 overflow-hidden !max-w-none !m-0 !p-0"
         aria-label={`${modeLabel[mode]} map workbench`}
       >

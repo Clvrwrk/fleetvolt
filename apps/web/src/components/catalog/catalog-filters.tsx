@@ -93,7 +93,7 @@ function FilterGroup({
             "min-w-0 flex-1 text-left text-[11px] font-mono uppercase tracking-[0.14em] transition",
             active
               ? "text-[var(--fv-alert-red)] hover:text-[var(--fv-alert-red)]"
-              : "text-[var(--fv-fog)] hover:text-white",
+              : "text-[#c5d0d8] hover:text-white",
           )}
           aria-expanded={open}
         >
@@ -119,7 +119,7 @@ function FilterGroup({
           onClick={() => setOpen((v) => !v)}
           className={cn(
             "flex h-11 w-11 shrink-0 items-center justify-center transition",
-            active ? "text-[var(--fv-alert-red)]" : "text-[var(--fv-fog)] hover:text-white",
+            active ? "text-[#ff8b80]" : "text-[#c5d0d8] hover:text-white",
           )}
           aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
           aria-expanded={open}

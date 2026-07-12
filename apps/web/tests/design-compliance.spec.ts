@@ -2,6 +2,22 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 const PUBLIC_SURFACES = ["/", "/role-select", "/briefing", "/catalog"] as const;
+const INTERNAL_SURFACES = [
+  "/fleet",
+  "/fleet/setup",
+  "/fleet/contract-plan",
+  "/driver",
+  "/driver/setup",
+  "/driver/day-plan",
+  "/caas",
+  "/caas/setup",
+  "/planner",
+  "/hotspot",
+  "/status",
+  "/load",
+  "/unit",
+  "/workbench?mode=caas_gap_map",
+] as const;
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
   { name: "ipad", width: 1024, height: 1366 },
@@ -75,4 +91,28 @@ test.describe("FleetVolt enterprise design compliance", () => {
     );
     expect(tooSmall).toEqual([]);
   });
+});
+
+test.describe("FleetVolt protected-surface compliance", () => {
+  test.skip(
+    process.env.FLEETVOLT_INTERNAL_AUDIT !== "1",
+    "Requires the isolated FLEETVOLT_E2E review server.",
+  );
+
+  for (const viewport of VIEWPORTS) {
+    test(`${viewport.name} internal route sweep`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/api/review-session?next=/fleet", {
+        waitUntil: "domcontentloaded",
+      });
+
+      for (const route of INTERNAL_SURFACES) {
+        await page.goto(route, { waitUntil: "domcontentloaded" });
+        await expect(page.locator("main"), route).toHaveCount(1);
+        await expectNoHorizontalOverflow(page);
+        await expectNoSeriousAxeViolations(page);
+      }
+    });
+  }
 });

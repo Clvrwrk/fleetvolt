@@ -98,10 +98,10 @@ export function FleetVehiclePicker({
                     setOpenFacet((v) => (v === key ? null : key))
                   }
                   className={cn(
-                    "rounded-md border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition",
+                    "min-h-11 rounded-sm border px-3 text-[11px] font-mono uppercase tracking-wider transition",
                     active
                       ? "border-[var(--fv-alert-red)]/40 bg-[var(--fv-alert-red)]/10 text-[var(--fv-alert-red)]"
-                      : "border-black/10 bg-white text-[var(--fv-graphite)] hover:border-black/20",
+                      : "border-white/12 bg-[#121820] text-[#a5b2bc] hover:border-[#42a5d9]/50 hover:text-white",
                   )}
                   data-active={active ? "true" : "false"}
                 >
@@ -109,10 +109,10 @@ export function FleetVehiclePicker({
                   {active ? ` · ${filters[key]}` : ""}
                 </button>
                 {openFacet === key ? (
-                  <div className="absolute right-0 z-20 mt-1 max-h-56 w-64 overflow-y-auto rounded-lg border border-black/10 bg-white py-1 shadow-lg">
+                  <div className="absolute right-0 z-20 mt-1 max-h-56 w-64 overflow-y-auto rounded-sm border border-white/12 bg-[#121820] py-1 shadow-lg">
                     <button
                       type="button"
-                      className="block w-full px-3 py-1.5 text-left text-xs text-[var(--fv-steel)] hover:bg-[var(--fv-canvas)]"
+                      className="block min-h-11 w-full px-3 text-left text-xs text-[#a5b2bc] hover:bg-white/5 hover:text-white"
                       onClick={() => {
                         setFilters((f) => ({ ...f, [key]: null }));
                         setOpenFacet(null);
@@ -125,7 +125,7 @@ export function FleetVehiclePicker({
                         key={option}
                         type="button"
                         className={cn(
-                          "block w-full truncate px-3 py-1.5 text-left text-xs hover:bg-[var(--fv-canvas)]",
+                          "block min-h-11 w-full truncate px-3 text-left text-xs text-[#a5b2bc] hover:bg-white/5 hover:text-white",
                           filters[key] === option
                             ? "font-semibold text-[var(--fv-blueprint-blue)]"
                             : "text-[var(--fv-graphite)]",
