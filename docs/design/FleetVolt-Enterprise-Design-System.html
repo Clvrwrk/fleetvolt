@@ -30,6 +30,8 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(--t0);line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
 .wrap{max-width:var(--content);margin:0 auto;padding:0 var(--s-sm)}
+.skip-link{position:fixed;z-index:100;top:8px;left:8px;transform:translateY(-150%);background:var(--fg);color:var(--bg);font-weight:700;padding:10px 14px;border-radius:var(--radius)}
+.skip-link:focus{transform:translateY(0);outline:2px solid var(--ember);outline-offset:2px}
 h1,h2,h3,h4{line-height:1.15;letter-spacing:-.02em;margin:0}
 h2{font-size:var(--t4);font-weight:800;margin-bottom:var(--s-xs)}
 h3{font-size:var(--t2);font-weight:700;margin:var(--s-md) 0 var(--s-xs)}
@@ -103,14 +105,17 @@ th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.7rem
 
 .prompt{position:relative;background:color-mix(in srgb,var(--fg) 5%,transparent);border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-xs);padding-right:90px;font-size:var(--t--1);line-height:1.6;margin-bottom:var(--s-xs)}
 .prompt .n{font-weight:700;color:var(--accent-text);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em;font-size:.7rem}
-.copy{position:absolute;top:12px;right:12px;font-size:.7rem;font-family:var(--font);font-weight:700;padding:6px 10px;border-radius:var(--pill);border:1px solid var(--rule);background:var(--bg);color:var(--fg);cursor:pointer}
+.copy{position:absolute;top:8px;right:8px;min-height:44px;font-size:.7rem;font-family:var(--font);font-weight:700;padding:6px 12px;border-radius:var(--pill);border:1px solid var(--rule);background:var(--bg);color:var(--fg);cursor:pointer}
 .copy:hover{border-color:var(--ember)}
+.copy:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 
 .clearspace{position:relative;display:inline-block;padding:24px;border:1px dashed var(--ember);border-radius:4px}
 .dont{border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-xs);text-align:center;font-size:var(--t--1)}
 .dont .x{color:#B3261E;font-weight:800;font-size:var(--t1);display:block}
 .confirm{background:color-mix(in srgb,var(--ember) 14%,transparent);border-radius:4px;padding:1px 6px;font-weight:700;font-size:.85em;color:var(--accent-text)}
 footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:var(--muted);font-size:var(--t--1)}
+.footer-links{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
+.footer-links a{min-height:44px;display:inline-flex;align-items:center}
 @media(max-width:640px){
   html,body{overflow-x:hidden}
   .wrap{overflow:hidden}
@@ -121,11 +126,13 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   table{display:block;max-width:100%;overflow-x:auto}
   pre{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
 }
+@media(prefers-reduced-motion:reduce){body{transition:none}.skip-link{transition:none}}
 </style>
 </head>
 <body>
 
 <div class="wrap">
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <header>
   <div class="topbar">
     <div class="lockup">
@@ -145,6 +152,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
     </div>
   </div>
 </header>
+
+<main id="main-content">
 
 <!-- ================= LOGO ================= -->
 <section id="logo">
@@ -184,8 +193,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   </div>
 
   <h3>Construction — exact, do not eyeball a rebuild</h3>
-  <table>
-    <tr><th>Element</th><th>Geometry (96×96 viewBox)</th><th>Colour</th></tr>
+  <table tabindex="0" aria-label="FleetVolt logo construction specification">
+    <tr><th scope="col">Element</th><th scope="col">Geometry (96×96 viewBox)</th><th scope="col">Colour</th></tr>
     <tr><td>Orbit</td><td><code>circle cx=48 cy=48 r=38</code>, stroke-width <code>2</code>, no fill, 28% opacity</td><td>Carbon / Signal White</td></tr>
     <tr><td>Trace</td><td>Same 38 radius, <code>36 203</code> dash, round cap</td><td>Electric</td></tr>
     <tr><td>Bolt</td><td><code>M54 12 29 53h16l-5 34 28-46H50z</code></td><td>Electric</td></tr>
@@ -250,8 +259,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
 
   <h3>Measured contrast — WCAG 2.2</h3>
   <p>These are computed, not estimated.</p>
-  <table>
-    <tr><th>Foreground / Background</th><th>Ratio</th><th>Verdict</th></tr>
+  <table tabindex="0" aria-label="FleetVolt color contrast measurements">
+    <tr><th scope="col">Foreground / Background</th><th scope="col">Ratio</th><th scope="col">Verdict</th></tr>
     <tr><td>Carbon on Signal White</td><td>18.51:1</td><td class="pass">AAA — all sizes</td></tr>
     <tr><td>Signal White on Carbon</td><td>18.51:1</td><td class="pass">AAA — all sizes</td></tr>
     <tr><td>Carbon on Electric <span class="muted">(primary button)</span></td><td>7.23:1</td><td class="pass">AAA normal</td></tr>
@@ -268,8 +277,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
 
   <h3>Pantone — candidates, and why you must verify them</h3>
   <p>Pantone numbers <b>cannot be responsibly derived from a hex value</b>. Hex is screen light; ink is pigment on a substrate; thread is dyed fibre. The maths gets close; the physical guide decides. Everything below is a <b>candidate for verification</b>, not a spec.</p>
-  <table>
-    <tr><th>Colour</th><th>Candidate</th><th>Alternate</th><th>Notes</th></tr>
+  <table tabindex="0" aria-label="FleetVolt physical color candidates">
+    <tr><th scope="col">Colour</th><th scope="col">Candidate</th><th scope="col">Alternate</th><th scope="col">Notes</th></tr>
     <tr><td><b>Electric</b></td><td><span class="confirm">[PHYSICAL MATCH]</span></td><td><span class="confirm">[TEXTILE MATCH]</span></td><td>Screen blue shifts by substrate and finish. Approve coated, uncoated, vinyl, and thread separately.</td></tr>
     <tr><td><b>Carbon</b></td><td>PMS Black 6 C candidate</td><td>Neutral Black candidate</td><td><b>Never assume K100.</b> Carbon is cool and dense; production black must be physically matched.</td></tr>
     <tr><td><b>Signal White</b></td><td colspan="2"><b>Specify the substrate where possible</b></td><td>Use the stock or textile white rather than flooding near-white ink unless color consistency requires it.</td></tr>
@@ -310,8 +319,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   </div>
 
   <h3>Rules</h3>
-  <table>
-    <tr><th>Rule</th><th>Value</th></tr>
+  <table tabindex="0" aria-label="FleetVolt typography rules">
+    <tr><th scope="col">Rule</th><th scope="col">Value</th></tr>
     <tr><td>Line height</td><td>Body 1.6 · Headings 1.15 · Display 1.0</td></tr>
     <tr><td>Measure</td><td>60–75 characters. Hard cap 80. <code>max-width: 68ch</code></td></tr>
     <tr><td>Letterspacing</td><td>Display/headings −0.02em · Body 0 · ALL-CAPS labels +0.14em</td></tr>
@@ -341,8 +350,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <h3>Grid &amp; the golden split</h3>
   <div class="grid g2">
     <div class="card">
-      <table style="margin:0">
-        <tr><th>Property</th><th>Value</th></tr>
+      <table tabindex="0" aria-label="FleetVolt layout grid specification" style="margin:0">
+        <tr><th scope="col">Property</th><th scope="col">Value</th></tr>
         <tr><td>Columns</td><td>12, 24px gutters</td></tr>
         <tr><td>Content max</td><td>1128px</td></tr>
         <tr><td>Page max</td><td>1440px</td></tr>
@@ -385,8 +394,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   </div>
 
   <h3>Non-negotiables</h3>
-  <table>
-    <tr><th>WCAG</th><th>Rule</th></tr>
+  <table tabindex="0" aria-label="FleetVolt WCAG requirements">
+    <tr><th scope="col">WCAG</th><th scope="col">Rule</th></tr>
     <tr><td>2.5.8 Target size</td><td>Min 24×24px required; <b>we adopt 44×44px</b> — drivers and field teams use phones in imperfect conditions.</td></tr>
     <tr><td>1.4.11 Non-text contrast</td><td>Meaningful borders ≥3:1. <b>Hairlines are decorative only.</b> Any border carrying meaning uses Carbon, Signal White, or Electric Deep as appropriate.</td></tr>
     <tr><td>1.4.1 Use of colour</td><td>Colour is never the sole carrier of information.</td></tr>
@@ -411,7 +420,7 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
     <div>
       <h4 style="margin-top:0">Calculating road-level route…</h4>
       <p class="muted" style="font-size:var(--t--1);margin:0">Micro 150ms · standard 250ms · entrance 400ms · trace rotation 1200ms · bolt rotation 60s. Easing <code>cubic-bezier(.4,0,.2,1)</code>. <b>No bounce, no elastic</b> — freight decisions require calm motion.</p>
-      <button class="btn btn-secondary" style="margin-top:var(--s-xs);font-size:var(--t--1);padding:8px 16px;min-height:36px" id="spinBtn">Toggle animation</button>
+      <button class="btn btn-secondary" style="margin-top:var(--s-xs);font-size:var(--t--1);padding:8px 16px;min-height:44px" id="spinBtn" aria-pressed="false">Toggle animation</button>
     </div>
   </div>
 </section>
@@ -422,7 +431,7 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <h2>Design tokens</h2>
   <div class="prompt" style="padding-right:90px">
     <span class="n">CSS custom properties</span>
-    <button class="copy" data-copy="css">Copy</button>
+    <button class="copy" data-copy="css" aria-label="Copy CSS custom properties" aria-live="polite">Copy</button>
 <pre id="css" style="margin:0;white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:.75rem;line-height:1.5">:root{
   --fv-carbon:#07090C; --fv-electric:#42A5D9; --fv-electric-deep:#20698E;
   --fv-signal-white:#F3F7FA; --fv-gunmetal:#121820; --fv-armor:#202A34;
@@ -454,20 +463,20 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
 
   <div class="prompt">
     <span class="n">Shared style suffix — append to all</span>
-    <button class="copy" data-copy="p0">Copy</button>
+    <button class="copy" data-copy="p0" aria-label="Copy shared image style suffix" aria-live="polite">Copy</button>
     <span id="p0">Photorealistic industrial transportation photography, directional hard light, cool high-contrast grade. Brand palette strictly: Carbon #07090C, Electric blue #42A5D9, Signal White #F3F7FA. Logo: a blue lightning bolt inside a thin circular orbit with a short blue tracing arc; uppercase FLEETVOLT wordmark in Arcline. Premium, masculine, technical, operationally credible. No invented product UI, no extra text, no gradients or effects on the logo.</span>
   </div>
 
-  <div class="prompt"><span class="n">01 · Trade-show booth</span><button class="copy" data-copy="p1">Copy</button><span id="p1">A 10x20ft FleetVolt trade-show booth. Carbon back wall with one oversized Electric route trace crossing behind the blue bolt mark. Signal White headline: “OWN THE TRANSITION.” A large live freight map display and executive briefing table. Two fleet executives in conversation. Convention-hall lighting.</span></div>
-  <div class="prompt"><span class="n">02 · Retractable banner</span><button class="copy" data-copy="p2">Copy</button><span id="p2">A 33x80in FleetVolt retractable banner, Carbon field, stacked bolt lockup in the top third, Electric road trace rising from the base. “ROAD-LEVEL EV FREIGHT INTELLIGENCE.” Photographed at an advanced-transportation conference.</span></div>
-  <div class="prompt"><span class="n">03 · Embroidered polo</span><button class="copy" data-copy="p3">Copy</button><span id="p3">Close-up of a black technical polo, FleetVolt blue bolt-and-orbit mark embroidered on the left chest at 50mm, thread texture visible in raking cool light. Mark only, no wordmark.</span></div>
-  <div class="prompt"><span class="n">04 · Hard hat + hi-vis</span><button class="copy" data-copy="p4">Copy</button><span id="p4">A matte-black hard hat with the Electric FleetVolt bolt on the side, resting beside a high-visibility vest with a small chest lockup inside a Class 8 charging depot. Real equipment, honest wear.</span></div>
-  <div class="prompt"><span class="n">05 · Class 8 truck livery</span><button class="copy" data-copy="p5">Copy</button><span id="p5">A white Class 8 electric tractor with a restrained Carbon lower wrap, Electric route line, and uppercase FLEETVOLT wordmark. Parked at a California freight terminal at blue hour. Legible from a distance.</span></div>
-  <div class="prompt"><span class="n">06 · Executive report kit</span><button class="copy" data-copy="p6">Copy</button><span id="p6">FleetVolt executive briefing on Signal White heavyweight stock, Carbon cover with blind-embossed bolt orbit, Electric foil trace, route maps and charts visible inside. Macro paper texture, technical and expensive.</span></div>
-  <div class="prompt"><span class="n">07 · Field kit</span><button class="copy" data-copy="p7">Copy</button><span id="p7">Black rugged field notebook, die-cut bolt stickers, Electric lanyard, black metal pen, and route-review cards arranged on a steel work surface. Overhead industrial flat lay.</span></div>
-  <div class="prompt"><span class="n">08 · Enamel pin</span><button class="copy" data-copy="p8">Copy</button><span id="p8">Macro shot of a hard enamel FleetVolt lapel pin — Electric bolt, thin dark orbit, short blue tracing arc — on a Carbon presentation card with uppercase wordmark below.</span></div>
-  <div class="prompt"><span class="n">09 · Mobile charger unit</span><button class="copy" data-copy="p9">Copy</button><span id="p9">A rugged mobile battery charging trailer in a California truck parking area, Carbon body, Electric FleetVolt bolt and route trace, small Signal White safety labels. Operational documentary photography.</span></div>
-  <div class="prompt"><span class="n">10 · Table throw + lanyards</span><button class="copy" data-copy="p10">Copy</button><span id="p10">A trade-show table with a Carbon fitted throw carrying a subtle route-grid pattern, Electric lanyards with gunmetal hardware, and a stack of FleetVolt Executive Briefings.</span></div>
+  <div class="prompt"><span class="n">01 · Trade-show booth</span><button class="copy" data-copy="p1" aria-label="Copy trade-show booth prompt" aria-live="polite">Copy</button><span id="p1">A 10x20ft FleetVolt trade-show booth. Carbon back wall with one oversized Electric route trace crossing behind the blue bolt mark. Signal White headline: “OWN THE TRANSITION.” A large live freight map display and executive briefing table. Two fleet executives in conversation. Convention-hall lighting.</span></div>
+  <div class="prompt"><span class="n">02 · Retractable banner</span><button class="copy" data-copy="p2" aria-label="Copy retractable banner prompt" aria-live="polite">Copy</button><span id="p2">A 33x80in FleetVolt retractable banner, Carbon field, stacked bolt lockup in the top third, Electric road trace rising from the base. “ROAD-LEVEL EV FREIGHT INTELLIGENCE.” Photographed at an advanced-transportation conference.</span></div>
+  <div class="prompt"><span class="n">03 · Embroidered polo</span><button class="copy" data-copy="p3" aria-label="Copy embroidered polo prompt" aria-live="polite">Copy</button><span id="p3">Close-up of a black technical polo, FleetVolt blue bolt-and-orbit mark embroidered on the left chest at 50mm, thread texture visible in raking cool light. Mark only, no wordmark.</span></div>
+  <div class="prompt"><span class="n">04 · Hard hat + hi-vis</span><button class="copy" data-copy="p4" aria-label="Copy hard hat and high-visibility prompt" aria-live="polite">Copy</button><span id="p4">A matte-black hard hat with the Electric FleetVolt bolt on the side, resting beside a high-visibility vest with a small chest lockup inside a Class 8 charging depot. Real equipment, honest wear.</span></div>
+  <div class="prompt"><span class="n">05 · Class 8 truck livery</span><button class="copy" data-copy="p5" aria-label="Copy Class 8 truck livery prompt" aria-live="polite">Copy</button><span id="p5">A white Class 8 electric tractor with a restrained Carbon lower wrap, Electric route line, and uppercase FLEETVOLT wordmark. Parked at a California freight terminal at blue hour. Legible from a distance.</span></div>
+  <div class="prompt"><span class="n">06 · Executive report kit</span><button class="copy" data-copy="p6" aria-label="Copy executive report kit prompt" aria-live="polite">Copy</button><span id="p6">FleetVolt executive briefing on Signal White heavyweight stock, Carbon cover with blind-embossed bolt orbit, Electric foil trace, route maps and charts visible inside. Macro paper texture, technical and expensive.</span></div>
+  <div class="prompt"><span class="n">07 · Field kit</span><button class="copy" data-copy="p7" aria-label="Copy field kit prompt" aria-live="polite">Copy</button><span id="p7">Black rugged field notebook, die-cut bolt stickers, Electric lanyard, black metal pen, and route-review cards arranged on a steel work surface. Overhead industrial flat lay.</span></div>
+  <div class="prompt"><span class="n">08 · Enamel pin</span><button class="copy" data-copy="p8" aria-label="Copy enamel pin prompt" aria-live="polite">Copy</button><span id="p8">Macro shot of a hard enamel FleetVolt lapel pin — Electric bolt, thin dark orbit, short blue tracing arc — on a Carbon presentation card with uppercase wordmark below.</span></div>
+  <div class="prompt"><span class="n">09 · Mobile charger unit</span><button class="copy" data-copy="p9" aria-label="Copy mobile charger unit prompt" aria-live="polite">Copy</button><span id="p9">A rugged mobile battery charging trailer in a California truck parking area, Carbon body, Electric FleetVolt bolt and route trace, small Signal White safety labels. Operational documentary photography.</span></div>
+  <div class="prompt"><span class="n">10 · Table throw + lanyards</span><button class="copy" data-copy="p10" aria-label="Copy table throw and lanyards prompt" aria-live="polite">Copy</button><span id="p10">A trade-show table with a Carbon fitted throw carrying a subtle route-grid pattern, Electric lanyards with gunmetal hardware, and a stack of FleetVolt Executive Briefings.</span></div>
 
   <div class="callout">
     <p><b>Embroidery — the trap nobody warns you about.</b> The short trace disappears and the bolt counters can fill in below 25mm. Use the approved bolt-only small asset. Orbit stroke must be ≥1.5mm at final size. And <b>thread ≠ Pantone C</b>: specify <b>Pantone TCX</b>, demand a thread-card match and a <b>physical stitch-out</b>. Never approve embroidery from a digital mock-up.</p>
@@ -504,11 +513,11 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <p><b>We model decisions; we do not guarantee outcomes.</b> A route model is only as current and complete as its inputs. Distinguish measured, sourced, modeled, estimated, mock, and unavailable data every time. <span class="confirm">[CONFIRM final wording with counsel]</span></p>
 
   <h3>Fact sheet <span class="confirm">[CONFIRM — every row]</span></h3>
-  <table>
-    <tr><td>Legal entity</td><td><span class="confirm">[CONFIRM]</span></td><td>Founded</td><td><span class="confirm">[CONFIRM]</span></td></tr>
-    <tr><td>HQ</td><td><span class="confirm">[CONFIRM]</span></td><td>Leadership</td><td><span class="confirm">[CONFIRM]</span></td></tr>
-    <tr><td>Employees</td><td><span class="confirm">[CONFIRM]</span></td><td>Funding</td><td><span class="confirm">[CONFIRM or "privately held"]</span></td></tr>
-    <tr><td>Coverage</td><td><span class="confirm">[CONFIRM corridors/ports]</span></td><td>Modeled routes</td><td><span class="confirm">[CONFIRM + as-of date]</span></td></tr>
+  <table tabindex="0" aria-label="FleetVolt corporate fact sheet">
+    <tr><th scope="row">Legal entity</th><td><span class="confirm">[CONFIRM]</span></td><th scope="row">Founded</th><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><th scope="row">HQ</th><td><span class="confirm">[CONFIRM]</span></td><th scope="row">Leadership</th><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><th scope="row">Employees</th><td><span class="confirm">[CONFIRM]</span></td><th scope="row">Funding</th><td><span class="confirm">[CONFIRM or "privately held"]</span></td></tr>
+    <tr><th scope="row">Coverage</th><td><span class="confirm">[CONFIRM corridors/ports]</span></td><th scope="row">Modeled routes</th><td><span class="confirm">[CONFIRM + as-of date]</span></td></tr>
   </table>
   <p class="muted"><b>Metric discipline:</b> every number ships with an <b>as-of date</b>. A journalist who quotes a March number as current in September has been misled by <i>us</i>, not by themselves.</p>
 
@@ -527,8 +536,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
 
   <h3>Crisis holding statements <span class="confirm">[CONFIRM wording with counsel]</span></h3>
   <p>Pre-approved lines exist so nobody improvises under pressure at 6pm. Draft in advance for at least:</p>
-  <table>
-    <tr><th>Scenario</th><th>Structure</th></tr>
+  <table tabindex="0" aria-label="FleetVolt crisis response guidance">
+    <tr><th scope="col">Scenario</th><th scope="col">Structure</th></tr>
     <tr><td><b>A published route finding is materially wrong</b></td><td>Acknowledge → state affected source/model scope → remove or label the finding → publish correction and prevention step. Never defend stale evidence.</td></tr>
     <tr><td><b>Data / privacy incident</b></td><td>Acknowledge → scope → what users should do → what we're doing → when we'll update next. Never speculate on cause before forensics.</td></tr>
     <tr><td><b>A provenance error</b> (modeled data presented as verified)</td><td><b>Existential — the brand IS the evidence chain.</b> Own it plainly, correct publicly, state the systemic fix.</td></tr>
@@ -555,8 +564,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   </div>
 
   <h3>Open items before launch</h3>
-  <table>
-    <tr><th>#</th><th>Item</th><th>Owner</th></tr>
+  <table tabindex="0" aria-label="FleetVolt pre-launch governance items">
+    <tr><th scope="col">#</th><th scope="col">Item</th><th scope="col">Owner</th></tr>
     <tr><td>1</td><td>Physical Pantone verification — all three colours, coated + uncoated + TCX</td><td><span class="confirm">[CONFIRM]</span></td></tr>
     <tr><td>2</td><td>Embroidery stitch-out approval</td><td><span class="confirm">[CONFIRM]</span></td></tr>
     <tr><td>3</td><td>Fill every <span class="confirm">[CONFIRM]</span> in the press kit</td><td><span class="confirm">[CONFIRM]</span></td></tr>
@@ -568,6 +577,7 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <h3>Change control</h3>
   <p>Colour, type, mark geometry and clear space are <b>LOCKED</b>. Changing any of them requires CEO written sign-off, bumps the version, and <b>invalidates existing printed and embroidered stock</b> — so the cost of the change is the cost of the reprint, and that number gets stated <i>before</i> the decision.</p>
 </section>
+</main>
 
 <footer>
   <div class="lockup" style="margin-bottom:var(--s-xs)">
@@ -576,6 +586,11 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   </div>
   Brand &amp; Design System v1.0 · Electric Command "Electric Command System" · Drafted 12 Jul 2026 · Cleverwork / AIA4<br>
   Status: controlled Alpha · awaiting CEO sign-off + the physical-production and legal items above.
+  <nav class="footer-links" aria-label="Compliance resources">
+    <a href="#components">Accessibility requirements</a>
+    <a href="#press">Legal and evidence guidance</a>
+    <span>Privacy: this document uses no tracking, analytics, cookies, or data collection.</span>
+  </nav>
 </footer>
 </div>
 
@@ -587,15 +602,18 @@ btn.addEventListener('click',()=>{
   btn.textContent=dark?'View dark ◐':'View light ◑';
   btn.setAttribute('aria-pressed',String(!dark));
 });
-const spin=document.getElementById('spinDemo');
-document.getElementById('spinBtn').addEventListener('click',()=>spin.classList.toggle('spin'));
+const spin=document.getElementById('spinDemo'), spinBtn=document.getElementById('spinBtn');
+spinBtn.addEventListener('click',()=>{
+  const active=spin.classList.toggle('spin');
+  spinBtn.setAttribute('aria-pressed',String(active));
+});
 document.querySelectorAll('.copy').forEach(b=>{
   b.addEventListener('click',()=>{
     const t=document.getElementById(b.dataset.copy).innerText;
     navigator.clipboard.writeText(t).then(()=>{
       const o=b.textContent; b.textContent='Copied ✓';
       setTimeout(()=>b.textContent=o,1400);
-    });
+    }).catch(()=>{b.textContent='Copy unavailable';});
   });
 });
 </script>

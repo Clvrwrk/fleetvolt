@@ -37,3 +37,16 @@ The stable review server is `http://localhost:3100`. Desktop, iPad, mobile, and 
 - Rewrote all home-services content as FleetVolt freight-intelligence language; no Radius brand or county-vetting language remains.
 - Corrected Electric Deep to `#20698E` after measured contrast found `#287EAA` insufficient on Signal White.
 - Browser verification: Desktop 1440×900, iPad 1024×1366, Mobile 390×844, and dark mode pass. Mobile overflow found in the source layout was fixed; final document scroll width equals viewport width.
+
+## WCAG forensic report remediation
+
+- Ingested the 12 July 2026 forensic report: overall PASS with two minor warnings.
+- Added `scope="col"` to all 21 column headers and `scope="row"` to the eight fact-sheet row headers.
+- Added a main landmark and keyboard-visible skip link.
+- Added descriptive labels and keyboard focus to all nine potentially scrollable tables.
+- Added unique accessible names and polite status announcements to all 12 copy controls.
+- Raised every interactive control to at least 44px, including copy and motion-demo buttons.
+- Made the motion-demo `aria-pressed` state truthful and disabled theme transitions under reduced-motion preferences.
+- Added an in-document compliance footer without inventing broken Privacy/Terms routes.
+- Reverified mobile at 390×844: no page-level overflow, no controls below 44px, 1 main landmark, 21 column headers, and 8 row headers.
+- `axe-core` is not installed in this repo; an automated axe/WAVE scan remains a deployment verification item rather than a claimed pass.
