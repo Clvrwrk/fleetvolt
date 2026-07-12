@@ -887,6 +887,32 @@ export default defineSchema({
     .index("by_expiresAt", ["expiresAt"])
     .index("by_refreshState", ["refreshState"]),
 
+  // Independently freshened route intelligence. The requestHash references the
+  // authoritative road geometry above; snapshots never duplicate or mutate the
+  // 90-day provider geometry lifecycle.
+  routeEnrichments: defineTable({
+    requestHash: v.string(),
+    snapshot: v.optional(v.any()),
+    computedAt: v.number(),
+    expiresAt: v.number(),
+    refreshLeaseUntil: v.optional(v.number()),
+    refreshState: v.union(
+      v.literal("fresh"),
+      v.literal("refreshing"),
+      v.literal("failed"),
+    ),
+    lastRefreshAttemptAt: v.optional(v.number()),
+    lastRefreshError: v.optional(v.string()),
+    accessCount: v.number(),
+    refreshCount: v.number(),
+    lastAccessedAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_requestHash", ["requestHash"])
+    .index("by_expiresAt", ["expiresAt"])
+    .index("by_refreshState", ["refreshState"]),
+
   // Last successful map-workbench Calculate runs (driver / fleet / caas).
   // Used to restore route geometry + draft on "Start Day Plan" for returning users.
   workbenchRuns: defineTable({
