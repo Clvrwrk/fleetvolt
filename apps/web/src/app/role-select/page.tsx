@@ -67,7 +67,7 @@ export default function RoleSelectPage() {
   };
 
   return (
-    <main className="fv-role-shell">
+    <main id="main-content" tabIndex={-1} className="fv-role-shell">
       <div className="fv-command-grid" aria-hidden="true" />
 
       <header className="fv-role-topbar">

@@ -19,7 +19,7 @@ function BoltMark({ className = "" }: { className?: string }) {
 
 function Intro({ onComplete }: { onComplete: () => void }) {
   return (
-    <div className="fv-ignition" role="dialog" aria-label="FleetVolt system startup">
+    <div className="fv-ignition" role="dialog" aria-modal="true" aria-label="FleetVolt system startup">
       <button type="button" onClick={onComplete} className="fv-ignition-skip">
         Skip intro
       </button>
@@ -126,7 +126,7 @@ export function FleetVoltHome() {
   return (
     <>
       {showIntro ? <Intro onComplete={completeIntro} /> : null}
-      <main className="fv-home-shell">
+      <main id="main-content" tabIndex={-1} className="fv-home-shell">
         <div className="fv-home-grid" aria-hidden="true" />
         <header className="fv-home-nav">
           <Image

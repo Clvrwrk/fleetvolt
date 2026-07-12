@@ -96,7 +96,14 @@ function AppShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   // Public routes render without the shell
   if (isPublicRoute(pathname)) {
-    return <>{children}</>;
+    return (
+      <>
+        <a className="fv-skip-link" href="#main-content">
+          Skip to main content
+        </a>
+        {children}
+      </>
+    );
   }
 
   const pageTitle = getPageTitle(pathname);
@@ -105,10 +112,15 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
   return (
     <div className={mapFirst ? "min-h-screen bg-[var(--fv-bg)]" : "fv-enterprise-shell min-h-screen"}>
+      <a className="fv-skip-link" href="#main-content">
+        Skip to main content
+      </a>
       {!mapFirst ? <Sidebar /> : null}
-      <div className={mapFirst ? "pl-0" : "pl-14 md:pl-[260px]"}>
+      <div className={mapFirst ? "pl-0" : "fv-shell-content pl-0 md:pl-[260px]"}>
         <TopBar pageTitle={pageTitle} />
         <main
+          id="main-content"
+          tabIndex={-1}
           className={
             mapFirst
               ? "fv-app-main fv-app-main--map min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0"

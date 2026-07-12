@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Route,
@@ -78,23 +79,27 @@ function TabItem({
 }
 
 export function MobileTabBar() {
-  const { items, loading, activeHref } = useRoleNav();
+  const pathname = usePathname();
+  const { items, activeHref } = useRoleNav();
 
-  // Don't render if no items; allow fallback nav (e.g. /fleet) while role loads
-  if (items.length === 0) return null;
+  const fallbackItems: NavItem[] = [
+    { label: "Home", href: "/", icon: "LayoutDashboard" },
+    { label: "Briefing", href: "/briefing", icon: "Sparkles" },
+    { label: "Sign in", href: "/role-select", icon: "Users" },
+  ];
 
   // Show first 4 nav items (Research §7.1: "bottom tab bar for ≤5 items")
-  const tabItems = items.slice(0, 4);
+  const tabItems = (items.length > 0 ? items : fallbackItems).slice(0, 4);
 
   if (tabItems.length === 0) return null;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden"
+      className="fv-mobile-commandbar fixed bottom-0 left-0 right-0 z-40 flex md:hidden"
       style={{
-        background: "var(--fv-paper)",
-        borderTop: "1px solid var(--fv-steel)",
-        boxShadow: "0 -2px 8px rgba(0, 0, 0, 0.06)",
+        background: "rgba(8, 11, 15, 0.96)",
+        borderTop: "1px solid rgba(255,255,255,.1)",
+        boxShadow: "0 -10px 30px rgba(0, 0, 0, 0.28)",
       }}
       aria-label="Mobile navigation"
     >
@@ -102,7 +107,7 @@ export function MobileTabBar() {
         <TabItem
           key={item.href}
           item={item}
-          active={activeHref === item.href}
+          active={(activeHref || pathname) === item.href}
         />
       ))}
     </nav>

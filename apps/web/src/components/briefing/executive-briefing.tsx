@@ -75,7 +75,7 @@ export function ExecutiveBriefing() {
   const printReport = () => window.print();
 
   return (
-    <main className="fv-brief-shell">
+    <main id="main-content" tabIndex={-1} className="fv-brief-shell">
       <header className="fv-brief-toolbar no-print">
         <Link href="/" className="fv-brief-back"><ArrowLeft size={15} /> Home</Link>
         <Image src="/fleetvolt-logo-horizontal-light.svg" alt="FleetVolt" width={240} height={54} className="fv-brief-logo" priority />
@@ -133,12 +133,12 @@ export function ExecutiveBriefing() {
           </div>
           <div className="fv-brief-section">
             <div className="fv-brief-section-head"><div><span>03 / ECONOMIC CASE</span><h2>Diesel displacement at trial scale</h2></div></div>
-            <table className="fv-brief-economics"><tbody>
-              <tr><th>Annual route miles</th><td>2.19M</td><td>60 trucks · modeled</td></tr>
-              <tr><th>Diesel displaced</th><td>365K gal</td><td>at 6.0 mpg</td></tr>
-              <tr><th>Electricity demand</th><td>5.50 GWh</td><td>route energy</td></tr>
-              <tr><th>Annual energy delta</th><td className="positive">$1.42M</td><td>illustrative</td></tr>
-              <tr><th>CO₂e avoided</th><td>3,720 t</td><td>method pending</td></tr>
+            <table className="fv-brief-economics" aria-label="Modeled trial economics"><tbody>
+              <tr><th scope="row">Annual route miles</th><td>2.19M</td><td>60 trucks · modeled</td></tr>
+              <tr><th scope="row">Diesel displaced</th><td>365K gal</td><td>at 6.0 mpg</td></tr>
+              <tr><th scope="row">Electricity demand</th><td>5.50 GWh</td><td>route energy</td></tr>
+              <tr><th scope="row">Annual energy delta</th><td className="positive">$1.42M</td><td>illustrative</td></tr>
+              <tr><th scope="row">CO₂e avoided</th><td>3,720 t</td><td>method pending</td></tr>
             </tbody></table>
             <div className="fv-brief-gap-callout"><Zap /><div><span>INFRASTRUCTURE GAP</span><strong>1.0 MW mobile bridge recommended</strong><p>Bridge demand until a verified trailer-through permanent site clears interconnection and construction.</p></div></div>
           </div>
@@ -149,9 +149,9 @@ export function ExecutiveBriefing() {
             <div><span>04 / GO-TO-MARKET</span><h2>Top 10 carrier targets using this corridor</h2></div>
             <span className="fv-brief-tag fv-brief-tag--mock">MOCK DATA · DEMO ONLY</span>
           </div>
-          <div className="fv-brief-carrier-table-wrap">
-            <table className="fv-brief-carriers">
-              <thead><tr><th>Rank</th><th>Carrier</th><th>Fit</th><th>Score</th><th>Addressable fleet</th><th>Action</th></tr></thead>
+          <div className="fv-brief-carrier-table-wrap" role="region" aria-label="Top ten modeled carrier targets" tabIndex={0}>
+            <table className="fv-brief-carriers" aria-label="Top ten modeled carrier targets">
+              <thead><tr><th scope="col">Rank</th><th scope="col">Carrier</th><th scope="col">Fit</th><th scope="col">Score</th><th scope="col">Addressable fleet</th><th scope="col">Action</th></tr></thead>
               <tbody>{carrierTargets.map(([rank,name,fit,score,fleet]) => (
                 <tr key={rank}><td>{rank.padStart(2,"0")}</td><td><strong>{name}</strong><small>Synthetic demo company</small></td><td>{fit}</td><td><span className="fv-brief-score">{score}</span></td><td>{fleet}</td><td>Executive briefing → validation call</td></tr>
               ))}</tbody>

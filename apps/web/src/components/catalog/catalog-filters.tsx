@@ -85,7 +85,7 @@ function FilterGroup({
       data-filter-group={title.toLowerCase()}
       data-active={active ? "true" : "false"}
     >
-      <div className="flex items-center gap-1.5 px-3 py-2.5">
+      <div className="flex min-h-11 items-center gap-1.5 px-3">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -106,7 +106,7 @@ function FilterGroup({
               e.stopPropagation();
               onClearAll();
             }}
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--fv-alert-red)] text-white transition hover:brightness-110"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--fv-alert-red)] text-white transition hover:brightness-110"
             aria-label="Clear all filters"
             title="Clear all filters"
             data-testid={`catalog-filter-clear-all-${title.toLowerCase()}`}
@@ -118,7 +118,7 @@ function FilterGroup({
           type="button"
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            "shrink-0 transition",
+            "flex h-11 w-11 shrink-0 items-center justify-center transition",
             active ? "text-[var(--fv-alert-red)]" : "text-[var(--fv-fog)] hover:text-white",
           )}
           aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
@@ -133,7 +133,7 @@ function FilterGroup({
             type="button"
             onClick={() => onChange(null)}
             className={cn(
-              "flex w-full rounded-md px-2 py-1.5 text-left text-xs transition",
+              "flex min-h-11 w-full items-center rounded-md px-2 text-left text-xs transition",
               value === null
                 ? "bg-white/10 text-white"
                 : "text-[var(--fv-slate)] hover:bg-white/5 hover:text-[var(--fv-fog)]",
@@ -147,7 +147,7 @@ function FilterGroup({
               type="button"
               onClick={() => onChange(option === value ? null : option)}
               className={cn(
-                "flex w-full rounded-md px-2 py-1.5 text-left text-xs transition",
+                "flex min-h-11 w-full items-center rounded-md px-2 text-left text-xs transition",
                 value === option
                   ? "bg-[var(--fv-blueprint-blue)]/25 text-white"
                   : "text-[var(--fv-slate)] hover:bg-white/5 hover:text-[var(--fv-fog)]",
@@ -190,7 +190,7 @@ export function CatalogActiveChips({
           key={key}
           type="button"
           onClick={() => onClearOne(key)}
-          className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11px] font-medium text-[var(--fv-graphite)]"
+          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-black/10 bg-white px-2.5 text-[11px] font-medium text-[var(--fv-graphite)]"
         >
           <span className="max-w-[180px] truncate">{value}</span>
           <X size={12} aria-hidden />
@@ -199,7 +199,7 @@ export function CatalogActiveChips({
       <button
         type="button"
         onClick={onClear}
-        className="text-[11px] font-mono uppercase tracking-wider text-[var(--fv-steel)] hover:text-[var(--fv-graphite)]"
+        className="min-h-11 px-2 text-[11px] font-mono uppercase tracking-wider text-[var(--fv-steel)] hover:text-[var(--fv-graphite)]"
       >
         Clear
       </button>

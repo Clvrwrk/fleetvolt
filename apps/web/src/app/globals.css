@@ -188,6 +188,30 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Keyboard and touch contracts shared by every FleetVolt surface. */
+.fv-skip-link {
+  position: fixed;
+  left: 14px;
+  top: 12px;
+  z-index: 10000;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  color: #061018;
+  background: #76c7ef;
+  font: 900 10px/1 var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transform: translateY(-180%);
+  transition: transform .15s ease;
+}
+.fv-skip-link:focus { transform: translateY(0); }
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #76c7ef;
+  outline-offset: 3px;
+}
+
 /* ── FleetVolt live brand lockup ────────────────────────────────────────── */
 .fv-brand {
   --fv-brand-blue: #4c8fb8;
@@ -272,6 +296,15 @@ body {
   backdrop-filter: blur(18px);
 }
 
+.fv-command-topbar :where(button, a) { min-height: 44px; }
+.fv-shell-content { transition: padding-left 200ms cubic-bezier(.4,0,.2,1); }
+@media (min-width: 768px) {
+  .fv-enterprise-shell aside[data-collapsed="true"] + .fv-shell-content { padding-left: 56px; }
+}
+
+.fv-mobile-commandbar a { color: #728390; text-decoration: none; }
+.fv-mobile-commandbar a[aria-current="page"] { color: #f3f7fa; background: rgba(66,165,217,.08); }
+
 .fv-enterprise-shell .fv-page-backdrop {
   background: transparent;
 }
@@ -342,6 +375,10 @@ body {
 /* Role-select / public access control */
 .fv-role-shell {
   position: relative;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
   min-height: 100dvh;
   overflow: hidden;
   color: #f3f7fa;
@@ -360,7 +397,7 @@ body {
   padding: 14px clamp(20px,4vw,64px);
   border-bottom: 1px solid rgba(255,255,255,.09);
 }
-.fv-role-topbar a { text-decoration: none; }
+.fv-role-topbar a { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
 .fv-role-system-state { display: flex; align-items: center; gap: 8px; color: #788895; font: 800 8px/1 var(--font-mono); letter-spacing: .16em; }
 .fv-role-system-state i { width: 6px; height: 6px; border-radius: 50%; background: #6fd49a; box-shadow: 0 0 12px #6fd49a; }
 .fv-role-stage { position: relative; z-index: 1; width: min(1280px, calc(100% - 40px)); margin: 0 auto; padding: clamp(48px,8vh,92px) 0 30px; }
@@ -388,10 +425,10 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-role-briefing > svg { color: #42a5d9; }
 .fv-role-briefing span { display: block; color: #42a5d9; font: 800 7.5px/1 var(--font-mono); letter-spacing: .15em; }
 .fv-role-briefing strong { display: block; margin-top: 6px; font-size: 13px; }
-.fv-role-briefing a { display: inline-flex; align-items: center; gap: 7px; color: #9ed9f6; text-decoration: none; font: 800 8px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.fv-role-briefing a { display: inline-flex; min-height: 44px; align-items: center; gap: 7px; color: #9ed9f6; text-decoration: none; font: 800 8px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
 .fv-role-security { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 25px; color: #586773; font: 800 7px/1.4 var(--font-mono); letter-spacing: .12em; }
 .fv-role-security span, .fv-role-security a { display: inline-flex; align-items: center; gap: 7px; }
-.fv-role-security a { color: #71818d; text-decoration: none; }
+.fv-role-security a { min-height: 44px; color: #71818d; text-decoration: none; }
 
 /* Live design-system showroom */
 .fv-system-page { width: min(1320px, calc(100% - 40px)); margin: 0 auto; padding: clamp(35px,5vw,72px) 0 80px; color: #f3f7fa; }
@@ -525,7 +562,7 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-home-nav-actions { display: flex; align-items: center; gap: 22px; }
 .fv-home-system { display: inline-flex; align-items: center; gap: 8px; font: 700 9px/1 var(--font-mono); letter-spacing: .17em; color: #8b9aa7; }
 .fv-home-system i { width: 6px; height: 6px; border-radius: 50%; background: #49bd80; box-shadow: 0 0 12px #49bd80; }
-.fv-home-signin { display: inline-flex; min-height: 40px; align-items: center; gap: 8px; padding: 0 16px; border: 1px solid rgba(66,165,217,.48); color: var(--home-white); text-decoration: none; font: 800 11px/1 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; transition: .2s ease; }
+.fv-home-signin { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 16px; border: 1px solid rgba(66,165,217,.48); color: var(--home-white); text-decoration: none; font: 800 11px/1 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; transition: .2s ease; }
 .fv-home-signin:hover { background: var(--home-electric); color: #061018; box-shadow: 0 0 30px rgba(66,165,217,.25); }
 
 .fv-home-stage { position: relative; z-index: 1; width: min(1440px, 100%); margin: auto; padding: clamp(30px, 5vh, 72px) clamp(22px, 5vw, 74px) clamp(24px, 4vh, 54px); display: grid; grid-template-columns: minmax(340px, .84fr) minmax(500px, 1.16fr); align-items: center; gap: clamp(36px, 6vw, 90px); }
@@ -589,7 +626,7 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 
 .fv-ignition { --home-electric: #42a5d9; position: fixed; inset: 0; z-index: 999; display: grid; place-items: center; overflow: hidden; color: #f3f7fa; background: #05070a; animation: fv-ignition-exit .8s ease 3.65s forwards; }
 .fv-ignition::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(66,165,217,.12), transparent 34%); animation: fv-core-pulse 1.4s ease 1.5s both; }
-.fv-ignition-skip { position: absolute; z-index: 3; top: 24px; right: 28px; padding: 9px 12px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: #8b99a5; font: 800 8px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
+.fv-ignition-skip { position: absolute; z-index: 3; top: 24px; right: 28px; min-height: 44px; padding: 0 14px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: #8b99a5; font: 800 8px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
 .fv-ignition-core { position: relative; z-index: 2; width: min(520px, 82vw); display: flex; flex-direction: column; align-items: center; text-align: center; }
 .fv-ignition-kicker { color: #6d7c88; font: 800 8px/1 var(--font-mono); letter-spacing: .26em; text-transform: uppercase; opacity: 0; animation: fv-rise .6s ease .25s forwards; }
 .fv-ignition-mark { width: min(184px, 40vw); margin: 24px 0 12px; filter: drop-shadow(0 0 32px rgba(66,165,217,.22)); }
@@ -622,7 +659,7 @@ button.fv-role-card { cursor: pointer; font: inherit; }
   .fv-home-nav { min-height: 70px; padding: 11px 16px; }
   .fv-home-logo { width: 176px; height: 42px; }
   .fv-home-system { display: none; }
-  .fv-home-signin { min-height: 36px; padding: 0 12px; }
+  .fv-home-signin { min-height: 44px; padding: 0 12px; }
   .fv-home-stage { padding: 32px 16px 28px; gap: 30px; }
   .fv-home-copy h1 { font-size: clamp(34px, 10vw, 44px); letter-spacing: -.035em; }
   .fv-home-copy > p { margin-top: 18px; font-size: 14px; }
@@ -650,11 +687,11 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-brief-shell { width: 100%; max-width: none; min-height: 100dvh; color: #dce6ed; background: #080b0f; }
 .fv-brief-toolbar { position: sticky; top: 0; z-index: 20; min-height: 62px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px; padding: 8px clamp(16px,3vw,42px); border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(8,11,15,.94); backdrop-filter: blur(16px); }
 .fv-brief-logo { width: 190px; height: 44px; object-fit: contain; }
-.fv-brief-back, .fv-brief-secondary, .fv-brief-download { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; width: fit-content; padding: 0 13px; border: 1px solid rgba(255,255,255,.14); color: #9aabb7; background: transparent; text-decoration: none; font: 800 9px/1 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; cursor: pointer; }
+.fv-brief-back, .fv-brief-secondary, .fv-brief-download { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; width: fit-content; padding: 0 13px; border: 1px solid rgba(255,255,255,.14); color: #9aabb7; background: transparent; text-decoration: none; font: 800 9px/1 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; cursor: pointer; }
 .fv-brief-toolbar-actions { display: flex; justify-content: flex-end; gap: 9px; }
 .fv-brief-download { color: #071016; border-color: #42a5d9; background: #42a5d9; }
 .fv-brief-document { width: min(1480px, calc(100% - 34px)); margin: 24px auto 60px; border: 1px solid rgba(142,165,181,.25); background: #0d1218; box-shadow: 0 35px 110px rgba(0,0,0,.42); }
-.fv-brief-coverline, .fv-brief-doc-footer { display: flex; justify-content: space-between; gap: 16px; padding: 14px clamp(18px,3vw,42px); color: #61717e; font: 800 8px/1 var(--font-mono); letter-spacing: .15em; }
+.fv-brief-coverline, .fv-brief-doc-footer { display: flex; justify-content: space-between; gap: 16px; padding: 14px clamp(18px,3vw,42px); color: #8a9aa6; font: 800 8px/1 var(--font-mono); letter-spacing: .15em; }
 .fv-brief-coverline { border-bottom: 1px solid rgba(255,255,255,.08); }
 .fv-brief-hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 50px; align-items: end; padding: clamp(40px,7vw,94px) clamp(22px,5vw,76px) 52px; background: radial-gradient(circle at 84% 22%, rgba(66,165,217,.13), transparent 30%); }
 .fv-brief-kicker { color: #42a5d9; font: 900 9px/1 var(--font-mono); letter-spacing: .22em; }
@@ -669,9 +706,9 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-brief-metrics > div { min-width: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 11px; padding: 20px clamp(12px,2.4vw,34px); border-right: 1px solid rgba(255,255,255,.08); }
 .fv-brief-metrics > div:last-child { border-right: 0; }
 .fv-brief-metrics svg { grid-row: 1 / 4; align-self: center; width: 20px; color: #42a5d9; }
-.fv-brief-metrics span { color: #667783; font: 900 7.5px/1 var(--font-mono); letter-spacing: .12em; }
+.fv-brief-metrics span { color: #82939f; font: 900 7.5px/1 var(--font-mono); letter-spacing: .12em; }
 .fv-brief-metrics strong { color: #e8eff3; font-size: clamp(18px,2vw,27px); line-height: 1.1; }
-.fv-brief-metrics small { color: #62717d; font: 700 8px var(--font-mono); }
+.fv-brief-metrics small { color: #82939f; font: 700 8px var(--font-mono); }
 .fv-brief-section { min-width: 0; padding: clamp(28px,4vw,56px); border-bottom: 1px solid rgba(255,255,255,.08); }
 .fv-brief-section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
 .fv-brief-section-head span { color: #42a5d9; font: 900 8px/1 var(--font-mono); letter-spacing: .16em; }
@@ -704,12 +741,12 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-brief-chart-line { fill: none; stroke: #58b6e9; stroke-width: 4; }
 .fv-brief-chart-floor { stroke: #f0b84b; stroke-width: 1; stroke-dasharray: 6 5; }
 .fv-brief-chart text { fill: #758692; font: 800 9px var(--font-mono); letter-spacing: .07em; }
-.fv-brief-caption { margin: 18px 0 0; color: #61717d; font: 700 8.5px/1.6 var(--font-mono); }
+.fv-brief-caption { margin: 18px 0 0; color: #82939f; font: 700 8.5px/1.6 var(--font-mono); }
 .fv-brief-economics { width: 100%; border-collapse: collapse; }
 .fv-brief-economics th, .fv-brief-economics td { padding: 13px 8px; border-bottom: 1px solid rgba(255,255,255,.07); text-align: left; font-size: 11px; }
 .fv-brief-economics th { color: #8999a5; font-weight: 600; }
 .fv-brief-economics td:nth-child(2) { color: #e9eff3; font-size: 15px; font-weight: 800; }
-.fv-brief-economics td:last-child { color: #64747f; font: 700 8px var(--font-mono); }
+.fv-brief-economics td:last-child { color: #82939f; font: 700 8px var(--font-mono); }
 .fv-brief-economics td.positive { color: #6fd49a; }
 .fv-brief-gap-callout { display: flex; gap: 14px; margin-top: 22px; padding: 17px; border: 1px solid rgba(240,184,75,.25); background: rgba(240,184,75,.06); }
 .fv-brief-gap-callout > svg { flex: 0 0 auto; color: #f0b84b; }
@@ -718,11 +755,11 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-brief-gap-callout p { margin: 0; color: #788894; font-size: 10px; line-height: 1.5; }
 .fv-brief-carrier-table-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,.08); }
 .fv-brief-carriers { width: 100%; min-width: 860px; border-collapse: collapse; }
-.fv-brief-carriers th { padding: 12px 14px; color: #61727e; background: #090d11; text-align: left; font: 900 7.5px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.fv-brief-carriers th { padding: 12px 14px; color: #82939f; background: #090d11; text-align: left; font: 900 7.5px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
 .fv-brief-carriers td { padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.065); color: #8e9da8; font-size: 10px; }
 .fv-brief-carriers td:first-child { color: #42a5d9; font: 900 10px var(--font-mono); }
 .fv-brief-carriers strong { display: block; color: #dce5ea; font-size: 11px; }
-.fv-brief-carriers small { display: block; margin-top: 3px; color: #566570; font: 700 7px var(--font-mono); }
+.fv-brief-carriers small { display: block; margin-top: 3px; color: #82939f; font: 700 7px var(--font-mono); }
 .fv-brief-score { display: inline-grid; place-items: center; width: 34px; height: 24px; border: 1px solid rgba(66,165,217,.3); color: #75c4ed; font: 900 10px var(--font-mono); }
 .fv-brief-close { display: flex; align-items: center; justify-content: space-between; gap: 38px; padding: clamp(34px,6vw,76px); background: linear-gradient(90deg, rgba(66,165,217,.11), transparent); }
 .fv-brief-close span { color: #42a5d9; font: 900 8px var(--font-mono); letter-spacing: .16em; }
