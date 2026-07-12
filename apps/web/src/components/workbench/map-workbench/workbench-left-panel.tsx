@@ -17,7 +17,6 @@ import { RouteBuilder } from "./inputs/route-builder";
 import { DriverProfileSelect } from "./inputs/driver-profile-select";
 import { DRIVER_TRUCK_PROFILES, TruckProfileSelect } from "./inputs/truck-profile-select";
 import { WorkdayConstraints, getDriverConstraintDefaults } from "./inputs/workday-constraints";
-import { CORE_CORRIDORS } from "@/lib/workbench/core-routes";
 import {
   filtersForMode,
   layersForMode,
@@ -32,14 +31,6 @@ type WorkbenchLeftPanelProps = {
   /** When embedded in the stacked tool rail accordion, hide duplicate chrome. */
   chrome?: "standalone" | "embedded";
 };
-
-const quickRoutes = CORE_CORRIDORS.map((corridor) => ({
-  id: corridor.id,
-  label: corridor.label,
-  meta: corridor.meta,
-  origin: corridor.origin,
-  destination: corridor.destination,
-}));
 
 function resolvePanelMode(mode: WorkbenchMode | undefined, rawMode: string | null): WorkbenchMode {
   if (mode) return mode;
@@ -259,26 +250,6 @@ export function WorkbenchLeftPanel({
     } finally {
       setIsRunning(false);
     }
-  }
-
-  function applyQuickRoute(route: (typeof quickRoutes)[number]) {
-    applyDraftPatch({ origin: route.origin, destination: route.destination });
-    setCaasPhase("route_analysis");
-    // WorkbenchBootstrap draws only after a road provider returns a real path.
-    useMapWorkbenchStore.setState({
-      routeGeometry: null,
-      providerWarnings: ["Loading road geometry…"],
-      focusBounds: {
-        north:
-          Math.max(route.origin.latitude, route.destination.latitude) + 0.35,
-        south:
-          Math.min(route.origin.latitude, route.destination.latitude) - 0.35,
-        east:
-          Math.max(route.origin.longitude, route.destination.longitude) + 0.45,
-        west:
-          Math.min(route.origin.longitude, route.destination.longitude) - 0.45,
-      },
-    });
   }
 
   async function calculateDriverPlan() {
@@ -789,23 +760,6 @@ export function WorkbenchLeftPanel({
             </section>
           </>
         ) : null}
-
-        <section className="space-y-2" aria-labelledby="quick-routes-heading">
-          <TechnicalLabel>Quick corridors</TechnicalLabel>
-          <div className="space-y-2" id="quick-routes-heading">
-            {quickRoutes.map((route) => (
-              <button
-                key={route.id}
-                type="button"
-                onClick={() => applyQuickRoute(route)}
-                className="min-h-11 w-full rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--fv-accent)] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]"
-              >
-                <span className="block text-sm font-semibold text-[var(--fv-graphite)]">{route.label}</span>
-                <span className="block text-xs text-[var(--fv-steel)]">{route.meta}</span>
-              </button>
-            ))}
-          </div>
-        </section>
 
         <section className="space-y-2" aria-labelledby="layers-heading">
           <div className="flex items-center gap-2" id="layers-heading">
