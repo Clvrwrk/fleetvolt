@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import path from "node:path";
 
 /**
- * Phase 17 — screenshot verification for Driver / Fleet / CaaS workbench.
+ * Desktop screenshot verification for Fleet Manager and CaaS workbenches.
  * Live Google tile pixel checks are skipped when Maps env/referrer is unavailable;
  * DOM layout + screenshot artifacts are still captured.
  */
@@ -52,13 +52,6 @@ async function captureWorkbench(
 }
 
 test.describe("map workbench screenshots — initial states", () => {
-  test("driver day plan desktop initial", async ({ page }) => {
-    await captureWorkbench(page, "driver_day_plan", "driver-day-plan-desktop-initial", {
-      width: 1440,
-      height: 900,
-    });
-  });
-
   test("fleet contract plan desktop initial", async ({ page }) => {
     await captureWorkbench(page, "fleet_contract_plan", "fleet-contract-plan-desktop-initial", {
       width: 1440,
@@ -73,30 +66,9 @@ test.describe("map workbench screenshots — initial states", () => {
     });
   });
 
-  test("driver day plan mobile initial", async ({ page }) => {
-    await captureWorkbench(page, "driver_day_plan", "driver-day-plan-mobile-initial", {
-      width: 390,
-      height: 844,
-    });
-    await expect(page.getByTestId("mobile-workbench-sheet")).toBeVisible();
-  });
 });
 
 test.describe("map workbench screenshots — planned-result states", () => {
-  test("driver planned result via AI draft", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await withWorkbenchSession(page);
-    await page.goto("/workbench?mode=driver_day_plan");
-    await expect(page.getByTestId("ai-command-bar")).toBeVisible({ timeout: 20_000 });
-    await page.getByTestId("ai-command-input").fill("Draft POLB to Barstow day plan");
-    await page.getByTestId("ai-command-submit").click();
-    await expect(page.getByTestId("ai-command-summary")).toBeVisible({ timeout: 30_000 });
-    await page.screenshot({
-      path: path.join(SHOT_DIR, "driver-day-plan-desktop-planned.png"),
-      fullPage: false,
-    });
-  });
-
   test("fleet planned result via AI assumptions", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await withWorkbenchSession(page);

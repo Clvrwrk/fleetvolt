@@ -5,10 +5,10 @@ milestone_name: Persistent Route Intelligence
 current_phase: 20
 current_phase_name: freight-poi-route-catalog
 status: human_verification
-stopped_at: "Phase 20 implementation and local responsive verification complete. Awaiting explicit temporary-tunnel approval for ScreenshotOne and Chris UAT."
-last_updated: "2026-07-12T06:45:00.000Z"
+stopped_at: "FleetVolt.Network desktop split verified locally; draft PR, live Convex/map, ScreenshotOne, and production gates remain."
+last_updated: "2026-07-12T21:05:00.000Z"
 last_activity: 2026-07-12
-last_activity_desc: FLE-19 cinematic homepage, Executive Briefing, and explainable GAP candidates pass locally; linked-repo Vercel/ScreenshotOne approval pending
+last_activity_desc: FleetVolt.Network desktop runtime split complete; CaaS is tonight's Linear critical path and Fleet Manager is secondary
 progress:
   total_phases: 5
   completed_phases: 1
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
 
-**Current focus:** FLE-19 Monday-demo priority locally implemented at `a86dfa5`; external ScreenshotOne evidence and Chris UAT pending
+**Current focus:** FLE-5 CaaS desktop production path; PR/live Convex/map/ScreenshotOne gates pending
 
 ## Current Position
 
 Phase: 20 (freight-poi-route-catalog) — human verification
-Status: Five promoted routes, grouped selector, manifest, Docker, and responsive local review passed
-Last activity: 2026-07-12 — desktop/iPad/mobile route focus passed; temporary public preview not yet authorized
+Status: Desktop CaaS/Fleet Manager split passes typecheck, 246 unit tests, 31-route build, and focused desktop E2E
+Last activity: 2026-07-12 — mobile runtime residue removed; Linear reset to CaaS tonight, demo Monday, Fleet Manager secondary
 
 ## Shipped phases (summaries present)
 
@@ -72,6 +72,7 @@ Last activity: 2026-07-12 — desktop/iPad/mobile route focus passed; temporary 
 - Playwright map-workbench e2e was flaky under EMFILE; re-run recommended
 - Google Maps: apex `https://fleetvolt.network/*` must stay on browser key (subdomain wildcard alone is insufficient)
 - ScreenshotOne cannot reach private localhost; temporary public tunnel requires explicit action-time approval
+- Live Convex parity and live Google-map/referrer gates remain required before production acceptance
 
 ## Session Continuity
 
@@ -92,3 +93,4 @@ Git: `df91c6e` on origin/master (clean)
 | 260711-qq9 | Build isolated Docker Desktop FleetVolt review container | 2026-07-11 | `e639fa2` | complete | [quick task](./quick/260711-qq9-build-an-isolated-docker-desktop-fleetvo/) |
 | 260712-2k3 | Build cinematic FleetVolt homepage, Executive Briefing lane, and explainable Class 8 gap candidates | 2026-07-12 | `a86dfa5` | local pass; Vercel/ScreenshotOne approval pending | [quick task](./quick/260712-2k3-build-cinematic-fleetvolt-homepage-execu/) |
 | 260712-55k | Install Arcline/Brokline typography and live internal Arcline logo | 2026-07-12 | `3c858e9`, `7a1509a` | local pass; temporary Vercel/ScreenshotOne approval pending | [quick task](./quick/260712-55k-install-arcline-as-fleetvolt-body-font-w/) |
+| 260712-j2t | Reset FleetVolt.Network desktop scope, remove mobile runtime residue, and establish CaaS as the primary demo path | 2026-07-12 | pending | local automation passed; PR/live data/ScreenshotOne gates pending | [quick task](./quick/260712-j2t-reset-fleetvolt-network-desktop-scope-re/) |

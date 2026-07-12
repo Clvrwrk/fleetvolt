@@ -104,6 +104,7 @@ describe("google-routes", () => {
       {
         origin: { latitude: 33.7542, longitude: -118.2165 },
         destination: { latitude: 34.3133, longitude: -117.4747 },
+        provider: "google",
       },
       { apiKey: "server-only-key" },
     );
@@ -130,6 +131,7 @@ describe("google-routes", () => {
       {
         origin: { latitude: 33.7542, longitude: -118.2165 },
         destination: { latitude: 34.3133, longitude: -117.4747 },
+        provider: "google",
       },
       { apiKey: "server-only-key" },
     );

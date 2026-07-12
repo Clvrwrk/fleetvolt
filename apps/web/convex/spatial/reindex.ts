@@ -17,6 +17,12 @@ import { internal } from "../_generated/api";
 import { internalMutation } from "../_generated/server";
 import { insertPoint, removePoint, type PointTable } from "../lib/spatial";
 
+// Convex's generated `internal` type omits references to the module currently
+// being initialized. Runtime self-scheduling is valid, so isolate the narrow
+// generated-type escape hatch here instead of spreading casts through handlers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const self = (internal as any)["spatial/reindex"];
+
 const pointTable = v.union(
   v.literal("chargers"),
   v.literal("carriers"),
@@ -115,7 +121,7 @@ export const reindexAll = internalMutation({
     const tables: PointTable[] = ["chargers", "carriers", "parking", "pois", "ports"];
     let scheduled = 0;
     for (const table of tables) {
-      await ctx.scheduler.runAfter(0, internal["spatial/reindex"].reindexTableContinue, {
+      await ctx.scheduler.runAfter(0, self.reindexTableContinue, {
         table,
         cursor: null,
       });
@@ -133,13 +139,13 @@ export const reindexTableContinue = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const result = await ctx.runMutation(internal["spatial/reindex"].reindexTable, {
+    const result = (await ctx.runMutation(self.reindexTable, {
       table: args.table,
       cursor: args.cursor,
       limit: 100,
-    });
+    })) as { done: boolean; continueCursor: string | null };
     if (!result.done && result.continueCursor) {
-      await ctx.scheduler.runAfter(0, internal["spatial/reindex"].reindexTableContinue, {
+      await ctx.scheduler.runAfter(0, self.reindexTableContinue, {
         table: args.table,
         cursor: result.continueCursor,
       });

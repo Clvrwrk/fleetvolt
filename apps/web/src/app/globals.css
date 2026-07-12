@@ -352,9 +352,6 @@ body {
   .fv-enterprise-shell aside[data-collapsed="true"] + .fv-shell-content { padding-left: 56px; }
 }
 
-.fv-mobile-commandbar a { color: #728390; text-decoration: none; }
-.fv-mobile-commandbar a[aria-current="page"] { color: #f3f7fa; background: rgba(66,165,217,.08); }
-
 /* Data Paper keeps a light map canvas, so its small technical copy and
    action blue use the accessible print/data variants of the brand tokens. */
 [data-testid="map-workbench-shell"] {

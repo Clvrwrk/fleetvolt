@@ -5,7 +5,6 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
 import { FleetVoltMapCanvas } from "./fleetvolt-map-canvas";
-import { MobileWorkbenchSheet } from "./mobile-workbench-sheet";
 import { WorkbenchLeftPanel } from "./workbench-left-panel";
 import { WorkbenchRightPanel } from "./workbench-right-panel";
 import { WorkbenchRailNav } from "./workbench-rail-nav";
@@ -168,7 +167,7 @@ export function MapWorkbenchShell({ mode = "driver_day_plan" }: MapWorkbenchShel
       <aside
         data-testid="workbench-tool-rail"
         className={cn(
-          "relative z-20 hidden h-full min-h-0 shrink-0 flex-col border-r border-white/10 bg-[var(--fv-graphite)] md:flex",
+          "relative z-20 flex h-full min-h-0 shrink-0 flex-col border-r border-white/10 bg-[var(--fv-graphite)]",
           RAIL_WIDTH_CLASS,
         )}
         aria-label="Workbench tools"
@@ -233,8 +232,6 @@ export function MapWorkbenchShell({ mode = "driver_day_plan" }: MapWorkbenchShel
           <FleetVoltMapCanvas mode={mode} className="h-full w-full" />
         </div>
       </main>
-
-      <MobileWorkbenchSheet mode={mode} />
     </section>
   );
 }

@@ -490,7 +490,9 @@ export default function DriverSetupPage() {
               lat={form.homeTerminal.lat}
               lng={form.homeTerminal.lng}
               selectedCarrierKey={form.associatedCarrierKey}
-              onAssociate={(key: string) => setForm({ ...form, associatedCarrierKey: key })}
+              onAssociate={(key) =>
+                setForm({ ...form, associatedCarrierKey: key })
+              }
             />
           </div>
         )}

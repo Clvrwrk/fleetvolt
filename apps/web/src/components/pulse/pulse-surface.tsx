@@ -143,7 +143,7 @@ export function PulseSurface() {
             <div className="hidden w-[300px] shrink-0 lg:block">
               <SkeuomorphicCard
                 data-testid="control-panel"
-                padding="6"
+                padding="lg"
                 className="h-full"
               >
                 {controlPanel}
@@ -165,7 +165,7 @@ export function PulseSurface() {
         {/* Control panel — tablet: collapses into an accordion beneath the map. */}
         <div className="lg:hidden" data-reveal>
           <Collapsible.Root open={panelOpen} onOpenChange={setPanelOpen}>
-            <SkeuomorphicCard data-testid="control-panel-accordion" padding="6">
+            <SkeuomorphicCard data-testid="control-panel-accordion" padding="lg">
               <Collapsible.Trigger asChild>
                 <button
                   type="button"

@@ -236,6 +236,16 @@ Use these entry points:
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- gsd-workflow-end -->
 
+## Mandatory Branch and PR Safety
+
+- Never commit directly to `main`.
+- Never push changes directly to `main`.
+- Never merge a pull request or merge a work branch into `main` unless Chris
+  gives separate, explicit approval for that merge.
+- Implement on a dedicated work branch, commit only the intended files, push
+  that branch, and open a pull request as the default delivery path.
+- A passing PR or preview deployment is not production approval.
+
 ## Mandatory Local Visual Handoff Gate
 
 This gate applies whenever an agent changes FleetVolt through a local branch,

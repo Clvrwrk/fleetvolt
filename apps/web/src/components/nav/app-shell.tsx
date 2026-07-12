@@ -5,11 +5,8 @@ import { ReactNode } from "react";
 import { UserMenu } from "@/components/auth/user-menu";
 import { Sidebar } from "./sidebar";
 import { PageHeader } from "./page-header";
-import { MobileTabBar } from "./mobile-tab-bar";
 
-// ── Phase 16 / Wave 3: AppShell integrated with Sidebar, PageHeader, MobileTabBar ─
-//
-// The new app chrome for ALL authenticated pages. Replaces the old NavHeader.
+// Desktop application chrome for authenticated Fleet Manager and CaaS pages.
 //
 // Layout (dashboards / non-workbench):
 //   ┌──────────────────────────────────────────────────────┐
@@ -29,8 +26,7 @@ import { MobileTabBar } from "./mobile-tab-bar";
 //   Global Sidebar is HIDDEN. Left chrome is the workbench tool rail
 //   (role nav above, accordion tools below) inside MapWorkbenchShell.
 //
-// Sidebar: 260px expanded, 56px collapsed (Wave 3). PageHeader in top bar.
-// MobileTabBar: bottom-fixed on <768px screens (hidden on map-first routes).
+// Sidebar: 260px expanded, 56px collapsed. PageHeader remains in the top bar.
 //
 // Public routes (/, /role-select, /callback) bypass the AppShell entirely
 // and render children without the sidebar/top bar.
@@ -126,13 +122,12 @@ function AppShellInner({ children }: { children: ReactNode }) {
           <main
             id="main-content"
             tabIndex={-1}
-            className="fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0 pb-14 md:pb-0"
+            className="fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0"
           >
             {children}
           </main>
         )}
       </div>
-      {!mapFirst ? <MobileTabBar /> : null}
     </div>
   );
 }

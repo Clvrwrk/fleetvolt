@@ -29,6 +29,7 @@ const VIEWPORTS = [
   { name: "ipad", width: 1024, height: 1366 },
   { name: "mobile", width: 390, height: 844 },
 ] as const;
+const PROTECTED_VIEWPORTS = [VIEWPORTS[0]] as const;
 
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => ({
@@ -214,7 +215,7 @@ test.describe("FleetVolt protected-surface compliance", () => {
     "Requires the isolated FLEETVOLT_E2E review server.",
   );
 
-  for (const viewport of VIEWPORTS) {
+  for (const viewport of PROTECTED_VIEWPORTS) {
     test(`${viewport.name} internal route sweep`, async ({ page }) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion: "reduce" });

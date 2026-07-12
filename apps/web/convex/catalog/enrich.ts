@@ -18,6 +18,17 @@ type FirecrawlPayload = {
   links?: string[];
 };
 
+type EnrichmentRow = {
+  slug: string;
+  hvipVehicleUrl: string;
+};
+
+type EnrichmentQueueResult = {
+  queued: number;
+  batches: number;
+  batchSize: number;
+};
+
 function pickImageUrl(payload: FirecrawlPayload): {
   imageUrl: string | null;
   galleryUrls: string[];
@@ -171,17 +182,20 @@ export const startImageEnrichment = action({
     batches: v.number(),
     batchSize: v.number(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<EnrichmentQueueResult> => {
     const limit = Math.min(args.limit ?? 188, 250);
     const batchSize = Math.min(Math.max(args.batchSize ?? 8, 1), 20);
     const onlyMissing = args.onlyMissing ?? true;
     const offset = Math.max(args.offset ?? 0, 0);
 
-    const rows = await ctx.runQuery(internal.catalog.enrichQueries.listForEnrichment, {
-      limit,
-      onlyMissing,
-      offset,
-    });
+    const rows: EnrichmentRow[] = await ctx.runQuery(
+      internal.catalog.enrichQueries.listForEnrichment,
+      {
+        limit,
+        onlyMissing,
+        offset,
+      },
+    );
 
     let batches = 0;
     for (let i = 0; i < rows.length; i += batchSize) {
