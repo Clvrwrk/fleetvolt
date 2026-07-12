@@ -199,6 +199,7 @@ export function WorkbenchRightPanel({
         {cards.map((card) => (
           <article
             key={card.id}
+            data-testid="workbench-result-card"
             className={cn("rounded-2xl border p-3 shadow-sm", severityStyles(card.severity))}
           >
             <div className="flex items-center justify-between gap-3">

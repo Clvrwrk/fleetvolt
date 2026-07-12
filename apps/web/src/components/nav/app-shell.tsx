@@ -1,9 +1,8 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
-import { ReactNode, Suspense } from "react";
+import { usePathname } from "next/navigation";
+import { ReactNode } from "react";
 import { UserMenu } from "@/components/auth/user-menu";
-import { useWorkOSAuth } from "@/lib/auth";
 import { Sidebar } from "./sidebar";
 import { PageHeader } from "./page-header";
 import { MobileTabBar } from "./mobile-tab-bar";
@@ -81,37 +80,19 @@ function TopBar({ pageTitle }: { pageTitle: string }) {
   );
 }
 
-/** "Sign In" button shown in top bar when unauthenticated on protected routes. */
-function SignInButton() {
-  const { signIn } = useWorkOSAuth();
-  return (
-    <button
-      onClick={() => signIn()}
-      className="fv-btn-primary"
-      style={{ padding: "6px 16px", fontSize: "13px", width: "auto" }}
-    >
-      Sign In
-    </button>
-  );
-}
-
-function isMapWorkbenchRoute(pathname: string, searchParams: URLSearchParams | null): boolean {
+function isMapWorkbenchRoute(pathname: string): boolean {
   if (pathname === "/workbench" || pathname.startsWith("/workbench/")) return true;
   if (pathname === "/driver/day-plan" || pathname.startsWith("/driver/day-plan/")) return true;
   if (pathname === "/fleet/contract-plan" || pathname.startsWith("/fleet/contract-plan/")) return true;
   if (pathname === "/caas/gap-map" || pathname.startsWith("/caas/gap-map/")) return true;
-  // /caas is map-first (freight overview); ?view=summary stays in chrome shell.
-  if (pathname === "/caas") {
-    return searchParams?.get("view") !== "summary";
-  }
+  // /caas is map-first. Its optional summary view retains this compact chrome
+  // so the global layout does not depend on search params during hydration.
+  if (pathname === "/caas") return true;
   return false;
 }
 
 function AppShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { isAuthenticated, loading } = useWorkOSAuth();
-
   // Public routes render without the shell
   if (isPublicRoute(pathname)) {
     return <>{children}</>;
@@ -119,7 +100,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
   const pageTitle = getPageTitle(pathname);
   // Map workbench owns its own stacked left tool rail — hide global Sidebar.
-  const mapFirst = isMapWorkbenchRoute(pathname, searchParams);
+  const mapFirst = isMapWorkbenchRoute(pathname);
 
   return (
     <div className="min-h-screen bg-[var(--fv-bg)]">
@@ -142,9 +123,5 @@ function AppShellInner({ children }: { children: ReactNode }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <Suspense fallback={<>{children}</>}>
-      <AppShellInner>{children}</AppShellInner>
-    </Suspense>
-  );
+  return <AppShellInner>{children}</AppShellInner>;
 }

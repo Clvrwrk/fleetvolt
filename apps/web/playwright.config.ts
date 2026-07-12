@@ -26,6 +26,16 @@ export default defineConfig({
           ...process.env,
           FLEETVOLT_E2E: "1",
           PORT: "3017",
+          // Keep the deterministic UI suite independent of Google referrer
+          // allowlists. Set FLEETVOLT_E2E_MAPS=1 for the live-map gate.
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
+            process.env.FLEETVOLT_E2E_MAPS === "1"
+              ? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""
+              : "",
+          NEXT_PUBLIC_GOOGLE_MAP_ID:
+            process.env.FLEETVOLT_E2E_MAPS === "1"
+              ? process.env.NEXT_PUBLIC_GOOGLE_MAP_ID ?? ""
+              : "",
         },
       },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
