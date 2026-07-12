@@ -1112,7 +1112,9 @@ th {
 }
 
 @keyframes fv-loading-bolt {
-  to { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  1.666% { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .fv-loading-ring,
@@ -1125,7 +1127,7 @@ th {
 }
 
 .fv-loading-bolt {
-  animation: fv-loading-bolt 1s linear infinite;
+  animation: fv-loading-bolt 60s ease-in-out infinite;
   filter: drop-shadow(0 0 5px rgb(76 143 184 / 45%));
 }
 

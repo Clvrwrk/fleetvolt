@@ -2,9 +2,9 @@
   
   <style>
     .fv-logo-tracer { transform-origin: 56px 60px; animation: fv-ring 1.2s linear infinite; }
-    .fv-logo-bolt { transform-origin: 56px 60px; animation: fv-bolt 1s linear infinite; }
+    .fv-logo-bolt { transform-origin: 56px 60px; animation: fv-bolt 60s ease-in-out infinite; }
     @keyframes fv-ring { to { transform: rotate(360deg); } }
-    @keyframes fv-bolt { to { transform: rotate(360deg); } }
+    @keyframes fv-bolt { 0% { transform: rotate(0deg); } 1.666% { transform: rotate(360deg); } 100% { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .fv-logo-tracer, .fv-logo-bolt { animation: none; } }
   </style>
   <g>

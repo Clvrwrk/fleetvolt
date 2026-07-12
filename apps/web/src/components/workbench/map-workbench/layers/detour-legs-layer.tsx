@@ -136,15 +136,10 @@ export function DetourLegsLayer({
         if (cancelled) return;
 
         const spurPath = toPath(spur.coordinates ?? []);
-        if (spurPath.length < 2) {
-          // Fallback: straight spur so the driver still sees the exit intent.
-          setPaths({
-            spur: [
-              { lat: nearest.point.lat, lng: nearest.point.lng },
-              { lat: asset.lat, lng: asset.lng },
-            ],
-            junction: nearest.point,
-          });
+        if (spurPath.length < 8) {
+          // No road geometry means no line. A straight segment would look like
+          // a usable detour even though it may cross buildings or waterways.
+          setPaths(null);
           return;
         }
 
@@ -155,13 +150,7 @@ export function DetourLegsLayer({
       } catch (error) {
         if (cancelled) return;
         console.warn("[workbench] detour spur failed", error);
-        setPaths({
-          spur: [
-            { lat: nearest.point.lat, lng: nearest.point.lng },
-            { lat: asset.lat, lng: asset.lng },
-          ],
-          junction: nearest.point,
-        });
+        setPaths(null);
       }
     })();
 
