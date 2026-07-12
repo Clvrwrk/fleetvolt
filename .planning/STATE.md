@@ -84,3 +84,4 @@ Git: `df91c6e` on origin/master (clean)
 | # | Description | Date | Commit | Status | Directory |
 |---|-------------|------|--------|--------|-----------|
 | 260709-szr | Finish and validate the active CaaS geospatial and California choropleth WIP | 2026-07-09 | `e64e149`, `227ba15` | complete (live Convex smoke blocked by sandbox DNS) | [quick task](./quick/260709-szr-finish-and-validate-the-active-caas-geos/) |
+| 260711-ol3 | Codify and exercise localhost visual review + Chris handoff | 2026-07-12 | pending | blocked on ScreenshotOne export approval and Linear browser policy | [quick task](./quick/260711-ol3-codify-localhost-visual-review-and-chris/) |
