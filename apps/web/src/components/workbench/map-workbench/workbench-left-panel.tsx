@@ -8,6 +8,10 @@ import { api } from "../../../../convex/_generated/api";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { cn } from "@/lib/utils";
+import {
+  buildClass8GapCandidates,
+  type CaasGapOpportunityEvidence,
+} from "@/lib/maps/class8-gap-candidates";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import type { WorkbenchMode, WorkbenchResultCard } from "./types";
 import type { WorkbenchMapAsset } from "./layers/asset-marker-layer";
@@ -143,23 +147,96 @@ export function WorkbenchLeftPanel({
         }
       : "skip",
   );
+  const gapCandidateCenter =
+    mode === "caas_gap_map" &&
+    caasPhase === "route_analysis" &&
+    draft.origin &&
+    draft.destination
+      ? {
+          lat: (draft.origin.latitude + draft.destination.latitude) / 2,
+          lng: (draft.origin.longitude + draft.destination.longitude) / 2,
+        }
+      : null;
+  const routeParkingCandidates = useQuery(
+    api.pois.queries.parkingInRadius,
+    gapCandidateCenter
+      ? { ...gapCandidateCenter, radiusM: 45_000, limit: 8 }
+      : "skip",
+  );
+  const routePoiCandidates = useQuery(
+    api.pois.queries.poisInRadius,
+    gapCandidateCenter
+      ? {
+          ...gapCandidateCenter,
+          radiusM: 45_000,
+          types: ["truck_stop", "rest_area", "fuel", "food"],
+          limit: 8,
+        }
+      : "skip",
+  );
 
   useEffect(() => {
     if (mode !== "caas_gap_map") return;
 
     if (caasPhase === "route_analysis" && caasRouteOpportunity) {
+      const opportunityEvidence = caasRouteOpportunity as CaasGapOpportunityEvidence;
+      const gapCandidates = buildClass8GapCandidates(
+        {
+          ...opportunityEvidence,
+          hotspot: {
+            ...(opportunityEvidence.hotspot ?? {}),
+            parking: routeParkingCandidates
+              ? {
+                  parking: routeParkingCandidates.parking,
+                  totalSpots: routeParkingCandidates.totalSpotsWithinRadius,
+                }
+              : opportunityEvidence.hotspot?.parking,
+            pois: routePoiCandidates
+              ? { pois: routePoiCandidates.pois }
+              : opportunityEvidence.hotspot?.pois,
+          },
+          route:
+            draft.origin && draft.destination
+              ? {
+                  ...(opportunityEvidence.route ?? {}),
+                  origin: {
+                    lat: draft.origin.latitude,
+                    lng: draft.origin.longitude,
+                  },
+                  destination: {
+                    lat: draft.destination.latitude,
+                    lng: draft.destination.longitude,
+                  },
+                  midpoint: opportunityEvidence.route?.midpoint ?? {
+                    lat: (draft.origin.latitude + draft.destination.latitude) / 2,
+                    lng: (draft.origin.longitude + draft.destination.longitude) / 2,
+                  },
+                }
+              : opportunityEvidence.route,
+        },
+      );
+      const currentAssets = useMapWorkbenchStore.getState().mapAssets;
       useMapWorkbenchStore.setState({
         resultCards: caasRouteOpportunity.cards as unknown as WorkbenchResultCard[],
+        mapAssets: [
+          ...currentAssets.filter((asset) => asset.layerId !== "class8-gaps"),
+          ...gapCandidates,
+        ],
         providerWarnings: [
-          "True vs detour-solvable gap classification uses Class 8 radius plus nearest-charger distance; detour route time remains unavailable unless provider data is connected.",
+          gapCandidates.length > 0
+            ? `${gapCandidates.length} modeled mobile-charge candidate(s) anchored to route-area dwell assets. Site access and utility capacity require validation.`
+            : "No mobile-charge GAP candidate was generated because the current evidence shows corridor coverage without a modeled dwell/capacity opportunity.",
+          "True vs detour-solvable classification uses Class 8 radius plus nearest-charger distance; detour route time remains unavailable unless provider data is connected.",
         ],
       });
       return;
     }
 
     if (caasPhase === "freight_overview" && caasOpportunity) {
+      const currentAssets = useMapWorkbenchStore.getState().mapAssets;
       useMapWorkbenchStore.setState({
         resultCards: caasOpportunity.cards as WorkbenchResultCard[],
+        mapAssets: currentAssets.filter((asset) => asset.layerId !== "class8-gaps"),
         providerWarnings: [
           "West-coast freight overview uses road-traced corridors + CalTrans truck AADT samples. Build a route with truck, A→B, and driver profile to run Class-8 gap analysis.",
         ],
@@ -172,6 +249,8 @@ export function WorkbenchLeftPanel({
     draft.destination,
     draft.origin,
     mode,
+    routeParkingCandidates,
+    routePoiCandidates,
   ]);
 
   async function runCaasGapAnalysis() {
@@ -191,6 +270,9 @@ export function WorkbenchLeftPanel({
       // Keep the map honest while the provider builds road geometry.
       useMapWorkbenchStore.setState({
         routeGeometry: null,
+        mapAssets: useMapWorkbenchStore
+          .getState()
+          .mapAssets.filter((asset) => asset.layerId !== "class8-gaps"),
         providerWarnings: ["Loading road geometry…"],
       });
 

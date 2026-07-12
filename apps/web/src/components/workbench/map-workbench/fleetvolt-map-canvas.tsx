@@ -613,6 +613,11 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
 
   const routeProvider = routeGeometry?.provider;
   const routeDistanceMeters = routeGeometry?.distanceMeters;
+  const gapLayerActive = activeLayers.includes("class8-gaps");
+  const gapCandidates = assets.filter(
+    (asset) => asset.layerId === "class8-gaps",
+  );
+  const gapCandidateCount = gapCandidates.length;
   const selectRoute = useCallback(() => {
     if (routeCoordinates.length < 8) return;
     const midpoint = routeCoordinates[Math.floor(routeCoordinates.length / 2)]!;
@@ -748,6 +753,57 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
           >
             {routeFocusActive ? "Show all map layers" : "Focus this route"}
           </button>
+        ) : null}
+        {isCaas && gapLayerActive ? (
+          <div
+            data-testid="class8-gap-layer-status"
+            data-state={
+              routeCoordinates.length < 8
+                ? "route-required"
+                : gapCandidateCount > 0
+                  ? "candidates"
+                  : "covered"
+            }
+            className={cn(
+              "mt-2 max-w-[17rem] border-l-2 px-2 py-1.5 text-[9px] font-bold uppercase leading-4 tracking-[0.09em]",
+              routeCoordinates.length < 8
+                ? "border-[var(--fv-caution-amber)] bg-[var(--fv-caution-amber)]/10 text-[var(--fv-caution-amber)]"
+                : gapCandidateCount > 0
+                  ? "border-[var(--fv-alert-red)] bg-[var(--fv-alert-red)]/10 text-[var(--fv-alert-red)]"
+                  : "border-[var(--fv-signal-green)] bg-[var(--fv-signal-green)]/10 text-[var(--fv-signal-green)]",
+            )}
+          >
+            {routeCoordinates.length < 8
+              ? "GAP layer armed · build a road route to calculate siting candidates"
+              : gapCandidateCount > 0
+                ? `${gapCandidateCount} explainable mobile-charge GAP candidate${gapCandidateCount === 1 ? "" : "s"}`
+                : "Gap analysis complete · no modeled mobile siting candidate"}
+            {gapCandidateCount > 0 ? (
+              <button
+                type="button"
+                data-testid="class8-gap-review-candidate"
+                onClick={() => {
+                  const candidate = gapCandidates[0]!;
+                  selectAsset({
+                    id: candidate.id,
+                    type: candidate.type,
+                    label: candidate.label,
+                    layerId: candidate.layerId,
+                    latitude: candidate.latitude,
+                    longitude: candidate.longitude,
+                    metadata: {
+                      ...candidate.metadata,
+                      subtitle: candidate.subtitle,
+                      metric: candidate.metric,
+                    },
+                  });
+                }}
+                className="pointer-events-auto mt-1 block border-b border-current text-[8px] font-black uppercase tracking-[0.12em]"
+              >
+                Review candidate evidence
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
 

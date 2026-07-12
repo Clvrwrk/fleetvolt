@@ -35,7 +35,7 @@ import { MobileTabBar } from "./mobile-tab-bar";
 // Public routes (/, /role-select, /callback) bypass the AppShell entirely
 // and render children without the sidebar/top bar.
 
-const PUBLIC_ROUTES = new Set(["/", "/role-select", "/callback"]);
+const PUBLIC_ROUTES = new Set(["/", "/briefing", "/role-select", "/callback"]);
 
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;

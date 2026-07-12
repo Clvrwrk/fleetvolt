@@ -75,6 +75,11 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
   }
 
   const rows = metadataRows(selection.metadata);
+  const gapMetadata = selection.type === "class8-gap" ? selection.metadata : null;
+  const gapValue = (key: string, fallback = "Not available") => {
+    const value = gapMetadata?.[key];
+    return value === undefined || value === null || value === "" ? fallback : String(value);
+  };
 
   return (
     <aside
@@ -83,7 +88,7 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
       data-asset-type={selection.type}
       data-on-route={proximity ? String(proximity.onRoute) : undefined}
       className={cn(
-        "pointer-events-auto w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-black/10 bg-white/95 p-4 text-[var(--fv-graphite)] shadow-2xl backdrop-blur",
+        "pointer-events-auto max-h-[min(44rem,calc(100dvh-7rem))] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-black/10 bg-white/95 p-4 text-[var(--fv-graphite)] shadow-2xl backdrop-blur",
         className,
       )}
       aria-label={`${selection.label} details`}
@@ -135,7 +140,50 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
         </div>
       ) : null}
 
-      {rows.length > 0 ? (
+      {gapMetadata ? (
+        <div data-testid="class8-gap-explanation" className="mt-3 space-y-2">
+          <div className="rounded-xl border border-[var(--fv-alert-red)]/30 bg-[var(--fv-alert-red)]/8 px-3 py-2.5">
+            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--fv-alert-red)]">
+              Why this is a GAP candidate
+            </div>
+            <p className="mt-1 text-[11px] font-semibold leading-4 text-[var(--fv-graphite)]">
+              {gapValue("whyGap")}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-black/10 bg-[var(--fv-bg)] px-3 py-2">
+              <div className="text-[8px] font-black uppercase tracking-[0.12em] text-[var(--fv-blueprint-blue)]">Optimum charge window</div>
+              <div className="mt-1 text-[11px] font-bold text-[var(--fv-graphite)]">{gapValue("optimalArrivalSoc")}</div>
+              <div className="mt-0.5 text-[9px] text-[var(--fv-steel)]">{gapValue("dwellWindow")}</div>
+            </div>
+            <div className="rounded-xl border border-black/10 bg-[var(--fv-bg)] px-3 py-2">
+              <div className="text-[8px] font-black uppercase tracking-[0.12em] text-[var(--fv-blueprint-blue)]">Mobile bridge</div>
+              <div className="mt-1 text-[11px] font-bold text-[var(--fv-graphite)]">{gapValue("recommendedPower")}</div>
+              <div className="mt-0.5 text-[9px] text-[var(--fv-steel)]">{gapValue("classification")}</div>
+            </div>
+          </div>
+          <dl className="divide-y divide-black/10 overflow-hidden rounded-xl border border-black/10 text-[10px]">
+            {[
+              ["Site type", gapValue("siteType")],
+              ["Why here", gapValue("whyHere")],
+              ["Charger evidence", gapValue("chargerEvidence")],
+              ["Confidence", gapValue("confidence")],
+              ["Provenance", gapValue("provenance")],
+              ["Must validate", gapValue("verification")],
+            ].map(([label, value]) => (
+              <div key={label} className="grid grid-cols-[5.2rem_minmax(0,1fr)] gap-2 bg-white px-3 py-2">
+                <dt className="font-bold text-[var(--fv-steel)]">{label}</dt>
+                <dd className="text-right leading-4 text-[var(--fv-graphite)]">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="rounded-lg bg-[var(--fv-caution-amber)]/10 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--fv-caution-amber)]">
+            {gapValue("status", "Modeled siting hypothesis — validation required")}
+          </div>
+        </div>
+      ) : null}
+
+      {!gapMetadata && rows.length > 0 ? (
         <dl className="mt-3 divide-y divide-black/10 overflow-hidden rounded-xl border border-black/10">
           {rows
             .filter((row) => row.key !== "carrierHref")
@@ -148,11 +196,11 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
             </div>
           ))}
         </dl>
-      ) : (
+      ) : !gapMetadata ? (
         <p className="mt-3 text-xs leading-5 text-[var(--fv-steel)]">
           Metadata card ready. Detailed Convex asset payloads attach through the workbench aggregation layer.
         </p>
-      )}
+      ) : null}
 
       {selection.type !== "route" && typeof selection.metadata?.carrierHref === "string" ? (
         <a

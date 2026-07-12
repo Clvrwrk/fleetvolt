@@ -68,8 +68,8 @@ const LAYER_CATALOG: Record<WorkbenchLayerId, LayerToolbarItem> = {
   },
   "class8-gaps": {
     id: "class8-gaps",
-    label: "Class 8 charger gap",
-    hint: "Where Class-8 charging is missing",
+    label: "Class 8 GAP",
+    hint: "Explainable mobile-charge siting candidates",
   },
   carriers: {
     id: "carriers",
