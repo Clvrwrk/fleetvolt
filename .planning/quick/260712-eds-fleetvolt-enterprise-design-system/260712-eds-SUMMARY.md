@@ -28,3 +28,12 @@ issue: FLE-19
 ## Human-needed gate
 
 The stable review server is `http://localhost:3100`. Desktop, iPad, mobile, and ScreenshotOne evidence remain required. ScreenshotOne cannot access private localhost; the exact temporary Vercel upload approval request is recorded on FLE-19. No staging or production release was performed.
+
+## CEO correction — faithful Radius architecture
+
+- Replaced the initial sparse component showroom with a faithful FleetVolt-branded copy of the supplied Radius Trades system structure.
+- Preserved all 10 sections, 9 tables, 12 copyable controls, dark/light mode, physical-production guidance, contrast audit, SWAG prompts, press kit, crisis guidance, and governance.
+- Replaced the brand layer with FleetVolt Carbon/Electric/Signal White, Arcline, Brokline campaign display, and the bolt-and-trace mark.
+- Rewrote all home-services content as FleetVolt freight-intelligence language; no Radius brand or county-vetting language remains.
+- Corrected Electric Deep to `#20698E` after measured contrast found `#287EAA` insufficient on Signal White.
+- Browser verification: Desktop 1440×900, iPad 1024×1366, Mobile 390×844, and dark mode pass. Mobile overflow found in the source layout was fixed; final document scroll width equals viewport width.

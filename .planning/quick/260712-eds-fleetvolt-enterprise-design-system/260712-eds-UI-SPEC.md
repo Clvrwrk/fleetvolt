@@ -40,3 +40,7 @@ Replace the mixed pale-CAD, generic-SaaS, and command-dark languages with one go
 3. `/design-system` renders the live palette, type, controls, state, and decision-surface primitives.
 4. The design-system governance document defines component, map, motion, accessibility, and migration rules.
 5. Desktop, iPad, and mobile pass without horizontal overflow or unreadable content.
+
+## CEO correction addendum
+
+The live showroom must reproduce the supplied Radius Trades reference information architecture and density, not reinterpret it as a sparse component sampler. Preserve all ten sections, long-form production guidance, measured contrast, token copying, SWAG prompts, press guidance, and governance. Replace only the brand layer and domain content with FleetVolt colors, Arcline/Brokline/telemetry typography, bolt-and-trace logo, and freight-intelligence language.
