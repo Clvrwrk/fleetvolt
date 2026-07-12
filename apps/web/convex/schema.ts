@@ -913,6 +913,40 @@ export default defineSchema({
     .index("by_expiresAt", ["expiresAt"])
     .index("by_refreshState", ["refreshState"]),
 
+  // Promoted route catalog entries reference the independently cached road
+  // geometry + intelligence snapshot by requestHash. The provider payloads are
+  // deliberately not copied here: catalog curation cannot reset either cache.
+  routeCatalogEntries: defineTable({
+    catalogId: v.string(),
+    name: v.string(),
+    promoted: v.boolean(),
+    sortOrder: v.number(),
+    generatorId: v.string(),
+    originPortCode: v.string(),
+    origin: v.object({
+      label: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      kind: v.string(),
+      source: v.string(),
+      id: v.optional(v.string()),
+    }),
+    destination: v.object({
+      label: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      kind: v.string(),
+      source: v.string(),
+      id: v.optional(v.string()),
+    }),
+    requestHash: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_catalogId", ["catalogId"])
+    .index("by_promoted_sortOrder", ["promoted", "sortOrder"])
+    .index("by_requestHash", ["requestHash"]),
+
   // Last successful map-workbench Calculate runs (driver / fleet / caas).
   // Used to restore route geometry + draft on "Start Day Plan" for returning users.
   workbenchRuns: defineTable({

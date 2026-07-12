@@ -97,6 +97,8 @@ import type * as ports from "../ports.js";
 import type * as report from "../report.js";
 import type * as routes_cache from "../routes/cache.js";
 import type * as routes_cachePolicy from "../routes/cachePolicy.js";
+import type * as routes_catalog from "../routes/catalog.js";
+import type * as routes_catalogPolicy from "../routes/catalogPolicy.js";
 import type * as routes_enrichment from "../routes/enrichment.js";
 import type * as routes_enrichmentPolicy from "../routes/enrichmentPolicy.js";
 import type * as routes_enrichmentRepository from "../routes/enrichmentRepository.js";
@@ -213,6 +215,8 @@ declare const fullApi: ApiFromModules<{
   report: typeof report;
   "routes/cache": typeof routes_cache;
   "routes/cachePolicy": typeof routes_cachePolicy;
+  "routes/catalog": typeof routes_catalog;
+  "routes/catalogPolicy": typeof routes_catalogPolicy;
   "routes/enrichment": typeof routes_enrichment;
   "routes/enrichmentPolicy": typeof routes_enrichmentPolicy;
   "routes/enrichmentRepository": typeof routes_enrichmentRepository;
