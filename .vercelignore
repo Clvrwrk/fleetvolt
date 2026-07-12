@@ -1,0 +1,16 @@
+# Local routing datasets and retired backend services are not part of the
+# Vercel web preview. Keeping them out avoids multi-gigabyte CLI uploads.
+data/**
+services/**
+
+# Local-only planning, design, cache, and review artifacts.
+.planning/**
+Design/**
+Grok_Chat/**
+.pnpm-store/**
+.venv/**
+.ruff_cache/**
+apps/web/test-results/**
+apps/web/playwright-report/**
+compose.review.yml
+docker-compose.yml
