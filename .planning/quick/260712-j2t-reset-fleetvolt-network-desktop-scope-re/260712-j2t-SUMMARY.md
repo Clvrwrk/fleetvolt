@@ -37,7 +37,7 @@ verification: human_needed
 - Deterministic screenshots show the map in its honest loading state because the isolated review build has no live Google map credential/referrer gate.
 - The in-app browser became stuck on a transient localhost connection-error interstitial after the server restart; Playwright completed the local verification instead.
 - ScreenshotOne still requires a reachable branch/PR preview. Local screenshots are not a substitute.
-- No production deploy, main merge, or main push occurred. The next delivery artifact is a draft PR from `wip/2026-07-09-session`.
+- No production deploy, main merge, or main push occurred. [Draft PR #1](https://github.com/Clvrwrk/fleetvolt/pull/1) is open from `wip/2026-07-09-session` into `master` for review.
 
 ## Linear floor
 

@@ -5,7 +5,7 @@ milestone_name: Persistent Route Intelligence
 current_phase: 20
 current_phase_name: freight-poi-route-catalog
 status: human_verification
-stopped_at: "FleetVolt.Network desktop split verified locally; draft PR, live Convex/map, ScreenshotOne, and production gates remain."
+stopped_at: "FleetVolt.Network desktop split verified locally and opened as draft PR #1; live Convex/map, ScreenshotOne, and production gates remain."
 last_updated: "2026-07-12T21:05:00.000Z"
 last_activity: 2026-07-12
 last_activity_desc: FleetVolt.Network desktop runtime split complete; CaaS is tonight's Linear critical path and Fleet Manager is secondary
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
 
-**Current focus:** FLE-5 CaaS desktop production path; PR/live Convex/map/ScreenshotOne gates pending
+**Current focus:** FLE-5 CaaS desktop production path; draft PR #1 open, with live Convex/map/ScreenshotOne gates pending
 
 ## Current Position
 
@@ -93,4 +93,4 @@ Git: `df91c6e` on origin/master (clean)
 | 260711-qq9 | Build isolated Docker Desktop FleetVolt review container | 2026-07-11 | `e639fa2` | complete | [quick task](./quick/260711-qq9-build-an-isolated-docker-desktop-fleetvo/) |
 | 260712-2k3 | Build cinematic FleetVolt homepage, Executive Briefing lane, and explainable Class 8 gap candidates | 2026-07-12 | `a86dfa5` | local pass; Vercel/ScreenshotOne approval pending | [quick task](./quick/260712-2k3-build-cinematic-fleetvolt-homepage-execu/) |
 | 260712-55k | Install Arcline/Brokline typography and live internal Arcline logo | 2026-07-12 | `3c858e9`, `7a1509a` | local pass; temporary Vercel/ScreenshotOne approval pending | [quick task](./quick/260712-55k-install-arcline-as-fleetvolt-body-font-w/) |
-| 260712-j2t | Reset FleetVolt.Network desktop scope, remove mobile runtime residue, and establish CaaS as the primary demo path | 2026-07-12 | pending | local automation passed; PR/live data/ScreenshotOne gates pending | [quick task](./quick/260712-j2t-reset-fleetvolt-network-desktop-scope-re/) |
+| 260712-j2t | Reset FleetVolt.Network desktop scope, remove mobile runtime residue, and establish CaaS as the primary demo path | 2026-07-12 | `94aa436` | local automation passed; [draft PR #1](https://github.com/Clvrwrk/fleetvolt/pull/1) open; live data/ScreenshotOne gates pending | [quick task](./quick/260712-j2t-reset-fleetvolt-network-desktop-scope-re/) |
