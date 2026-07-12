@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { SlidersHorizontal, X } from "lucide-react";
@@ -73,20 +80,35 @@ function CatalogFilterDrawer({
   value,
   onChange,
   onClose,
+  visible,
 }: {
   definition: FilterDefinition;
   value: string | null;
   onChange: (next: string | null) => void;
   onClose: () => void;
+  visible: boolean;
 }) {
   const choices = ["All vehicles", ...definition.options];
+  const columnCount = choices.length <= 8 ? 2 : choices.length <= 12 ? 3 : 4;
+  const drawerWidth = Math.max(420, columnCount * 170);
 
   return (
     <section
       id={`catalog-filter-drawer-${definition.key}`}
       data-testid="catalog-filter-drawer"
-      className="fixed inset-x-2 bottom-16 top-16 z-[70] flex min-h-0 flex-col overflow-hidden rounded-sm border border-[#42a5d9]/35 bg-[#0b1016]/[0.98] shadow-[0_24px_80px_rgba(0,0,0,0.56)] backdrop-blur-xl md:bottom-3 md:left-[268px] md:right-3 md:top-[64px] md:max-w-[760px]"
+      className={cn(
+        "fixed inset-x-2 top-2 z-[70] flex h-fit max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-sm border border-[#42a5d9]/35 bg-[#0b1016]/[0.98] shadow-[0_24px_80px_rgba(0,0,0,0.56)] backdrop-blur-xl transition-[transform,opacity] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transform-none motion-reduce:transition-none md:left-[268px] md:right-auto md:top-[64px] md:max-h-[calc(100dvh-76px)] md:w-[var(--catalog-drawer-width)] md:max-w-[calc(100vw-280px)]",
+        visible
+          ? "translate-x-0 opacity-100"
+          : "pointer-events-none -translate-x-10 opacity-0",
+      )}
+      style={
+        {
+          "--catalog-drawer-width": `${drawerWidth}px`,
+        } as CSSProperties
+      }
       aria-label={`${definition.label} catalog filters`}
+      aria-hidden={!visible}
     >
       <header className="flex shrink-0 items-start justify-between gap-5 border-b border-white/10 px-4 py-3 md:px-5 md:py-4">
         <div>
@@ -110,7 +132,10 @@ function CatalogFilterDrawer({
         </button>
       </header>
 
-      <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-px overflow-hidden bg-white/10 p-px sm:grid-cols-3 lg:grid-cols-4">
+      <div
+        className="grid shrink-0 auto-rows-[44px] gap-px overflow-hidden bg-white/10 p-px"
+        style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
+      >
         {choices.map((choice, index) => {
           const option = index === 0 ? null : choice;
           const selected = option === value;
@@ -254,8 +279,10 @@ function CatalogFilterDock({ variant }: { variant: "sidebar" | "inline" }) {
   const { filters, setFilter, clearAll } = useCatalogFilterParams();
   const activeCount = countActiveCatalogFilters(filters);
   const [openKey, setOpenKey] = useState<CatalogFilterKey | null>(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
 
   const definitions = useMemo<FilterDefinition[]>(
@@ -280,30 +307,51 @@ function CatalogFilterDock({ variant }: { variant: "sidebar" | "inline" }) {
   const cancelTimers = useCallback(() => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     if (openTimer.current) clearTimeout(openTimer.current);
+    if (animationTimer.current) clearTimeout(animationTimer.current);
   }, []);
+
+  const openDrawer = useCallback(
+    (key: CatalogFilterKey) => {
+      cancelTimers();
+      if (openKey !== null && drawerVisible) {
+        setOpenKey(key);
+        return;
+      }
+      setOpenKey(key);
+      setDrawerVisible(false);
+      animationTimer.current = setTimeout(() => setDrawerVisible(true), 24);
+    },
+    [cancelTimers, drawerVisible, openKey],
+  );
+
+  const closeDrawer = useCallback(() => {
+    cancelTimers();
+    setDrawerVisible(false);
+    animationTimer.current = setTimeout(() => setOpenKey(null), 360);
+  }, [cancelTimers]);
 
   const scheduleOpen = useCallback(
     (key: CatalogFilterKey) => {
       cancelTimers();
-      openTimer.current = setTimeout(() => setOpenKey(key), 360);
+      openTimer.current = setTimeout(() => openDrawer(key), 360);
     },
-    [cancelTimers],
+    [cancelTimers, openDrawer],
   );
 
   const scheduleClose = useCallback(() => {
     cancelTimers();
-    closeTimer.current = setTimeout(() => setOpenKey(null), 260);
-  }, [cancelTimers]);
+    closeTimer.current = setTimeout(closeDrawer, 220);
+  }, [cancelTimers, closeDrawer]);
 
   useEffect(() => cancelTimers, [cancelTimers]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenKey(null);
+      if (event.key === "Escape") closeDrawer();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [closeDrawer]);
 
   return (
     <div
@@ -355,7 +403,8 @@ function CatalogFilterDock({ variant }: { variant: "sidebar" | "inline" }) {
               type="button"
               onClick={() => {
                 cancelTimers();
-                setOpenKey(expanded ? null : definition.key);
+                if (expanded && drawerVisible) closeDrawer();
+                else openDrawer(definition.key);
               }}
               onMouseEnter={() => scheduleOpen(definition.key)}
               className={cn(
@@ -366,7 +415,7 @@ function CatalogFilterDock({ variant }: { variant: "sidebar" | "inline" }) {
                     ? "border-[#42a5d9]/55 bg-[#132633] text-white"
                     : "border-white/12 bg-[#121820] text-[#c5d0d8] hover:border-[#42a5d9]/45 hover:text-white",
               )}
-              aria-expanded={expanded}
+              aria-expanded={expanded && drawerVisible}
               aria-controls={`catalog-filter-drawer-${definition.key}`}
               data-filter-group={definition.label.toLowerCase()}
               data-active={active ? "true" : "false"}
@@ -388,7 +437,8 @@ function CatalogFilterDock({ variant }: { variant: "sidebar" | "inline" }) {
           definition={openDefinition}
           value={filters[openDefinition.key]}
           onChange={(next) => setFilter(openDefinition.key, next)}
-          onClose={() => setOpenKey(null)}
+          onClose={closeDrawer}
+          visible={drawerVisible}
         />
       ) : null}
     </div>

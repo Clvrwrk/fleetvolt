@@ -767,7 +767,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             className={cn(
               "mt-2 max-w-[17rem] border-l-2 px-2 py-1.5 text-[9px] font-bold uppercase leading-4 tracking-[0.09em]",
               routeCoordinates.length < 8
-                ? "border-[var(--fv-caution-amber)] bg-[var(--fv-caution-amber)]/10 text-[var(--fv-caution-amber)]"
+                ? "border-[#9a6a2b] bg-[#b8874c]/10 text-[#765019]"
                 : gapCandidateCount > 0
                   ? "border-[var(--fv-alert-red)] bg-[var(--fv-alert-red)]/10 text-[var(--fv-alert-red)]"
                   : "border-[var(--fv-signal-green)] bg-[var(--fv-signal-green)]/10 text-[var(--fv-signal-green)]",

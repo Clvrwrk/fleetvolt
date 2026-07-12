@@ -99,6 +99,7 @@ test.describe("FleetVolt enterprise design compliance", () => {
       await page.goto("/catalog", { waitUntil: "domcontentloaded" });
 
       const visibleDock = page.locator('[data-testid="catalog-filter-rail"]:visible');
+      const drawerHeights: Partial<Record<"type" | "oem" | "class" | "technology", number>> = {};
       for (const group of ["type", "oem", "class", "technology"] as const) {
         await visibleDock.locator(`button[data-filter-group="${group}"]`).click();
         const drawer = page.getByTestId("catalog-filter-drawer");
@@ -114,11 +115,16 @@ test.describe("FleetVolt enterprise design compliance", () => {
         expect(geometry.top, group).toBeGreaterThanOrEqual(0);
         expect(geometry.bottom, group).toBeLessThanOrEqual(geometry.viewportHeight);
         expect(geometry.scrollHeight, group).toBeLessThanOrEqual(geometry.clientHeight);
+        drawerHeights[group] = geometry.clientHeight;
         await expectNoHorizontalOverflow(page);
         await expectNoSeriousAxeViolations(page);
 
         await page.getByRole("button", { name: new RegExp(`Close ${group}`, "i") }).click();
         await expect(drawer).toBeHidden();
+      }
+      if (viewport.name === "desktop") {
+        expect(drawerHeights.technology).toBeLessThan(drawerHeights.oem ?? 0);
+        expect(drawerHeights.type).toBeLessThan(drawerHeights.oem ?? 0);
       }
     });
   }
@@ -129,9 +135,12 @@ test.describe("FleetVolt enterprise design compliance", () => {
     const dock = page.locator('[data-testid="catalog-filter-rail"]:visible');
     await dock.locator('button[data-filter-group="technology"]').hover();
     await page.waitForTimeout(420);
-    await expect(page.getByTestId("catalog-filter-drawer")).toBeVisible();
+    const drawer = page.getByTestId("catalog-filter-drawer");
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toHaveCSS("transition-duration", "0.36s");
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("catalog-filter-drawer")).toBeHidden();
+    await expect(drawer).toHaveAttribute("aria-hidden", "true");
+    await expect(drawer).toBeHidden();
   });
 });
 
