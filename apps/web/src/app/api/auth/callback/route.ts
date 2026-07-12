@@ -1,12 +1,7 @@
 import { ConvexHttpClient } from "convex/browser";
+import { NextResponse } from "next/server";
 import { handleAuth } from "@workos-inc/authkit-nextjs";
 import { api } from "../../../../../convex/_generated/api";
-
-const ROLE_HOME: Record<string, string> = {
-  driver: "/driver",
-  fleet_manager: "/fleet",
-  caas: "/caas",
-};
 
 function roleFromState(state?: string): "driver" | "fleet_manager" | "caas" {
   if (state === "driver" || state === "fleet_manager" || state === "caas") return state;
@@ -14,7 +9,6 @@ function roleFromState(state?: string): "driver" | "fleet_manager" | "caas" {
 }
 
 export const GET = handleAuth({
-  returnPathname: "/driver",
   async onSuccess({ user, state }) {
     const role = roleFromState(state);
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -24,7 +18,7 @@ export const GET = handleAuth({
     }
     try {
       const client = new ConvexHttpClient(convexUrl);
-      await client.mutation(api["userData/mutations"].upsertUserAccountFromWorkOS, {
+      await client.mutation(api.userData.mutations.upsertUserAccountFromWorkOS, {
         userId: user.id,
         role,
         email: user.email,
@@ -36,8 +30,10 @@ export const GET = handleAuth({
       console.error("[auth/callback] upsertUserAccountFromWorkOS failed", err);
     }
   },
-  onError(error) {
+  onError({ error, request }) {
     console.error("[auth/callback] handleAuth failed", error);
-    return undefined;
+    const retryUrl = new URL("/", request.url);
+    retryUrl.searchParams.set("auth_error", "callback_failed");
+    return NextResponse.redirect(retryUrl);
   },
 });

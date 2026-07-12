@@ -25,18 +25,6 @@ const WORKOS_CLIENT_ID = process.env.NEXT_PUBLIC_WORKOS_CLIENT_ID;
 const REDIRECT_URI = process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI || "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "";
 
-function getRedirectUri() {
-  if (REDIRECT_URI) return REDIRECT_URI;
-  if (typeof window !== "undefined") return `${window.location.origin}/callback`;
-  return "";
-}
-
-function getAppUrl() {
-  if (APP_URL) return APP_URL;
-  if (typeof window !== "undefined") return window.location.origin;
-  return "";
-}
-
 export type FleetVoltRole = "driver" | "fleet_manager" | "caas";
 
 export type AuthUser = {
@@ -52,17 +40,14 @@ export function useWorkOSAuth() {
 
   // Query the WorkOS user from the AuthKit component (null if not authenticated)
   const workosUser = useQuery(
-    api["users/queries"].getCurrentUser,
-    {},
-    // Skip the query until Convex auth is established
-    { skip: !isAuthenticated },
+    api.users.queries.getCurrentUser,
+    isAuthenticated ? {} : "skip",
   );
 
   // Query our userAccounts row for role/displayName/companyName
   const userAccount = useQuery(
-    api["users/queries"].getUserAccount,
-    {},
-    { skip: !isAuthenticated },
+    api.users.queries.getUserAccount,
+    isAuthenticated ? {} : "skip",
   );
 
   const loading = authLoading || (isAuthenticated && workosUser === undefined);
@@ -139,9 +124,8 @@ export function useWorkOSAuth() {
 export function useUserRole() {
   const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
   const userAccount = useQuery(
-    api["users/queries"].getUserAccount,
-    {},
-    { skip: !isAuthenticated },
+    api.users.queries.getUserAccount,
+    isAuthenticated ? {} : "skip",
   );
 
   const loading = authLoading || (isAuthenticated && userAccount === undefined);
