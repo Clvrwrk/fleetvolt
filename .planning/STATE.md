@@ -8,7 +8,7 @@ status: human_verification
 stopped_at: "Phase 20 implementation and local responsive verification complete. Awaiting explicit temporary-tunnel approval for ScreenshotOne and Chris UAT."
 last_updated: "2026-07-12T06:45:00.000Z"
 last_activity: 2026-07-12
-last_activity_desc: Five-route catalog and grouped responsive selector verified locally; ScreenshotOne handoff pending
+last_activity_desc: FLE-19 cinematic homepage, Executive Briefing, and explainable GAP candidates pass locally; linked-repo Vercel/ScreenshotOne approval pending
 progress:
   total_phases: 5
   completed_phases: 1
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
 
-**Current focus:** Phase 20 implementation complete — external ScreenshotOne evidence and Chris UAT pending
+**Current focus:** FLE-19 Monday-demo priority locally implemented at `a86dfa5`; external ScreenshotOne evidence and Chris UAT pending
 
 ## Current Position
 
@@ -90,3 +90,4 @@ Git: `df91c6e` on origin/master (clean)
 | 260709-szr | Finish and validate the active CaaS geospatial and California choropleth WIP | 2026-07-09 | `e64e149`, `227ba15` | complete (live Convex smoke blocked by sandbox DNS) | [quick task](./quick/260709-szr-finish-and-validate-the-active-caas-geos/) |
 | 260711-ol3 | Codify and exercise localhost visual review + Chris handoff | 2026-07-12 | pending | blocked on ScreenshotOne export approval and Linear browser policy | [quick task](./quick/260711-ol3-codify-localhost-visual-review-and-chris/) |
 | 260711-qq9 | Build isolated Docker Desktop FleetVolt review container | 2026-07-11 | `e639fa2` | complete | [quick task](./quick/260711-qq9-build-an-isolated-docker-desktop-fleetvo/) |
+| 260712-2k3 | Build cinematic FleetVolt homepage, Executive Briefing lane, and explainable Class 8 gap candidates | 2026-07-12 | `a86dfa5` | local pass; Vercel/ScreenshotOne approval pending | [quick task](./quick/260712-2k3-build-cinematic-fleetvolt-homepage-execu/) |
