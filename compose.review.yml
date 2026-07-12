@@ -1,0 +1,39 @@
+name: fleetvolt-review
+
+services:
+  web:
+    image: fleetvolt/review:${FLEETVOLT_REVIEW_TAG:-local}
+    container_name: fleetvolt-review-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.review
+      args:
+        NEXT_PUBLIC_CONVEX_URL: ${NEXT_PUBLIC_CONVEX_URL}
+        NEXT_PUBLIC_CONVEX_SITE_URL: ${NEXT_PUBLIC_CONVEX_SITE_URL:-}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+        NEXT_PUBLIC_GOOGLE_MAP_ID: ${NEXT_PUBLIC_GOOGLE_MAP_ID}
+        NEXT_PUBLIC_GOOGLE_MAP_ID_MONOCHROME: ${NEXT_PUBLIC_GOOGLE_MAP_ID_MONOCHROME:-}
+        NEXT_PUBLIC_WORKOS_CLIENT_ID: ${NEXT_PUBLIC_WORKOS_CLIENT_ID:-}
+        NEXT_PUBLIC_WORKOS_REDIRECT_URI: ${NEXT_PUBLIC_WORKOS_REDIRECT_URI:-}
+        NEXT_PUBLIC_APP_URL: http://localhost:${FLEETVOLT_REVIEW_PORT:-3000}
+    env_file:
+      - path: ./apps/web/.env.local
+        required: true
+    environment:
+      FLEETVOLT_E2E: "1"
+      PORT: "3000"
+      NEXT_PUBLIC_APP_URL: http://localhost:${FLEETVOLT_REVIEW_PORT:-3000}
+    ports:
+      - "${FLEETVOLT_REVIEW_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    init: true
+    restart: unless-stopped
