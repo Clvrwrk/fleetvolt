@@ -596,11 +596,11 @@ Plans:
 4. Selecting a catalog route immediately restores its road geometry and shows a compact ROAD / TRAFFIC / CHARGE manifest; amenity detail remains outside the selector.
 5. Selector and manifest pass Desktop 1440x900, iPad 1024x1366, and Mobile 390x844 visual/interaction gates, keyboard focus, and honest empty/loading states.
 
-**Plans**: 2 planned
+**Plans**: 2/2 plans complete; human visual verification pending
 
 Plans:
-- [ ] 20-01-PLAN.md — Catalog schema, policy, query, one-at-a-time precompute action, and five-route Alpha seed
-- [ ] 20-02-PLAN.md — Grouped Preconfigured/Recent selector, route manifest, responsive interaction, and visual verification
+- [x] 20-01-PLAN.md — Catalog schema, policy, query, one-at-a-time precompute action, and five-route Alpha seed (completed 2026-07-11)
+- [x] 20-02-PLAN.md — Grouped Preconfigured/Recent selector, route manifest, responsive interaction, and local visual verification (completed 2026-07-11; ScreenshotOne/Chris UAT pending)
 
 ### Phase 21: Overlapping Route Chooser
 

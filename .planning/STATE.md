@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Persistent Route Intelligence
-current_phase: 19
-current_phase_name: road-level-route-intelligence
-status: phase_complete
-stopped_at: "Phase 19 complete. Next: plan Phase 20 Freight POI Route Catalog."
-last_updated: "2026-07-12T04:54:00.000Z"
+current_phase: 20
+current_phase_name: freight-poi-route-catalog
+status: human_verification
+stopped_at: "Phase 20 implementation and local responsive verification complete. Awaiting explicit temporary-tunnel approval for ScreenshotOne and Chris UAT."
+last_updated: "2026-07-12T06:45:00.000Z"
 last_activity: 2026-07-12
-last_activity_desc: Seven-day road-level intelligence snapshots verified refresh then database hit without changing geometry cache
+last_activity_desc: Five-route catalog and grouped responsive selector verified locally; ScreenshotOne handoff pending
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 20
 ---
 
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md
 
 **Core value:** A planner or analyst can configure a realistic POLB drayage + inland corridor scenario, run physics-based simulation, see recommended charging stops with transparent assumptions, compare scenarios, and export a defensible report they trust for client or stakeholder decisions.
 
-**Current focus:** Phase 19 complete — next is Phase 20 Freight POI Route Catalog
+**Current focus:** Phase 20 implementation complete — external ScreenshotOne evidence and Chris UAT pending
 
 ## Current Position
 
-Phase: 19 (road-level-route-intelligence) — complete
-Status: Seven-day route intelligence and provenance receipts verified
-Last activity: 2026-07-12 — live refresh, database hit, geometry isolation, Docker, and responsive regression passed
+Phase: 20 (freight-poi-route-catalog) — human verification
+Status: Five promoted routes, grouped selector, manifest, Docker, and responsive local review passed
+Last activity: 2026-07-12 — desktop/iPad/mobile route focus passed; temporary public preview not yet authorized
 
 ## Shipped phases (summaries present)
 
@@ -56,7 +56,7 @@ Last activity: 2026-07-12 — live refresh, database hit, geometry isolation, Do
 
 ## Pending Todos
 
-- Plan and execute Phase 20 Freight POI Route Catalog
+- Complete Phase 20 ScreenshotOne evidence and Chris localhost/public-preview UAT
 - Invite testers via WorkOS; share docs/TESTING.md
 - Finish Phase 17 UAT Test 4–9 with logged-in walkthroughs
 - Confirm OPENAI_API_KEY on Convex prod if AI bar should hit live LLM
@@ -71,6 +71,7 @@ Last activity: 2026-07-12 — live refresh, database hit, geometry isolation, Do
 - Parallel Supabase database project — re-validate UAT when integrated
 - Playwright map-workbench e2e was flaky under EMFILE; re-run recommended
 - Google Maps: apex `https://fleetvolt.network/*` must stay on browser key (subdomain wildcard alone is insufficient)
+- ScreenshotOne cannot reach private localhost; temporary public tunnel requires explicit action-time approval
 
 ## Session Continuity
 
