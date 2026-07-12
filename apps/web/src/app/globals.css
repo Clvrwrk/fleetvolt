@@ -188,6 +188,43 @@ body {
   font-family: var(--font-sans);
 }
 
+/* ── FleetVolt live brand lockup ────────────────────────────────────────── */
+.fv-brand {
+  --fv-brand-blue: #4c8fb8;
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  color: #f4f6f8;
+  line-height: 1;
+}
+
+.fv-brand-mark { flex: 0 0 auto; overflow: visible; }
+.fv-brand-orbit { fill: none; stroke: #8a8a93; stroke-width: .75; opacity: .3; }
+.fv-brand-tracer { fill: none; stroke: var(--fv-brand-blue); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 42 235; transform-origin: 56px 60px; animation: fv-brand-ring 1.2s linear infinite; }
+.fv-brand-corner { fill: none; stroke: #8a8a93; stroke-width: 1.5; opacity: .6; }
+.fv-brand-bolt { fill: var(--fv-brand-blue); transform-origin: 56px 60px; animation: fv-brand-bolt 60s ease-in-out infinite; }
+.fv-brand-copy { display: flex; min-width: 0; flex-direction: column; justify-content: center; }
+.fv-brand-wordmark { white-space: nowrap; font-family: var(--font-arcline), var(--font-inter), ui-sans-serif, system-ui, sans-serif; font-weight: 700; letter-spacing: .055em; }
+.fv-brand-wordmark > span { color: var(--fv-brand-blue); }
+.fv-brand-tagline { margin-top: .35em; white-space: nowrap; color: #8a8a93; font-family: var(--font-mono); font-weight: 700; letter-spacing: .29em; }
+
+.fv-brand--compact .fv-brand-mark { width: 28px; height: 30px; }
+.fv-brand--standard { gap: 7px; }
+.fv-brand--standard .fv-brand-mark { width: 34px; height: 36px; }
+.fv-brand--standard .fv-brand-wordmark { font-size: 18px; }
+.fv-brand--standard .fv-brand-tagline { font-size: 4.2px; }
+.fv-brand--rail { gap: 11px; justify-content: flex-start; }
+.fv-brand--rail .fv-brand-mark { width: 62px; height: 66px; }
+.fv-brand--rail .fv-brand-wordmark { font-size: clamp(24px, 2.1vw, 31px); }
+.fv-brand--rail .fv-brand-tagline { font-size: clamp(5px, .46vw, 6.4px); }
+
+@keyframes fv-brand-ring { to { transform: rotate(360deg); } }
+@keyframes fv-brand-bolt { 0% { transform: rotate(0deg); } 1.666% { transform: rotate(360deg); } 100% { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-brand-tracer, .fv-brand-bolt { animation: none; }
+}
+
 /* ── FleetVolt public command deck / FLE-19 ─────────────────────────────── */
 .fv-home-shell {
   --home-carbon: #07090c;

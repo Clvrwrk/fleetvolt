@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   LayoutDashboard,
   Route,
@@ -13,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRoleNav, type NavItem } from "@/components/nav/use-role-nav";
+import { FleetVoltBrand } from "@/components/design/fleetvolt-brand";
 import { cn } from "@/lib/utils";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import { layersForMode } from "./role-layers";
@@ -65,14 +65,7 @@ export function WorkbenchRailNav() {
         aria-label="FleetVolt home"
         data-testid="workbench-rail-logo"
       >
-        <Image
-          src="/fleetvolt-logo-horizontal-light.svg"
-          alt="FleetVolt"
-          width={320}
-          height={72}
-          priority
-          className="h-16 w-full object-contain object-left sm:h-[4.5rem]"
-        />
+        <FleetVoltBrand size="rail" className="w-full" />
       </Link>
 
       <nav className="flex flex-col gap-0.5 px-3 py-3" aria-label="Role navigation">

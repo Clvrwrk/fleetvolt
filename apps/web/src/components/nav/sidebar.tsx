@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -23,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { CatalogSidebarFilters } from "@/components/catalog/catalog-filters";
+import { FleetVoltBrand } from "@/components/design/fleetvolt-brand";
 import {
   loadSavedFleets,
   SAVED_FLEETS_EVENT,
@@ -217,24 +217,9 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
       >
         <Link href="/" className="flex items-center no-underline">
           {effectiveCollapsed ? (
-            // Compact: icon-only logo (vertical variant fits 56px)
-            <Image
-              src="/fleetvolt-logo-vertical-light.svg"
-              alt="FleetVolt"
-              width={28}
-              height={28}
-              priority
-            />
+            <FleetVoltBrand size="compact" />
           ) : (
-            // Expanded: horizontal light logo on dark Graphite bg
-            <Image
-              src="/fleetvolt-logo-horizontal-light.svg"
-              alt="FleetVolt"
-              width={130}
-              height={28}
-              priority
-              style={{ filter: "brightness(0) invert(1)" }}
-            />
+            <FleetVoltBrand size="standard" />
           )}
         </Link>
       </div>
