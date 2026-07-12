@@ -97,7 +97,7 @@ function CatalogFilterDrawer({
       id={`catalog-filter-drawer-${definition.key}`}
       data-testid="catalog-filter-drawer"
       className={cn(
-        "fixed inset-x-2 top-2 z-[70] flex h-fit max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-sm border border-[#42a5d9]/35 bg-[#0b1016]/[0.98] shadow-[0_24px_80px_rgba(0,0,0,0.56)] backdrop-blur-xl transition-[transform,opacity] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transform-none motion-reduce:transition-none md:left-[268px] md:right-auto md:top-[64px] md:max-h-[calc(100dvh-76px)] md:w-[var(--catalog-drawer-width)] md:max-w-[calc(100vw-280px)]",
+        "fixed inset-x-2 top-0 z-[70] flex h-fit max-h-[100dvh] flex-col overflow-hidden rounded-sm border border-[#42a5d9]/35 bg-[#0b1016]/[0.98] shadow-[0_24px_80px_rgba(0,0,0,0.56)] backdrop-blur-xl transition-[transform,opacity] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transform-none motion-reduce:transition-none md:left-[268px] md:right-auto md:top-[64px] md:max-h-[calc(100dvh-76px)] md:w-[var(--catalog-drawer-width)] md:max-w-[calc(100vw-280px)]",
         visible
           ? "translate-x-0 opacity-100"
           : "pointer-events-none -translate-x-10 opacity-0",

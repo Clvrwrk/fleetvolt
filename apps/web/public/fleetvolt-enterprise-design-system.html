@@ -7,12 +7,12 @@
 <style>@font-face{font-family:"Arcline";src:url("/Arcline-Regular.ttf") format("truetype");font-weight:400;font-display:swap}@font-face{font-family:"Arcline";src:url("/Arcline-Bold.ttf") format("truetype");font-weight:600 900;font-display:swap}@font-face{font-family:"Arcline";src:url("/Arcline-Light.ttf") format("truetype");font-weight:300;font-display:swap}@font-face{font-family:"Brokline";src:url("/Brokline-Regular.otf") format("opentype");font-weight:400;font-display:swap}</style>
 <style>
 :root{
-  --char:#07090C; --ember:#42A5D9; --ember-deep:#20698E; --cream:#F3F7FA;
+  --char:#07090C; --ember:#42A5D9; --ember-deep:#175574; --cream:#F3F7FA;
   --char-70:#536573; --char-40:#8A9AA6; --hairline:#D2DDE4;
   --bg:var(--cream); --fg:var(--char); --muted:var(--char-70); --rule:var(--hairline);
   --accent-text:var(--ember-deep);
   --font:"Arcline","Inter","Helvetica Neue",Arial,sans-serif;
-  --t--1:.75rem; --t0:1rem; --t1:1.27rem; --t2:1.62rem; --t3:2.06rem;
+  --t--1:1rem; --t0:1.125rem; --t1:1.27rem; --t2:1.62rem; --t3:2.06rem;
   --t4:2.62rem; --t5:3.33rem; --t6:4.24rem; --t7:6.85rem;
   --s-3xs:4px; --s-2xs:8px; --s-xs:16px; --s-sm:24px; --s-md:40px;
   --s-lg:64px; --s-xl:104px; --s-2xl:168px;
@@ -28,8 +28,8 @@
   --sh-sm:0 1px 2px rgba(0,0,0,.4); --sh-md:0 4px 16px rgba(0,0,0,.45); --sh-lg:0 16px 40px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(--t0);line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
-.wrap{max-width:var(--content);margin:0 auto;padding:0 var(--s-sm)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(--t0);line-height:1.6;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%;transition:background .3s,color .3s}
+.wrap{max-width:var(--content);min-width:0;margin:0 auto;padding:0 var(--s-sm)}
 .skip-link{position:fixed;z-index:100;top:8px;left:8px;transform:translateY(-150%);background:var(--fg);color:var(--bg);font-weight:700;padding:10px 14px;border-radius:var(--radius)}
 .skip-link:focus{transform:translateY(0);outline:2px solid var(--ember);outline-offset:2px}
 h1,h2,h3,h4{line-height:1.15;letter-spacing:-.02em;margin:0}
@@ -38,7 +38,7 @@ h3{font-size:var(--t2);font-weight:700;margin:var(--s-md) 0 var(--s-xs)}
 h4{font-size:var(--t1);font-weight:700;margin:var(--s-sm) 0 var(--s-2xs)}
 p{margin:0 0 var(--s-xs);max-width:68ch}
 a{color:var(--accent-text)}
-code{font-family:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;font-size:.875em;background:color-mix(in srgb,var(--fg) 7%,transparent);padding:2px 6px;border-radius:4px}
+code{font-family:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;font-size:1em;background:color-mix(in srgb,var(--fg) 7%,transparent);padding:2px 6px;border-radius:4px}
 .eyebrow{font-size:var(--t--1);letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--accent-text);margin-bottom:var(--s-2xs)}
 .muted{color:var(--muted)}
 section{padding:var(--s-xl) 0;border-top:1px solid var(--rule)}
@@ -77,9 +77,9 @@ header{padding:var(--s-lg) 0 var(--s-md)}
 .sw .meta b{display:block;font-size:var(--t0);margin-bottom:2px}
 .sw .meta code{display:inline-block;margin:2px 4px 2px 0}
 
-table{width:100%;border-collapse:collapse;font-size:var(--t--1);font-variant-numeric:tabular-nums;margin:var(--s-xs) 0}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule)}
-th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.7rem;color:var(--muted)}
+table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:var(--t--1);font-variant-numeric:tabular-nums;margin:var(--s-xs) 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);overflow-wrap:anywhere}
+th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:1rem;color:var(--muted)}
 .pass{color:#1E7A46;font-weight:700}
 [data-theme="dark"] .pass{color:#5BC98B}
 .fail{color:#B3261E;font-weight:700}
@@ -89,8 +89,10 @@ th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.7rem
 .callout.warn{border-left-color:#B3261E;background:color-mix(in srgb,#B3261E 8%,transparent)}
 .callout p:last-child{margin-bottom:0}
 
-.typerow{display:flex;align-items:baseline;gap:var(--s-sm);padding:var(--s-2xs) 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.typerow{display:flex;min-width:0;align-items:baseline;gap:var(--s-sm);padding:var(--s-2xs) 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
 .typerow .lbl{font-size:var(--t--1);color:var(--muted);min-width:150px;font-variant-numeric:tabular-nums}
+.typerow .spec{min-width:0;max-width:100%;overflow-wrap:anywhere}
+pre{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
 .typerow .spec{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;letter-spacing:-.02em}
 
 .spacebar{background:var(--ember);height:16px;border-radius:2px}
@@ -104,15 +106,15 @@ th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.7rem
 .badge{display:inline-flex;align-items:center;gap:6px;font-size:var(--t--1);font-weight:700;color:var(--accent-text);letter-spacing:.04em}
 
 .prompt{position:relative;background:color-mix(in srgb,var(--fg) 5%,transparent);border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-xs);padding-right:90px;font-size:var(--t--1);line-height:1.6;margin-bottom:var(--s-xs)}
-.prompt .n{font-weight:700;color:var(--accent-text);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em;font-size:.7rem}
-.copy{position:absolute;top:8px;right:8px;min-height:44px;font-size:.7rem;font-family:var(--font);font-weight:700;padding:6px 12px;border-radius:var(--pill);border:1px solid var(--rule);background:var(--bg);color:var(--fg);cursor:pointer}
+.prompt .n{font-weight:700;color:var(--accent-text);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em;font-size:1rem}
+.copy{position:absolute;top:8px;right:8px;min-height:44px;font-size:1rem;font-family:var(--font);font-weight:700;padding:6px 12px;border-radius:var(--pill);border:1px solid var(--rule);background:var(--bg);color:var(--fg);cursor:pointer}
 .copy:hover{border-color:var(--ember)}
 .copy:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 
 .clearspace{position:relative;display:inline-block;padding:24px;border:1px dashed var(--ember);border-radius:4px}
 .dont{border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-xs);text-align:center;font-size:var(--t--1)}
 .dont .x{color:#B3261E;font-weight:800;font-size:var(--t1);display:block}
-.confirm{background:color-mix(in srgb,var(--ember) 14%,transparent);border-radius:4px;padding:1px 6px;font-weight:700;font-size:.85em;color:var(--accent-text)}
+.confirm{background:color-mix(in srgb,var(--ember) 14%,transparent);border-radius:4px;padding:1px 6px;font-weight:700;font-size:1em;color:var(--accent-text)}
 footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:var(--muted);font-size:var(--t--1)}
 .footer-links{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
 .footer-links a{min-height:44px;display:inline-flex;align-items:center}
@@ -171,7 +173,7 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
           </svg>
           <div>
             <div class="wm">FLEETVOLT</div>
-            <div class="desc" style="color:#20698E">EV freight intelligence</div>
+            <div class="desc" style="color:#175574">EV freight intelligence</div>
           </div>
         </div>
       </div>
@@ -251,7 +253,7 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <div class="grid g3" style="margin-top:var(--s-md)">
     <div class="sw"><div class="chip" style="background:#07090C"></div><div class="meta"><b>Carbon</b><code>#07090C</code><code>7,9,12</code><span class="muted">Command canvas. Deepest chrome.</span></div></div>
     <div class="sw"><div class="chip" style="background:#42A5D9"></div><div class="meta"><b>Electric</b><code>#42A5D9</code><code>66,165,217</code><span class="muted">Primary action, energy, selected state.</span></div></div>
-    <div class="sw"><div class="chip" style="background:#20698E"></div><div class="meta"><b>Electric Deep</b><code>#20698E</code><code>32,105,142</code><span class="muted">Accessible electric text on light surfaces.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#175574"></div><div class="meta"><b>Electric Deep</b><code>#175574</code><code>23,85,116</code><span class="muted">Accessible electric text on light surfaces.</span></div></div>
     <div class="sw"><div class="chip" style="background:#F3F7FA;border-bottom:1px solid var(--hairline)"></div><div class="meta"><b>Signal White</b><code>#F3F7FA</code><code>243,247,250</code><span class="muted">Report and light-data surface.</span></div></div>
     <div class="sw"><div class="chip" style="background:#121820"></div><div class="meta"><b>Gunmetal</b><code>#121820</code><span class="muted">Raised command surface.</span></div></div>
     <div class="sw"><div class="chip" style="background:#202A34"></div><div class="meta"><b>Armor</b><code>#202A34</code><span class="muted">Interactive and secondary surface.</span></div></div>
@@ -271,7 +273,7 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
 
   <div class="callout warn">
     <p><b>The one trap in this brand.</b> Electric text on Signal White is only <b>2.56:1, a WCAG AA failure</b>. It is acceptable for large graphics and non-text route geometry, not small labels.</p>
-    <p><b>Resolution:</b> the mark and route trace stay Electric. All Electric text under 24px on Signal White uses <b>Electric Deep #20698E</b>. Command Dark keeps plain Electric.</p>
+    <p><b>Resolution:</b> the mark and route trace stay Electric. All Electric text under 24px on Signal White uses <b>Electric Deep #175574</b>. Command Dark keeps plain Electric.</p>
     <p>This is not pedantry. FleetVolt sells defensible analysis to operational and executive buyers. A product that claims precision but fails basic legibility injures the evidence story.</p>
   </div>
 
@@ -302,8 +304,8 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <p>Arcline carries product and brand copy. JetBrains Mono carries telemetry, provenance, coordinates, and system state. Brokline is a controlled campaign signature used only for “OWN THE TRANSITION.”</p>
 
   <div class="callout">
-    <p><b>The golden-ratio problem, solved.</b> A pure φ (1.618) scale is beautiful and <i>practically unusable</i> for UI: 16 → 26 → 42 → 68 leaves no room for the small steps interfaces need.</p>
-    <p>So we scale on <b>√φ = 1.272</b>. Then <b>every second step is exactly φ apart</b> — because (√φ)² = φ. Golden harmony at the macro scale, usable increments at the micro scale, from one coherent system.</p>
+    <p><b>Age-friendly floor, then golden rhythm.</b> FleetVolt serves primarily 40+ engineering and logistics professionals. No readable text or form control may render below 16px; body copy starts at 18px. Above that operational floor, the display scale uses <b>√φ = 1.272</b> so every second step is exactly φ apart.</p>
+    <p>Small space is earned through layout, progressive disclosure, and concise language—never by shrinking labels into microtype. Text must scale to 200% without loss of content or horizontal page scrolling.</p>
   </div>
 
   <div style="margin-top:var(--s-md)">
@@ -314,14 +316,16 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
     <div class="typerow"><span class="lbl">33px · H3</span><span class="spec" style="font-size:var(--t3);font-weight:700">What the route proves</span></div>
     <div class="typerow"><span class="lbl">26px · φ · H4</span><span class="spec" style="font-size:var(--t2);font-weight:700">Traffic, energy, dwell, opportunity</span></div>
     <div class="typerow"><span class="lbl">20px · Lead</span><span class="spec" style="font-size:var(--t1);font-weight:400">Move freight with evidence.</span></div>
-    <div class="typerow"><span class="lbl">16px · Body (base)</span><span class="spec" style="font-size:var(--t0);font-weight:400">FleetVolt models road-level energy demand and charging opportunity.</span></div>
-    <div class="typerow"><span class="lbl">12px · Meta</span><span class="spec" style="font-size:var(--t--1);font-weight:400">PTV route · Caltrans AADT · refreshed 12 Jul 2026</span></div>
+    <div class="typerow"><span class="lbl">18px · Body (primary)</span><span class="spec" style="font-size:var(--t0);font-weight:400">FleetVolt models road-level energy demand and charging opportunity.</span></div>
+    <div class="typerow"><span class="lbl">16px · UI floor</span><span class="spec" style="font-size:var(--t--1);font-weight:400">PTV route · Caltrans AADT · refreshed 12 Jul 2026</span></div>
   </div>
 
   <h3>Rules</h3>
   <table tabindex="0" aria-label="FleetVolt typography rules">
     <tr><th scope="col">Rule</th><th scope="col">Value</th></tr>
     <tr><td>Line height</td><td>Body 1.6 · Headings 1.15 · Display 1.0</td></tr>
+    <tr><td>Absolute floor</td><td>16px / 1rem for labels, captions, telemetry, buttons, inputs, and helper text. Body defaults to 18px / 1.125rem.</td></tr>
+    <tr><td>Scaling</td><td>Use rem/em and support 200% text resize without clipping, lost controls, or horizontal page scrolling.</td></tr>
     <tr><td>Measure</td><td>60–75 characters. Hard cap 80. <code>max-width: 68ch</code></td></tr>
     <tr><td>Letterspacing</td><td>Display/headings −0.02em · Body 0 · ALL-CAPS labels +0.14em</td></tr>
     <tr><td>Case</td><td><b>Sentence case</b> for headings and buttons. Wordmark is <b>always uppercase</b>.</td></tr>
@@ -432,12 +436,13 @@ footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:
   <div class="prompt" style="padding-right:90px">
     <span class="n">CSS custom properties</span>
     <button class="copy" data-copy="css" aria-label="Copy CSS custom properties" aria-live="polite">Copy</button>
-<pre id="css" style="margin:0;white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:.75rem;line-height:1.5">:root{
-  --fv-carbon:#07090C; --fv-electric:#42A5D9; --fv-electric-deep:#20698E;
+<pre id="css" style="margin:0;white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:1rem;line-height:1.5">:root{
+  --fv-carbon:#07090C; --fv-electric:#42A5D9; --fv-electric-deep:#175574;
   --fv-signal-white:#F3F7FA; --fv-gunmetal:#121820; --fv-armor:#202A34;
   --fv-font:"Arcline","Inter",Arial,sans-serif;
   --fv-mono:"JetBrains Mono",ui-monospace,monospace;
-  --fv-text-0:1rem; --fv-text-2:1.62rem;  /* base x phi */
+  --fv-text-floor:1rem; --fv-text-body:1.125rem; /* 40+ readability contract */
+  --fv-text-2:1.62rem;  /* body/display scale */
   --fv-text-4:2.62rem; --fv-text-6:4.24rem; /* phi^2, phi^3 */
   --fv-space-2xs:8px; --fv-space-xs:16px; --fv-space-sm:24px;
   --fv-space-md:40px; --fv-space-lg:64px; --fv-space-xl:104px;

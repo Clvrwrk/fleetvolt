@@ -1,7 +1,13 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-const PUBLIC_SURFACES = ["/", "/role-select", "/briefing", "/catalog"] as const;
+const PUBLIC_SURFACES = [
+  "/",
+  "/role-select",
+  "/briefing",
+  "/catalog",
+  "/fleetvolt-enterprise-design-system.html",
+] as const;
 const INTERNAL_SURFACES = [
   "/fleet",
   "/fleet/setup",
@@ -47,6 +53,50 @@ async function expectNoSeriousAxeViolations(page: Page) {
   ).toEqual([]);
 }
 
+async function expectReadableTextFloor(page: Page, minimumPx = 16) {
+  const failures = await page.evaluate((minimum) => {
+    const visibleText = new Set<Element>();
+    for (const element of document.body.querySelectorAll("*")) {
+      if (element.closest("svg, style, script, noscript, template")) continue;
+      const directText = Array.from(element.childNodes).some(
+        (node) => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()),
+      );
+      if (!directText) continue;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      if (
+        style.display === "none" ||
+        style.visibility === "hidden" ||
+        Number(style.opacity) === 0 ||
+        rect.width === 0 ||
+        rect.height === 0
+      ) {
+        continue;
+      }
+      visibleText.add(element);
+    }
+
+    for (const control of document.querySelectorAll("input, select, textarea")) {
+      const style = getComputedStyle(control);
+      const rect = control.getBoundingClientRect();
+      if (style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0) {
+        visibleText.add(control);
+      }
+    }
+
+    return Array.from(visibleText)
+      .map((element) => ({
+        tag: element.tagName.toLowerCase(),
+        text: element.textContent?.trim().replace(/\s+/g, " ").slice(0, 80) ?? "",
+        className: typeof element.className === "string" ? element.className.slice(0, 160) : "",
+        fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+      }))
+      .filter(({ fontSize }) => fontSize < minimum)
+      .slice(0, 40);
+  }, minimumPx);
+  expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
+}
+
 test.describe("FleetVolt enterprise design compliance", () => {
   for (const viewport of VIEWPORTS) {
     for (const route of PUBLIC_SURFACES) {
@@ -59,6 +109,7 @@ test.describe("FleetVolt enterprise design compliance", () => {
 
         await expect(page.locator("main")).toHaveCount(1);
         await expectNoHorizontalOverflow(page);
+        await expectReadableTextFloor(page);
         await expectNoSeriousAxeViolations(page);
       });
     }
@@ -142,6 +193,19 @@ test.describe("FleetVolt enterprise design compliance", () => {
     await expect(drawer).toHaveAttribute("aria-hidden", "true");
     await expect(drawer).toBeHidden();
   });
+
+  for (const route of ["/", "/catalog", "/fleetvolt-enterprise-design-system.html"] as const) {
+    test(`${route} supports 200% scalable text without horizontal page overflow`, async ({ page }) => {
+      await page.setViewportSize(VIEWPORTS[0]);
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = "200%";
+      });
+      await page.waitForTimeout(100);
+      await expectReadableTextFloor(page, 32);
+      await expectNoHorizontalOverflow(page);
+    });
+  }
 });
 
 test.describe("FleetVolt protected-surface compliance", () => {
@@ -162,6 +226,7 @@ test.describe("FleetVolt protected-surface compliance", () => {
         await page.goto(route, { waitUntil: "domcontentloaded" });
         await expect(page.locator("main"), route).toHaveCount(1);
         await expectNoHorizontalOverflow(page);
+        await expectReadableTextFloor(page);
         await expectNoSeriousAxeViolations(page);
       }
     });
