@@ -58,8 +58,10 @@ function boundsFromCoordinates(
     east = Math.max(east, point.longitude);
     west = Math.min(west, point.longitude);
   }
-  const latPad = Math.max(0.12, (north - south) * 0.22);
-  const lngPad = Math.max(0.12, (east - west) * 0.22);
+  // Keep short drayage routes inspectable. The map canvas adds its own outer
+  // padding, so a large minimum here would shrink a five-mile route to a dot.
+  const latPad = Math.max(0.01, (north - south) * 0.22);
+  const lngPad = Math.max(0.01, (east - west) * 0.22);
   return {
     north: north + latPad,
     south: south - latPad,
@@ -70,8 +72,11 @@ function boundsFromCoordinates(
 
 export function RouteCatalogSelect() {
   const catalog = useQuery(api.routes.catalog.list, {});
-  const [selectedId, setSelectedId] = useState("");
   const [announcement, setAnnouncement] = useState("");
+  const selectedId = useMapWorkbenchStore((state) => {
+    const id = state.draft.metadata?.routeCatalogId;
+    return typeof id === "string" ? id : "";
+  });
   const entries = catalog
     ? [...catalog.preconfigured, ...catalog.recent]
     : [];
@@ -79,11 +84,14 @@ export function RouteCatalogSelect() {
   const isEmpty = catalog !== undefined && entries.length === 0;
 
   function applyRoute(id: string) {
-    setSelectedId(id);
     const entry = entries.find((candidate) => candidate.id === id);
     if (!entry || entry.geometry.coordinates.length < 8) return;
 
     const current = useMapWorkbenchStore.getState();
+    const midpoint =
+      entry.geometry.coordinates[
+        Math.floor(entry.geometry.coordinates.length / 2)
+      ]!;
     useMapWorkbenchStore.setState({
       draft: {
         ...current.draft,
@@ -96,10 +104,22 @@ export function RouteCatalogSelect() {
         },
       },
       routeGeometry: entry.geometry,
+      // Catalog selection is a planning focus, not a permanent filter-profile
+      // edit. Show the selected road truth without statewide asset clutter;
+      // the user's saved layer profile remains intact for the next normal load.
+      activeLayers: ["route"],
       providerWarnings: entry.geometry.warnings ?? [],
       resultCards: [],
       mapAssets: [],
-      selectedAsset: null,
+      selectedAsset: {
+        id: `catalog-route:${entry.requestHash}`,
+        type: "route",
+        label: entry.label,
+        layerId: "route",
+        latitude: midpoint.latitude,
+        longitude: midpoint.longitude,
+        metadata: { requestHash: entry.requestHash, source: "route-catalog" },
+      },
       focusBounds: boundsFromCoordinates(entry.geometry.coordinates),
       caasPhase: "route_analysis",
     });

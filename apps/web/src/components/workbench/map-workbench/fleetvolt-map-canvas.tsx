@@ -380,9 +380,14 @@ function MapCanvasBody({
 
   return (
       <GoogleMap
+      key={
+        focusBounds
+          ? `focus-${focusBounds.north}-${focusBounds.south}-${focusBounds.east}-${focusBounds.west}`
+          : `default-${mode}`
+      }
       mapId={mapId}
       renderingType={RenderingType.VECTOR}
-      defaultBounds={defaultBounds}
+      defaultBounds={focusBounds ? paddedBounds(focusBounds) : defaultBounds}
       gestureHandling="greedy"
       disableDefaultUI
       className="h-full w-full"
