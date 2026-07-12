@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery } from "convex/react";
-import { Check, Loader2, MapPin, Navigation, Search } from "lucide-react";
+import { Check, MapPin, Navigation, Search } from "lucide-react";
+import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { api } from "../../../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import {
@@ -275,7 +276,7 @@ function PlaceInputBody({
           onFocus={() => setIsOpen(true)}
         />
         {isLoadingGoogle ? (
-          <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-[var(--fv-steel)]" />
+          <FleetVoltLoader compact label="Searching places" className="absolute right-3 top-1/2 -translate-y-1/2" />
         ) : value ? (
           <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[var(--fv-signal-green)]" />
         ) : (

@@ -37,7 +37,7 @@ export const WORKBENCH_MODE_CONFIG: Record<WorkbenchMode, WorkbenchModeConfig> =
     description:
       "Contract corridor sizing with yards, chargers, highways, and parking.",
     primaryCta: "Plan Contract",
-    defaultLayers: ["route", "chargers", "fleet-yards", "highways"],
+    defaultLayers: [...ROLE_LAYER_IDS.fleet_contract_plan],
     defaultDraft: {
       vehicleClass: "Class 8 fleet",
     },

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useAction } from "convex/react";
-import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
+import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { api } from "../../../../convex/_generated/api";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
@@ -463,7 +464,7 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
           disabled={isRunning || prompt.trim().length === 0}
           className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--fv-graphite)] px-4 text-sm font-bold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isRunning ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+          {isRunning ? <FleetVoltLoader compact label="Applying map command" /> : <Sparkles size={16} />}
           Apply to map
         </button>
       </form>

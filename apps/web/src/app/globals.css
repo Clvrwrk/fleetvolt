@@ -1107,3 +1107,31 @@ th {
   justify-content: center;
   align-items: flex-start;
 }
+@keyframes fv-loading-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fv-loading-bolt {
+  to { transform: rotate(360deg); }
+}
+
+.fv-loading-ring,
+.fv-loading-bolt {
+  transform-origin: 32px 32px;
+}
+
+.fv-loading-ring {
+  animation: fv-loading-ring 1.2s linear infinite;
+}
+
+.fv-loading-bolt {
+  animation: fv-loading-bolt 1s linear infinite;
+  filter: drop-shadow(0 0 5px rgb(76 143 184 / 45%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-loading-ring,
+  .fv-loading-bolt {
+    animation: none;
+  }
+}

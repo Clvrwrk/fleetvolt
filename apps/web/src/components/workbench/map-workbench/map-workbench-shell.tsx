@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { TechnicalLabel } from "@/components/design/technical-label";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { WorkbenchLeftPanel } from "./workbench-left-panel";
 import { WorkbenchRightPanel } from "./workbench-right-panel";
 import { WorkbenchRailNav } from "./workbench-rail-nav";
 import { WorkbenchBootstrap } from "./workbench-bootstrap";
+import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import type { WorkbenchMode } from "./types";
 
 type MapWorkbenchShellProps = {
@@ -109,14 +110,20 @@ export function MapWorkbenchShell({ mode = "driver_day_plan" }: MapWorkbenchShel
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  useLayoutEffect(() => {
+    const store = useMapWorkbenchStore.getState();
+    if (store.mode !== mode) store.reset(mode);
+  }, [mode]);
+
   useEffect(() => {
+    useMapWorkbenchStore.getState().hydrateLayerProfile(mode);
     const timeoutId = window.setTimeout(() => {
       setInputsOpen(readBool(INPUTS_KEY, true));
       setSummaryOpen(readBool(SUMMARY_KEY, false));
       setMounted(true);
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, []);
+  }, [mode]);
 
   function toggleInputs() {
     setInputsOpen((prev) => {

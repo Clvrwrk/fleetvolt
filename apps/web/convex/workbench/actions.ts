@@ -411,10 +411,40 @@ export const routeGeometry = action({
         { ...request, provider: "ptv" },
         { apiKey: ptvKey },
       );
-      if (result.coordinates.length >= 2) {
+      if (result.coordinates.length >= 8) {
         routeCache.set(requestHash, result);
+        return result;
       }
-      return result;
+
+      // PTV may return an endpoint fallback on provider/profile failures. Use
+      // Google road geometry when available rather than drawing a straight
+      // line and presenting it as a route.
+      const googleKey =
+        process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+      if (googleKey) {
+        const googleResult = await fetchGoogleRouteInternal(
+          { ...request, provider: "google" },
+          googleKey,
+          requestHash,
+        );
+        if (googleResult.coordinates.length >= 8) {
+          const fallback = {
+            ...googleResult,
+            warnings: [
+              ...(result.warnings ?? []),
+              ...(googleResult.warnings ?? []),
+              "PTV road geometry was unavailable — used Google road geometry (not truck-certified).",
+            ],
+          };
+          routeCache.set(requestHash, fallback);
+          return fallback;
+        }
+      }
+      return routeGeometryFallback(
+        request,
+        "Road geometry unavailable from PTV and Google; no route should be drawn",
+        { requestHash },
+      );
     }
 
     if (request.provider === "google") {

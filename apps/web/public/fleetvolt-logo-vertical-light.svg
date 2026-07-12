@@ -1,13 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
   
+  <style>
+    .fv-logo-tracer { transform-origin: 120px 64px; animation: fv-ring 1.2s linear infinite; }
+    .fv-logo-bolt { transform-origin: 120px 64px; animation: fv-bolt 1s linear infinite; }
+    @keyframes fv-ring { to { transform: rotate(360deg); } }
+    @keyframes fv-bolt { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .fv-logo-tracer, .fv-logo-bolt { animation: none; } }
+  </style>
   <g transform="translate(66,8)">
     <circle cx="54" cy="56" r="42" fill="none" stroke="#8A8A93" stroke-width="0.75" opacity="0.3"></circle>
+    <circle class="fv-logo-tracer" cx="54" cy="56" r="42" fill="none" stroke="#4C8FB8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="40 225"></circle>
     <path d="M14,12 L14,24 M14,12 L26,12" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
     <path d="M94,12 L94,24 M94,12 L82,12" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
     <path d="M14,100 L14,88 M14,100 L26,100" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
     <path d="M94,100 L94,88 M94,100 L82,100" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
-    <path d="M61,13 L33,60 L50,60 L44,99 L75,46 L56,46 Z" fill="#4C8FB8"></path>
+    <path class="fv-logo-bolt" d="M61,13 L33,60 L50,60 L44,99 L75,46 L56,46 Z" fill="#4C8FB8"></path>
   </g>
-  <text x="120" y="172" text-anchor="middle" font-family="Inter, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="2.5" fill="#141416">FLEET<tspan fill="#4C8FB8">VOLT</tspan></text>
+  <text x="120" y="172" text-anchor="middle" font-family="Inter, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="2.5" fill="#F4F6F8">FLEET<tspan fill="#4C8FB8">VOLT</tspan></text>
   <text x="120" y="198" text-anchor="middle" font-family="&#39;JetBrains Mono&#39;, &#39;Courier New&#39;, monospace" font-size="9" letter-spacing="3.2" fill="#8A8A93">EV FREIGHT INTELLIGENCE</text>
 </svg>

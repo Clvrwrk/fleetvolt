@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { X } from "lucide-react";
 import { assessRouteProximity } from "@/lib/maps/route-proximity";
 import { cn } from "@/lib/utils";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
@@ -43,10 +44,12 @@ function metadataRows(metadata: Record<string, unknown> | undefined) {
 
 export function SelectedAssetCard({ selection, className }: SelectedAssetCardProps) {
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
+  const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
 
   const proximity = useMemo(() => {
     if (
       !selection ||
+      selection.type === "route" ||
       typeof selection.latitude !== "number" ||
       typeof selection.longitude !== "number" ||
       !Number.isFinite(selection.latitude) ||
@@ -85,14 +88,25 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
       )}
       aria-label={`${selection.label} details`}
     >
-      <div>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
         <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--fv-steel)]">
           {formatSelectionType(selection.type)} · {selection.layerId}
         </div>
         <h3 className="mt-1 text-base font-bold leading-tight">{selection.label}</h3>
         <p className="mt-1 text-[10px] text-[var(--fv-steel)]">
-          Tap the map marker again to close
+          Double-click the map item or use Close
         </p>
+        </div>
+        <button
+          type="button"
+          data-testid="selected-asset-card-close"
+          onClick={() => selectAsset(null)}
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-[var(--fv-steel)] transition hover:border-[var(--fv-blueprint-blue)] hover:text-[var(--fv-blueprint-blue)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-blueprint-blue)]"
+          aria-label={`Close ${selection.label} details`}
+        >
+          <X size={16} aria-hidden />
+        </button>
       </div>
 
       {proximity ? (
@@ -140,7 +154,7 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
         </p>
       )}
 
-      {typeof selection.metadata?.carrierHref === "string" ? (
+      {selection.type !== "route" && typeof selection.metadata?.carrierHref === "string" ? (
         <a
           href={selection.metadata.carrierHref}
           data-testid="carriers-in-region-link"
@@ -148,7 +162,7 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
         >
           See carriers in this region
         </a>
-      ) : (
+      ) : selection.type !== "route" ? (
         <a
           href={`/caas?view=summary&carriers=1${
             typeof selection.latitude === "number" &&
@@ -161,7 +175,7 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
         >
           See carriers near this point
         </a>
-      )}
+      ) : null}
     </aside>
   );
 }

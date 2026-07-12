@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useRoleNav, type NavItem } from "@/components/nav/use-role-nav";
 import { cn } from "@/lib/utils";
+import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
+import { layersForMode } from "./role-layers";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -47,6 +49,12 @@ function RailLink({ item, active }: { item: NavItem; active: boolean }) {
 /** Compact role nav stacked at the top of the workbench tool rail (above tools). */
 export function WorkbenchRailNav() {
   const { items, loading, activeHref } = useRoleNav();
+  const mode = useMapWorkbenchStore((state) => state.mode);
+  const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
+  const toggleLayer = useMapWorkbenchStore((state) => state.toggleLayer);
+  const iconLayers = layersForMode(mode).filter((layer) =>
+    ["ports", "chargers", "parking", "pois", "fleet-yards", "class8-gaps", "carriers", "caas-zones"].includes(layer.id),
+  );
 
   return (
     <div className="shrink-0 border-b border-white/10">
@@ -64,7 +72,6 @@ export function WorkbenchRailNav() {
           height={72}
           priority
           className="h-16 w-full object-contain object-left sm:h-[4.5rem]"
-          style={{ filter: "brightness(0) invert(1)" }}
         />
       </Link>
 
@@ -84,6 +91,36 @@ export function WorkbenchRailNav() {
             Role tools load after your account role is available.
           </p>
         )}
+
+        {iconLayers.length > 0 ? (
+          <div className="mt-2 border-t border-white/10 pt-2" data-testid="rail-icon-layer-toggles">
+            <div className="mb-1.5 px-1 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--fv-blueprint-blue)]">
+              Visible icon sets
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {iconLayers.map((layer) => {
+                const active = activeLayers.includes(layer.id);
+                return (
+                  <button
+                    key={layer.id}
+                    type="button"
+                    onClick={() => toggleLayer(layer.id)}
+                    aria-pressed={active}
+                    title={layer.hint}
+                    className={cn(
+                      "rounded-full border px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] transition",
+                      active
+                        ? "border-[var(--fv-blueprint-blue)] bg-[var(--fv-blueprint-blue)]/20 text-white"
+                        : "border-white/10 bg-transparent text-[var(--fv-steel)]",
+                    )}
+                  >
+                    {layer.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </nav>
     </div>
   );

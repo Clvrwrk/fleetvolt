@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   APILoadingStatus,
   APIProvider,
@@ -13,12 +13,14 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { MapSoftBoundary } from "@/components/map/map-soft-boundary";
 import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
+import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   useMapWorkbenchStore,
   type CaasGeoLevel,
 } from "@/stores/map-workbench-store";
 import { cn } from "@/lib/utils";
+import { distanceToPolylineM, ON_ROUTE_MAX_M } from "@/lib/maps/route-proximity";
 import { PortAnchors } from "@/components/pulse/port-anchors";
 import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
 import {
@@ -56,27 +58,6 @@ const WC_FREIGHT_BOUNDS: google.maps.LatLngBoundsLiteral = {
   south: 32.3,
   east: -114.0,
   west: -124.6,
-};
-
-const SAMPLE_ROUTES: Record<WorkbenchMode, RouteCoordinate[]> = {
-  driver_day_plan: [
-    { latitude: 33.7542, longitude: -118.2165 },
-    { latitude: 33.9022, longitude: -117.8854 },
-    { latitude: 34.1064, longitude: -117.5931 },
-    { latitude: 34.8958, longitude: -117.0173 },
-  ],
-  fleet_contract_plan: [
-    { latitude: 33.7542, longitude: -118.2165 },
-    { latitude: 34.0556, longitude: -117.1825 },
-    { latitude: 34.5361, longitude: -117.2912 },
-    { latitude: 35.3733, longitude: -119.0187 },
-  ],
-  caas_gap_map: [
-    { latitude: 37.8044, longitude: -122.2712 },
-    { latitude: 37.7397, longitude: -121.4252 },
-    { latitude: 36.7378, longitude: -119.7871 },
-    { latitude: 34.0522, longitude: -118.2437 },
-  ],
 };
 
 const SAMPLE_ASSETS: Record<WorkbenchMode, WorkbenchMapAsset[]> = {
@@ -350,6 +331,8 @@ function MapCanvasBody({
   onSelectPort,
   freightViaFilter,
   caasGeoLevel,
+  routeFocusActive,
+  onSelectRoute,
 }: {
   mode: WorkbenchMode;
   mapId: string;
@@ -370,6 +353,8 @@ function MapCanvasBody({
   onSelectPort: (code: string | null) => void;
   freightViaFilter: "all" | "I-15" | "I-40";
   caasGeoLevel: CaasGeoLevel;
+  routeFocusActive: boolean;
+  onSelectRoute: () => void;
 }) {
   const status = useApiLoadingStatus();
 
@@ -388,7 +373,7 @@ function MapCanvasBody({
         data-testid="map-loading"
         className="flex h-full min-h-[420px] w-full items-center justify-center text-sm text-[var(--fv-steel)]"
       >
-        Loading map…
+        <FleetVoltLoader label="Loading map" />
       </div>
     );
   }
@@ -412,20 +397,20 @@ function MapCanvasBody({
       <CaasChoroplethLayer
         level={caasGeoLevel}
         visible={
-          showGeoRegions && visibleLayer(activeLayers, "geo-regions")
+          !routeFocusActive && showGeoRegions && visibleLayer(activeLayers, "geo-regions")
         }
         selectedAsset={selectedAsset}
         onSelectRegion={selectAsset}
       />
       <FreightFlowLayer
-        visible={showFreightFlows && visibleLayer(activeLayers, "freight-flow")}
+        visible={!routeFocusActive && showFreightFlows && visibleLayer(activeLayers, "freight-flow")}
         viaFilter={freightViaFilter}
       />
       <GeneratorSpokesLayer
-        visible={showGeneratorSpokes}
+        visible={!routeFocusActive && showGeneratorSpokes}
         onSelectGenerator={selectAsset}
       />
-      {showPortAnchors && visibleLayer(activeLayers, "ports") ? (
+      {!routeFocusActive && showPortAnchors && visibleLayer(activeLayers, "ports") ? (
         <PortAnchors
           selectedPortCode={selectedPortCode}
           onSelect={(code) =>
@@ -433,7 +418,7 @@ function MapCanvasBody({
           }
         />
       ) : null}
-      {showPortAnchors ? (
+      {!routeFocusActive && showPortAnchors ? (
         <GeneratorMarkers
           portCode={selectedPortCode}
           visible={Boolean(selectedPortCode)}
@@ -442,6 +427,7 @@ function MapCanvasBody({
       <RouteLayer
         coordinates={routeCoordinates}
         visible={visibleLayer(activeLayers, "route") && showRouteLayer}
+        onSelectRoute={onSelectRoute}
       />
       <DetourLegsLayer
         routeCoordinates={routeCoordinates}
@@ -488,8 +474,6 @@ function layerAssetToMapAsset(asset: {
 }
 
 export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps) {
-  const storeMode = useMapWorkbenchStore((state) => state.mode);
-  const reset = useMapWorkbenchStore((state) => state.reset);
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const selectedAsset = useMapWorkbenchStore((state) => state.selectedAsset);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
@@ -509,12 +493,6 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const caasGeoLevel = useMapWorkbenchStore((state) => state.caasGeoLevel);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (storeMode !== mode) {
-      reset(mode);
-    }
-  }, [mode, reset, storeMode]);
-
   const isCaas = mode === "caas_gap_map";
   const freightOverview = isCaas && caasPhase === "freight_overview";
   // Always paint overview data layers on CaaS (freight/geo/assets) — route
@@ -524,8 +502,8 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const overviewLayers = useMemo(() => {
     if (!showCaasDataLayers) return undefined;
     return activeLayers.filter((id) =>
-      ["chargers", "parking", "carriers"].includes(id),
-    ) as Array<"chargers" | "parking" | "carriers">;
+      ["chargers", "parking", "carriers", "pois", "fleet-yards"].includes(id),
+    ) as Array<"chargers" | "parking" | "carriers" | "pois" | "fleet-yards">;
   }, [activeLayers, showCaasDataLayers]);
 
   const assetBbox = useMemo(() => {
@@ -571,10 +549,10 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
     if (freightOverview) return [];
     const raw = routeGeometry?.coordinates ?? [];
     const valid = raw.filter((c) => isValidLatLng(c.latitude, c.longitude));
-    // CaaS: never invent SAMPLE_ROUTES overlays that hide the data story.
-    if (isCaas) return valid.length >= 2 ? valid : [];
-    return valid.length >= 2 ? valid : SAMPLE_ROUTES[mode];
-  }, [freightOverview, isCaas, mode, routeGeometry?.coordinates]);
+    // A route is only a route when it follows roads. Endpoint previews and
+    // short fallback polylines stay hidden instead of misleading planners.
+    return valid.length >= 8 ? valid : [];
+  }, [freightOverview, routeGeometry?.coordinates]);
 
   const roadSnapStatus =
     freightOverview
@@ -582,7 +560,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
       : routeCoordinates.length >= 8
         ? "road"
         : routeCoordinates.length >= 2
-          ? "preview"
+          ? "loading"
           : "empty";
 
   const assets = useMemo(() => {
@@ -593,6 +571,8 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             ...(live.chargers ?? []).map(layerAssetToMapAsset),
             ...(live.parking ?? []).map(layerAssetToMapAsset),
             ...(live.carriers ?? []).map(layerAssetToMapAsset),
+            ...(live.pois ?? []).map(layerAssetToMapAsset),
+            ...(live.fleetYards ?? []).map(layerAssetToMapAsset),
           ]
         : [];
       // Merge Calculate pins (if any) on top of statewide/corridor query pins.
@@ -610,6 +590,44 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
       isValidLatLng(asset.latitude, asset.longitude),
     );
   }, [mapAssets, mode, overviewAssetsQuery?.assets, showCaasDataLayers]);
+  const routeFocusActive = selectedAsset?.type === "route";
+  const routeFocusedAssets = useMemo(() => {
+    if (!routeFocusActive || routeCoordinates.length < 8) return assets;
+    const path = routeCoordinates.map((point) => ({
+      lat: point.latitude,
+      lng: point.longitude,
+    }));
+    return assets.filter(
+      (asset) =>
+        distanceToPolylineM(
+          { lat: asset.latitude, lng: asset.longitude },
+          path,
+        ) <= ON_ROUTE_MAX_M,
+    );
+  }, [assets, routeCoordinates, routeFocusActive]);
+
+  const routeProvider = routeGeometry?.provider;
+  const routeDistanceMeters = routeGeometry?.distanceMeters;
+  const selectRoute = useCallback(() => {
+    if (routeCoordinates.length < 8) return;
+    const midpoint = routeCoordinates[Math.floor(routeCoordinates.length / 2)]!;
+    selectAsset({
+      id: `route-${mode}`,
+      type: "route",
+      label: `${routeProvider?.toUpperCase() ?? "Road"} route`,
+      layerId: "route",
+      latitude: midpoint.latitude,
+      longitude: midpoint.longitude,
+      metadata: {
+        provider: routeProvider ?? "unknown",
+        roadPoints: routeCoordinates.length,
+        distanceMiles: routeDistanceMeters
+          ? Math.round((routeDistanceMeters / 1609.344) * 10) / 10
+          : "unavailable",
+        routeFocus: "Only assets within 0.5 miles of this route are shown",
+      },
+    });
+  }, [mode, routeCoordinates, routeDistanceMeters, routeProvider, selectAsset]);
   const defaultBounds =
     mode === "caas_gap_map" ? WC_FREIGHT_BOUNDS : CA_BOUNDS;
 
@@ -648,7 +666,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             mode={mode}
             mapId={MAP_ID}
             routeCoordinates={routeCoordinates}
-            assets={assets}
+            assets={routeFocusedAssets}
             activeLayers={activeLayers}
             selectedAsset={selectedAsset}
             focusBounds={focusBounds}
@@ -672,11 +690,13 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             onSelectPort={setSelectedPortCode}
             freightViaFilter={freightViaFilter}
             caasGeoLevel={caasGeoLevel}
+            routeFocusActive={routeFocusActive}
+            onSelectRoute={selectRoute}
           />
         </APIProvider>
       </MapSoftBoundary>
 
-      {showCaasDataLayers && selectedPortCode ? (
+      {showCaasDataLayers && selectedPortCode && !routeFocusActive ? (
         <PortDetailPopup
           portCode={selectedPortCode}
           onClose={() => setSelectedPortCode(null)}
@@ -712,8 +732,18 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
               ? `${roadSnapStatus === "road" ? "Road-snapped" : "Preview"} · freight/geo/assets on`
             : roadSnapStatus === "road"
               ? `Road-snapped · ${routeCoordinates.length} pts`
-              : "Straight-line preview · snapping to roads…"}
+              : "Loading road geometry · no straight-line fallback"}
         </div>
+        {!freightOverview && routeCoordinates.length >= 8 ? (
+          <button
+            type="button"
+            data-testid="route-focus-toggle"
+            onClick={selectRoute}
+            className="pointer-events-auto mt-2 rounded-full border border-[var(--fv-blueprint-blue)]/35 bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--fv-blueprint-blue)] shadow-sm transition hover:bg-[var(--fv-blueprint-blue)] hover:text-white"
+          >
+            {routeFocusActive ? "Show all map layers" : "Focus this route"}
+          </button>
+        ) : null}
       </div>
 
       <div className="absolute bottom-5 right-5 z-10">

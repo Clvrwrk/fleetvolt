@@ -61,6 +61,7 @@ export type MapWorkbenchState = {
   setSelectedPortCode: (code: string | null) => void;
   setFreightViaFilter: (filter: FreightViaFilter) => void;
   setCaasGeoLevel: (level: CaasGeoLevel) => void;
+  hydrateLayerProfile: (mode?: WorkbenchMode) => void;
   applyMapActions: (actions: WorkbenchMapAction[]) => void;
   applyAiResult: (result: WorkbenchAiResult) => void;
 };
@@ -92,7 +93,39 @@ const CAAS_FULL_LAYERS: WorkbenchLayerId[] = [
   "geo-regions",
   "caas-zones",
   "highways",
+  "pois",
+  "fleet-yards",
 ];
+
+const LAYER_PROFILE_STORAGE_KEY = "fleetvolt_workbench_layer_profile_v1";
+
+type LayerProfiles = Partial<Record<WorkbenchMode, WorkbenchLayerId[]>>;
+
+function readLayerProfile(mode: WorkbenchMode): WorkbenchLayerId[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LAYER_PROFILE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LayerProfiles;
+    const allowed = new Set(ROLE_LAYER_IDS[mode]);
+    const saved = parsed[mode]?.filter((id) => allowed.has(id));
+    return saved && saved.length > 0 ? sortLayersForMode(mode, saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLayerProfile(mode: WorkbenchMode, layers: WorkbenchLayerId[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(LAYER_PROFILE_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as LayerProfiles) : {};
+    parsed[mode] = layers;
+    window.localStorage.setItem(LAYER_PROFILE_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Private browsing and locked-down storage keep the in-memory profile.
+  }
+}
 
 function boundsFromPlaces(
   origin?: WorkbenchPlace | null,
@@ -132,16 +165,6 @@ function boundsFromPlaces(
   };
 }
 
-/** Ensure CaaS AI layer patches still include the full data stack the user expects. */
-function ensureCaasFullLayers(
-  mode: WorkbenchMode,
-  layers: WorkbenchLayerId[],
-): WorkbenchLayerId[] {
-  if (mode !== "caas_gap_map") return layers;
-  const merged = new Set<WorkbenchLayerId>([...layers, ...CAAS_FULL_LAYERS]);
-  return sortLayersForMode(mode, [...merged]);
-}
-
 function cloneDraft(draft: WorkbenchPlanDraft): WorkbenchPlanDraft {
   const cloned: WorkbenchPlanDraft = { ...draft };
 
@@ -166,10 +189,14 @@ function initialStateForMode(mode: WorkbenchMode) {
   return {
     mode,
     draft: cloneDraft(config.defaultDraft),
+    // First visit: every icon set available to the role is visible. Returning
+    // visits restore that role's last layer profile.
     activeLayers:
-      mode === "caas_gap_map"
-        ? sortLayersForMode(mode, CAAS_FULL_LAYERS.filter((id) => id !== "route"))
-        : [...config.defaultLayers],
+      readLayerProfile(mode) ??
+      sortLayersForMode(
+        mode,
+        mode === "caas_gap_map" ? CAAS_FULL_LAYERS : ROLE_LAYER_IDS[mode],
+      ),
     selectedAsset: null,
     routeGeometry: null,
     mapAssets: [],
@@ -301,16 +328,23 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
         ? state.activeLayers.filter((activeLayer) => activeLayer !== layerId)
         : sortLayersForMode(state.mode, [...state.activeLayers, layerId]);
 
+      writeLayerProfile(state.mode, nextLayers);
       return { activeLayers: nextLayers };
     });
   },
   setLayers: (layerIds) => {
-    set((state) => ({
-      activeLayers: sortLayersForMode(
+    set((state) => {
+      const activeLayers = sortLayersForMode(
         state.mode,
         layerIds.filter((layer) => ALLOWED_LAYERS.has(layer)),
-      ),
-    }));
+      );
+      writeLayerProfile(state.mode, activeLayers);
+      return { activeLayers };
+    });
+  },
+  hydrateLayerProfile: (mode = get().mode) => {
+    const saved = readLayerProfile(mode);
+    if (saved) set({ activeLayers: saved });
   },
   selectAsset: (selection) => {
     set((state) => {
@@ -350,17 +384,14 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
         // Keep freight / geo / assets on — route analysis adds focus, it does not blank the map.
         return {
           caasPhase: phase,
-          activeLayers: ensureCaasFullLayers(state.mode, state.activeLayers),
+          activeLayers: state.activeLayers,
           focusBounds,
         };
       }
       return {
         caasPhase: phase,
         focusBounds: null,
-        activeLayers: ensureCaasFullLayers(
-          state.mode,
-          state.activeLayers.filter((id) => id !== "route"),
-        ),
+        activeLayers: state.activeLayers,
       };
     });
   },
@@ -368,6 +399,9 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
     for (const action of actions) {
       const patch = applyMapAction(get(), action);
       if (Object.keys(patch).length > 0) {
+        if (patch.activeLayers) {
+          writeLayerProfile(get().mode, patch.activeLayers);
+        }
         set(patch);
       }
     }
@@ -428,15 +462,12 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
       afterPhase.mode === "caas_gap_map" &&
       afterPhase.caasPhase === "route_analysis";
 
-    let nextLayers = result.activeLayers
+    const nextLayers = result.activeLayers
       ? sortLayersForMode(
           afterPhase.mode,
           result.activeLayers.filter((layer) => ALLOWED_LAYERS.has(layer)),
         )
       : undefined;
-    if (nextLayers && afterPhase.mode === "caas_gap_map") {
-      nextLayers = ensureCaasFullLayers(afterPhase.mode, nextLayers);
-    }
 
     const routeFocus =
       inRouteAnalysis && (aiBuiltRoute || result.routeGeometry)
@@ -447,6 +478,10 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
               afterPhase.routeGeometry?.coordinates,
           )
         : undefined;
+
+    if (nextLayers) {
+      writeLayerProfile(afterPhase.mode, nextLayers);
+    }
 
     set({
       ...(cards ? { resultCards: cards } : {}),

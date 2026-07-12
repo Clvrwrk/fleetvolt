@@ -170,8 +170,9 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
           coreCorridorId: corridor.id,
         },
       },
-      // Temporary straight line only — road snap replaces this immediately.
-      routeGeometry: endpointGeometry(corridor.origin, corridor.destination),
+      // Never draw endpoint-to-endpoint geometry as a route. The map stays in
+      // an honest loading state until a road provider returns a real polyline.
+      routeGeometry: null,
       providerWarnings: [
         `${corridor.label} preview (${corridor.meta}). Snapping to Google roads…`,
       ],
@@ -243,8 +244,9 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
                 "Google Routes fell back to endpoint geometry (check API key / Routes API enablement)",
             );
             useMapWorkbenchStore.setState({
+              routeGeometry: null,
               providerWarnings: [
-                "Road snap incomplete — showing straight-line preview.",
+                "Road snap incomplete — no route drawn until road geometry is available.",
                 ...(snapped.warnings ?? []),
               ],
             });
@@ -274,8 +276,9 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
         lastError instanceof Error ? lastError.message : String(lastError ?? "unknown error");
       console.error("[workbench] road snap failed after retries", lastError);
       useMapWorkbenchStore.setState({
+        routeGeometry: null,
         providerWarnings: [
-          `Road snap failed — straight line is NOT the drive path. ${message}`,
+          `Road snap failed — no route is drawn because a straight line is not a drive path. ${message}`,
         ],
       });
     })();

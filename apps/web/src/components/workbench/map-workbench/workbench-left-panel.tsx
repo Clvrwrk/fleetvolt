@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, Filter, Loader2, MapPinned, Route, SlidersHorizontal, Zap } from "lucide-react";
+import { AlertTriangle, Filter, MapPinned, Route, SlidersHorizontal, Zap } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { TechnicalLabel } from "@/components/design/technical-label";
+import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { cn } from "@/lib/utils";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import type { WorkbenchMode, WorkbenchResultCard } from "./types";
@@ -74,7 +75,6 @@ export function WorkbenchLeftPanel({
   const [runError, setRunError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [activeFilters, setActiveFilters] = useState<LayerFilterId[]>([]);
-  const storeMode = useMapWorkbenchStore((state) => state.mode);
   const draft = useMapWorkbenchStore((state) => state.draft);
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const applyDraftPatch = useMapWorkbenchStore((state) => state.applyDraftPatch);
@@ -154,12 +154,6 @@ export function WorkbenchLeftPanel({
   );
 
   useEffect(() => {
-    if (storeMode !== mode) {
-      useMapWorkbenchStore.getState().reset(mode);
-    }
-  }, [mode, storeMode]);
-
-  useEffect(() => {
     if (mode !== "caas_gap_map") return;
 
     if (caasPhase === "route_analysis" && caasRouteOpportunity) {
@@ -203,22 +197,10 @@ export function WorkbenchLeftPanel({
     setIsRunning(true);
     try {
       setCaasPhase("route_analysis");
-      // Immediate preview; then snap to roads like driver/fleet.
+      // Keep the map honest while the provider builds road geometry.
       useMapWorkbenchStore.setState({
-        routeGeometry: {
-          provider: "ptv",
-          coordinates: [
-            {
-              latitude: draft.origin.latitude,
-              longitude: draft.origin.longitude,
-            },
-            {
-              latitude: draft.destination.latitude,
-              longitude: draft.destination.longitude,
-            },
-          ],
-          warnings: ["Snapping corridor to roads…"],
-        },
+        routeGeometry: null,
+        providerWarnings: ["Loading road geometry…"],
       });
 
       const geometry = await fetchRouteGeometry({
@@ -261,8 +243,9 @@ export function WorkbenchLeftPanel({
         focus.east = east + lngPad;
         focus.west = west - lngPad;
       }
+      const usableGeometry = (geometry.coordinates?.length ?? 0) >= 8;
       useMapWorkbenchStore.setState({
-        routeGeometry: geometry,
+        routeGeometry: usableGeometry ? geometry : null,
         providerWarnings: geometry.warnings ?? [],
         focusBounds: focus,
         caasPhase: "route_analysis",
@@ -281,19 +264,10 @@ export function WorkbenchLeftPanel({
   function applyQuickRoute(route: (typeof quickRoutes)[number]) {
     applyDraftPatch({ origin: route.origin, destination: route.destination });
     setCaasPhase("route_analysis");
-    // Immediate straight-line preview; WorkbenchBootstrap upgrades to Google roads.
+    // WorkbenchBootstrap draws only after a road provider returns a real path.
     useMapWorkbenchStore.setState({
-      routeGeometry: {
-        provider: "ptv",
-        coordinates: [
-          { latitude: route.origin.latitude, longitude: route.origin.longitude },
-          {
-            latitude: route.destination.latitude,
-            longitude: route.destination.longitude,
-          },
-        ],
-        warnings: ["Snapping corridor to roads…"],
-      },
+      routeGeometry: null,
+      providerWarnings: ["Loading road geometry…"],
       focusBounds: {
         north:
           Math.max(route.origin.latitude, route.destination.latitude) + 0.35,
@@ -940,7 +914,7 @@ export function WorkbenchLeftPanel({
           disabled={isRunning || !canRunPlan}
           className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--fv-accent)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isRunning ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+          {isRunning ? <FleetVoltLoader compact label="Calculating plan" /> : <Zap size={16} />}
           {mode === "caas_gap_map"
             ? isRunning
               ? "Building route…"

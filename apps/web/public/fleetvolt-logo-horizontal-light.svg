@@ -1,13 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 120">
   
+  <style>
+    .fv-logo-tracer { transform-origin: 56px 60px; animation: fv-ring 1.2s linear infinite; }
+    .fv-logo-bolt { transform-origin: 56px 60px; animation: fv-bolt 1s linear infinite; }
+    @keyframes fv-ring { to { transform: rotate(360deg); } }
+    @keyframes fv-bolt { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .fv-logo-tracer, .fv-logo-bolt { animation: none; } }
+  </style>
   <g>
     <circle cx="56" cy="60" r="44" fill="none" stroke="#8A8A93" stroke-width="0.75" opacity="0.3"></circle>
+    <circle class="fv-logo-tracer" cx="56" cy="60" r="44" fill="none" stroke="#4C8FB8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="42 235"></circle>
     <path d="M14,14 L14,26 M14,14 L26,14" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
     <path d="M98,14 L98,26 M98,14 L86,14" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
     <path d="M14,106 L14,94 M14,106 L26,106" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
     <path d="M98,106 L98,94 M98,106 L86,106" stroke="#8A8A93" stroke-width="1.5" fill="none" opacity="0.6"></path>
-    <path d="M63,16 L34,64 L52,64 L46,104 L78,50 L58,50 Z" fill="#4C8FB8"></path>
+    <path class="fv-logo-bolt" d="M63,16 L34,64 L52,64 L46,104 L78,50 L58,50 Z" fill="#4C8FB8"></path>
   </g>
-  <text x="126" y="68" font-family="Inter, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="3" fill="#141416">FLEET<tspan fill="#4C8FB8">VOLT</tspan></text>
+  <text x="126" y="68" font-family="Inter, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="3" fill="#F4F6F8">FLEET<tspan fill="#4C8FB8">VOLT</tspan></text>
   <text x="129" y="94" font-family="&#39;JetBrains Mono&#39;, &#39;Courier New&#39;, monospace" font-size="10.5" letter-spacing="4.2" fill="#8A8A93">EV FREIGHT INTELLIGENCE</text>
 </svg>

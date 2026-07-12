@@ -24,7 +24,7 @@ export type AssetMarkerLayerProps = {
   assets: WorkbenchMapAsset[];
   visible?: boolean;
   selectedAsset?: WorkbenchSelection | null;
-  onSelectAsset?: (selection: WorkbenchSelection) => void;
+  onSelectAsset?: (selection: WorkbenchSelection | null) => void;
 };
 
 const ASSET_STYLE: Record<
@@ -105,7 +105,7 @@ export function AssetMarkerLayer({
             onClick={() => onSelectAsset?.(assetToSelection(asset))}
             zIndex={isSelected ? 40 : 20}
           >
-            <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="relative flex h-11 w-11 items-center justify-center">
               {isSelected ? (
                 <>
                   <span
@@ -129,12 +129,16 @@ export function AssetMarkerLayer({
                 data-layer-id={asset.layerId}
                 data-selected={isSelected ? "true" : "false"}
                 className={cn(
-                  "relative z-10 flex min-h-8 min-w-8 items-center justify-center rounded-full border-2 border-white px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white shadow-lg transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
+                  "relative z-10 flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white shadow-lg transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
                   style.fill,
                   isSelected ? `ring-4 ${style.ring} scale-110` : "ring-0",
                 )}
                 aria-label={isSelected ? `Deselect ${asset.label}` : `Select ${asset.label}`}
                 aria-pressed={isSelected}
+                onDoubleClick={(event) => {
+                  event.stopPropagation();
+                  onSelectAsset?.(null);
+                }}
               >
                 <span>{style.shortLabel}</span>
                 {asset.metric ? (

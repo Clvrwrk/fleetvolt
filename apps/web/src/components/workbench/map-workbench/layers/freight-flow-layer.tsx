@@ -65,6 +65,8 @@ export function FreightFlowLayer({
     tierRef.current = new Map();
 
     const arcs = (flows.arcs as FreightArc[]).filter((arc) => {
+      // Do not render crow-flies fallbacks as freight routes.
+      if (!arc.roadTraced || !arc.path || arc.path.length < 8) return false;
       if (!arc.compareGroup || viaFilter === "all") return true;
       return arc.viaRouteLabel === viaFilter;
     });
@@ -72,16 +74,10 @@ export function FreightFlowLayer({
     const polylines: google.maps.Polyline[] = [];
 
     for (const arc of arcs) {
-      const path =
-        arc.path?.length >= 2
-          ? arc.path.map((p: { lat: number; lng: number }) => ({
-              lat: p.lat,
-              lng: p.lng,
-            }))
-          : [
-              { lat: arc.origin.lat, lng: arc.origin.lng },
-              { lat: arc.destination.lat, lng: arc.destination.lng },
-            ];
+      const path = arc.path.map((p: { lat: number; lng: number }) => ({
+        lat: p.lat,
+        lng: p.lng,
+      }));
 
       const weight =
         arc.tier === "heavy" ? 5 : arc.tier === "medium" ? 4 : 3;
