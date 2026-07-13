@@ -16,9 +16,7 @@ Open the review-session URL, which bypasses WorkOS only inside this explicitly e
 http://localhost:3000/api/review-session?next=/caas
 ```
 
-Docker publishes port `3000` on all host interfaces. FleetVolt uses this port because `http://localhost:3000/*` is already authorized by the Google Maps browser-key policy. Reviewers and agents operating on this Mac can share the same immutable container instead of starting competing development servers.
-
-Another physical device can reach this Mac by LAN IP, but its map will remain blocked until that exact LAN origin (or a stable local-review hostname) is added to the Google Maps key allowlist. This Compose file does not change cloud settings or expose the app to the internet.
+Docker binds port `3000` to `127.0.0.1` only. FleetVolt uses this port because `http://localhost:3000/*` is already authorized by the Google Maps browser-key policy. Reviewers and agents operating on this Mac can share the same immutable container instead of starting competing development servers. Other LAN devices cannot reach the WorkOS-bypass review endpoint.
 
 ## Operate only this container
 

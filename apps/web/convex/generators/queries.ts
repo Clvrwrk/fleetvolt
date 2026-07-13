@@ -90,6 +90,7 @@ export const listNearPort = query({
       .collect();
 
     const all = await ctx.db.query("trafficGenerators").collect();
+    const taggedIds = new Set(tagged.map((row) => row.generatorId));
     const byId = new Map(tagged.map((r) => [r.generatorId, r]));
     for (const row of all) {
       if (byId.has(row.generatorId)) continue;
@@ -115,7 +116,7 @@ export const listNearPort = query({
           _d: distanceM,
         };
       })
-      .filter((r) => r._d <= radiusM)
+      .filter((r) => taggedIds.has(r.generatorId) || r._d <= radiusM)
       .sort((a, b) => a._d - b._d)
       .slice(0, max)
       .map(({ _d: _drop, ...rest }) => rest);

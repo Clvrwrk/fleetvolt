@@ -22,9 +22,10 @@ function useAuthFromAuthKit() {
     async ({ forceRefreshToken }: { forceRefreshToken?: boolean } = {}) => {
       if (!user) return null;
       try {
-        return forceRefreshToken
-          ? ((await refresh()) ?? null)
-          : ((await getAccessToken()) ?? null);
+        if (forceRefreshToken) {
+          await refresh();
+        }
+        return (await getAccessToken()) ?? null;
       } catch (error) {
         console.error("[auth] Failed to get WorkOS access token", error);
         return null;

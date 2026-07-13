@@ -443,11 +443,19 @@ export const routeGeometry = action({
           ],
         };
       }
-      const result = await fetchPtvRouteGeometry(
-        { ...request, provider: "ptv" },
-        { apiKey: ptvKey },
-      );
-      if (result.coordinates.length >= 8) {
+      let result: RouteGeometryResult | null = null;
+      let ptvFailure = "PTV returned no usable road geometry";
+      try {
+        result = await fetchPtvRouteGeometry(
+          { ...request, provider: "ptv" },
+          { apiKey: ptvKey },
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        ptvFailure = `PTV request failed: ${message}`;
+      }
+
+      if (result && result.coordinates.length >= 8) {
         const receipt = await ctx.runMutation(internal.routes.cache.complete, {
           requestHash,
           provider: "ptv",
@@ -475,8 +483,10 @@ export const routeGeometry = action({
         };
       }
 
-      const ptvFailure =
-        result.warnings.join("; ") || "PTV returned no usable road geometry";
+      if (result) {
+        ptvFailure =
+          result.warnings.join("; ") || "PTV returned no usable road geometry";
+      }
       const stale = await ctx.runMutation(internal.routes.cache.fail, {
         requestHash,
         error: ptvFailure,
@@ -507,7 +517,7 @@ export const routeGeometry = action({
           const fallback = {
             ...googleResult,
             warnings: [
-              ...(result.warnings ?? []),
+              ...(result?.warnings ?? []),
               ...(googleResult.warnings ?? []),
               "PTV road geometry was unavailable — used Google road geometry (not truck-certified).",
             ],
@@ -566,6 +576,8 @@ async function fetchGoogleRouteInternal(
     units: "IMPERIAL",
   };
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
   try {
     const response = await fetch(GOOGLE_ROUTES_URL, {
       method: "POST",
@@ -575,6 +587,7 @@ async function fetchGoogleRouteInternal(
         "X-Goog-FieldMask": GOOGLE_ROUTES_FIELD_MASK,
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -620,6 +633,8 @@ async function fetchGoogleRouteInternal(
       `Google Routes request failed: ${message}`,
       { requestHash },
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

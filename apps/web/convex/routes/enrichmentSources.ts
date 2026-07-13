@@ -22,6 +22,10 @@ const MAX_DETAIL_ROWS = 60;
 const DISTANCE_ROAD_POINTS = 128;
 const SOURCE_READ_CAPS = {
   chargers: 8_000,
+  parking: 8_000,
+  pois: 12_000,
+  carriers: 8_000,
+  fleetYards: 8_000,
 } as const;
 
 const args = { requestHash: v.string(), now: v.number() };
@@ -199,7 +203,9 @@ export const parkingAlongRoute = internalQuery({
   args,
   handler: async (ctx, input) => {
     const { distanceRoad } = await loadRoute(ctx, input.requestHash);
-    const rows = await ctx.db.query("parking").collect();
+    const read = await ctx.db.query("parking").take(SOURCE_READ_CAPS.parking + 1);
+    const truncated = read.length > SOURCE_READ_CAPS.parking;
+    const rows = read.slice(0, SOURCE_READ_CAPS.parking);
     const matches = rows
       .map((doc) => ({ doc, distanceM: distanceToPolylineM(doc.location, distanceRoad) }))
       .filter((row) => row.distanceM <= ROUTE_POINT_RADIUS_M)
@@ -207,7 +213,7 @@ export const parkingAlongRoute = internalQuery({
     return {
       coverage: coverage(rows.length > 0, matches.length, "NATD", "road_proximity_within_8km", {
         sourceFetchedAt: fetchedAt(matches.map((row) => row.doc)) ?? fetchedAt(rows),
-        truncated: false,
+        truncated,
       }),
       totalSpots: matches.reduce((sum, row) => sum + (row.doc.numberOfSpots ?? 0), 0),
       items: matches.slice(0, MAX_DETAIL_ROWS).map(({ doc, distanceM }) => ({
@@ -226,7 +232,9 @@ export const amenitiesAlongRoute = internalQuery({
   args,
   handler: async (ctx, input) => {
     const { distanceRoad } = await loadRoute(ctx, input.requestHash);
-    const rows = await ctx.db.query("pois").collect();
+    const read = await ctx.db.query("pois").take(SOURCE_READ_CAPS.pois + 1);
+    const truncated = read.length > SOURCE_READ_CAPS.pois;
+    const rows = read.slice(0, SOURCE_READ_CAPS.pois);
     const matches = rows
       .map((doc) => ({ doc, distanceM: distanceToPolylineM(doc.location, distanceRoad) }))
       .filter((row) => row.distanceM <= ROUTE_POINT_RADIUS_M)
@@ -238,7 +246,7 @@ export const amenitiesAlongRoute = internalQuery({
     return {
       coverage: coverage(rows.length > 0, matches.length, "OpenStreetMap", "road_proximity_within_8km", {
         sourceFetchedAt: fetchedAt(matches.map((row) => row.doc)) ?? fetchedAt(rows),
-        truncated: false,
+        truncated,
       }),
       countsByType,
       items: matches.slice(0, MAX_DETAIL_ROWS).map(({ doc, distanceM }) => ({
@@ -256,7 +264,9 @@ export const carriersAlongRoute = internalQuery({
   args,
   handler: async (ctx, input) => {
     const { distanceRoad } = await loadRoute(ctx, input.requestHash);
-    const rows = await ctx.db.query("carriers").collect();
+    const read = await ctx.db.query("carriers").take(SOURCE_READ_CAPS.carriers + 1);
+    const truncated = read.length > SOURCE_READ_CAPS.carriers;
+    const rows = read.slice(0, SOURCE_READ_CAPS.carriers);
     const matches = rows
       .filter((doc) => doc.location !== undefined)
       .map((doc) => ({ doc, distanceM: distanceToPolylineM(doc.location!, distanceRoad) }))
@@ -266,7 +276,7 @@ export const carriersAlongRoute = internalQuery({
       coverage: coverage(rows.length > 0, matches.length, "POLB_carrier_registry", "road_proximity_within_8km", {
         sourceFetchedAt: fetchedAt(matches.map((row) => row.doc)) ?? fetchedAt(rows),
         scope: "geocoded carriers only",
-        truncated: false,
+        truncated,
       }),
       items: matches.slice(0, MAX_DETAIL_ROWS).map(({ doc, distanceM }) => ({
         carrierKey: doc.carrierKey ?? String(doc._id),
@@ -284,13 +294,17 @@ export const fleetYardsAlongRoute = internalQuery({
   args,
   handler: async (ctx, input) => {
     const { distanceRoad } = await loadRoute(ctx, input.requestHash);
-    const rows = await ctx.db.query("fleetParkingLots").collect();
+    const read = await ctx.db
+      .query("fleetParkingLots")
+      .take(SOURCE_READ_CAPS.fleetYards + 1);
+    const truncated = read.length > SOURCE_READ_CAPS.fleetYards;
+    const rows = read.slice(0, SOURCE_READ_CAPS.fleetYards);
     const matches = rows
       .map((doc) => ({ doc, distanceM: distanceToPolylineM(doc.location, distanceRoad) }))
       .filter((row) => row.distanceM <= ROUTE_POINT_RADIUS_M)
       .sort((a, b) => a.distanceM - b.distanceM);
     return {
-      coverage: coverage(rows.length > 0, matches.length, "FleetVolt_fleetParkingLots", "road_proximity_within_8km", { truncated: false }),
+      coverage: coverage(rows.length > 0, matches.length, "FleetVolt_fleetParkingLots", "road_proximity_within_8km", { truncated }),
       items: matches.slice(0, MAX_DETAIL_ROWS).map(({ doc, distanceM }) => ({
         lotId: doc.lotId,
         fleetId: doc.fleetId,

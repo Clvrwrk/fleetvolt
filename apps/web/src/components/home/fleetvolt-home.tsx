@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, FileChartColumnIncreasing, LockKeyhole, Route, Truck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
 function BoltMark({ className = "" }: { className?: string }) {
@@ -17,9 +17,30 @@ function BoltMark({ className = "" }: { className?: string }) {
 }
 
 function Intro({ onComplete }: { onComplete: () => void }) {
+  const skipRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    skipRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onComplete();
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        skipRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [onComplete]);
+
   return (
     <div className="fv-ignition" role="dialog" aria-modal="true" aria-label="FleetVolt system startup">
-      <button type="button" onClick={onComplete} className="fv-ignition-skip">
+      <button ref={skipRef} type="button" onClick={onComplete} className="fv-ignition-skip">
         Skip intro
       </button>
       <div className="fv-ignition-grid" aria-hidden="true" />
@@ -108,7 +129,13 @@ export function FleetVoltHome() {
   return (
     <>
       {showIntro ? <Intro onComplete={completeIntro} /> : null}
-      <main id="main-content" tabIndex={-1} className="fv-home-shell">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="fv-home-shell"
+        inert={showIntro ? true : undefined}
+        aria-hidden={showIntro ? true : undefined}
+      >
         <div className="fv-home-grid" aria-hidden="true" />
         <header className="fv-home-nav">
           <Image

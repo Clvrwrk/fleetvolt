@@ -102,6 +102,7 @@ export function DetourLegsLayer({
     };
     const nearest = nearestPointOnPolyline(asset, corridor);
     if (!nearest) {
+      requestKey.current = null;
       const timeoutId = window.setTimeout(() => setPaths(null), 0);
       return () => window.clearTimeout(timeoutId);
     }

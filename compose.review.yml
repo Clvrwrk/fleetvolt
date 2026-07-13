@@ -24,7 +24,7 @@ services:
       PORT: "3000"
       NEXT_PUBLIC_APP_URL: http://localhost:${FLEETVOLT_REVIEW_PORT:-3000}
     ports:
-      - "${FLEETVOLT_REVIEW_PORT:-3000}:3000"
+      - "127.0.0.1:${FLEETVOLT_REVIEW_PORT:-3000}:3000"
     healthcheck:
       test:
         - CMD

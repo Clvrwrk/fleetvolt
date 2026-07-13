@@ -23,4 +23,26 @@ describe("AI map command presets", () => {
     ]);
     assert.equal(result.cards[0]?.id, "ai-caas-west-coast-freight");
   });
+
+  it("labels the Energy Forward draft as preview geometry until Calculate", () => {
+    const result = localAiFallback(
+      "caas_gap_map",
+      "Energy Forward 60-truck Long Beach to Shafter charging needs",
+    );
+
+    assert.equal(result.mode, "caas_gap_map");
+    assert.equal(result.routeGeometry?.provider, "mock");
+    assert.equal(result.cards[0]?.metrics?.routing, "preview");
+    assert.match(result.providerWarnings?.[0] ?? "", /not provider-backed/i);
+  });
+
+  it("does not let driver keywords change the active fleet mode", () => {
+    const result = localAiFallback(
+      "fleet_contract_plan",
+      "Show the POLB to Barstow contract",
+    );
+
+    assert.equal(result.mode, "fleet_contract_plan");
+    assert.equal(result.id.startsWith("wbai_local_driver_"), false);
+  });
 });

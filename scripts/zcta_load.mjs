@@ -67,6 +67,7 @@ for (let i = 0; i < rows.length; i += BATCH) {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
         maxBuffer: 64 * 1024 * 1024,
+        timeout: 120_000,
       },
     );
     const parsed = parseConvexJson(out);
@@ -104,6 +105,7 @@ try {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: 16 * 1024 * 1024,
+      timeout: 120_000,
     },
   );
   console.log("authoritative reconciliation:", parseConvexJson(out) ?? out.trim());

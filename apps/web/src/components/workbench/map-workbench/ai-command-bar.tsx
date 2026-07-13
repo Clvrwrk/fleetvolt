@@ -166,9 +166,9 @@ export function localAiFallback(
                 destination === SHAFTER ? "lb-shafter" : "lb-tijuana",
               fleetSizeTrucks: 60,
               borderSides: destination === OTAY ? "US, Mexico" : "US",
-              routingProvider: "ptv",
+              routingProvider: "preview",
             }
-          : { routingProvider: "ptv" };
+          : { routingProvider: "preview" };
       const skillSummary =
         destination === SHAFTER
           ? "Energy Forward ZE: Long Beach → Shafter. Model interim depot + en-route charging for a 60-truck Class 8 fleet (US only). PTV truck routing on Calculate."
@@ -216,9 +216,9 @@ export function localAiFallback(
             },
           },
         ],
-        // Preview only — Calculate / bootstrap snaps via PTV (provider: ptv).
+        // Preview only — Calculate / bootstrap replaces this with PTV geometry.
         routeGeometry: {
-          provider: "ptv",
+          provider: "mock",
           coordinates: [
             { latitude: POLB.latitude, longitude: POLB.longitude },
             {
@@ -248,7 +248,7 @@ export function localAiFallback(
             metrics: {
               origin: POLB.label,
               destination: destination.label,
-              routing: "ptv",
+              routing: "preview",
               ...(typeof zeMeta.fleetSizeTrucks === "number"
                 ? { fleetSizeTrucks: zeMeta.fleetSizeTrucks }
                 : {}),
@@ -259,7 +259,7 @@ export function localAiFallback(
         fallback: true,
         model: "workbench-local-fallback",
         providerWarnings: [
-          "Route geometry uses PTV Class-8 truck profile on Calculate — not Google.",
+          "Preview geometry is not provider-backed. Calculate uses the PTV Class-8 truck profile.",
         ],
       };
     }
@@ -302,10 +302,7 @@ export function localAiFallback(
     };
   }
 
-  if (
-    mode === "driver_day_plan" ||
-    /polb|barstow|day plan|charger layer/.test(lower)
-  ) {
+  if (mode === "driver_day_plan") {
     return {
       id: `wbai_local_driver_${Date.now()}`,
       mode: "driver_day_plan",
@@ -471,7 +468,8 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
     try {
       const lower = trimmed.toLowerCase();
       const isExampleIntent =
-        /polb|barstow|day plan|charger layer|oakland|tracy|contract|gap|carrier|opportunity|freight volume|freight flow|west coast ports|port freight/.test(
+        examples.some((example) => example.trim() === trimmed) ||
+        /polb|barstow|shafter|tijuana|energy forward|60[- ]?truck|day plan|charger layer|oakland|tracy|contract|gap|carrier|opportunity|freight volume|freight flow|west coast ports|port freight/.test(
           lower,
         );
 

@@ -257,7 +257,8 @@ export function WorkbenchLeftPanel({
       };
       // Prefer road-snapped bounds when we have a polyline.
       const coords = geometry.coordinates ?? [];
-      if (coords.length >= 2) {
+      const usableGeometry = coords.length >= 8;
+      if (usableGeometry) {
         let north = coords[0]!.latitude;
         let south = coords[0]!.latitude;
         let east = coords[0]!.longitude;
@@ -275,7 +276,6 @@ export function WorkbenchLeftPanel({
         focus.east = east + lngPad;
         focus.west = west - lngPad;
       }
-      const usableGeometry = (geometry.coordinates?.length ?? 0) >= 8;
       useMapWorkbenchStore.setState({
         routeGeometry: usableGeometry ? geometry : null,
         providerWarnings: geometry.warnings ?? [],
