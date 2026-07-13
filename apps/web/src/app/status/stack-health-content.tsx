@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type StackMeta = {
   postgres_version: string;
   table_counts: Record<string, number>;
@@ -200,7 +202,7 @@ export default async function StackHealthPage() {
 
   if (!result.ok) {
     return (
-      <main>
+      <div>
         <h1>FleetVolt Route</h1>
         <p className="subtitle">Local stack status</p>
         <div className="card">
@@ -222,7 +224,7 @@ export default async function StackHealthPage() {
             <Badge ok={false} />
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -250,15 +252,15 @@ export default async function StackHealthPage() {
   const totalChargerCount = data.table_counts.chargers ?? 0;
 
   return (
-    <main>
+    <div>
       <p style={{ marginBottom: "1rem" }}>
-        <a href="/" className="fv-nav-pill" style={{ display: "inline-block" }}>
+        <Link href="/" className="fv-nav-pill" style={{ display: "inline-block" }}>
           ← Home
-        </a>
+        </Link>
         {" · "}
-        <a href="/planner" className="fv-nav-pill" style={{ display: "inline-block" }}>
+        <Link href="/planner" className="fv-nav-pill" style={{ display: "inline-block" }}>
           Route Planner
-        </a>
+        </Link>
       </p>
       <h1>FleetVolt Route</h1>
       <p className="subtitle">
@@ -401,6 +403,6 @@ export default async function StackHealthPage() {
           <p className="error">Failed to load trucks: {trucksResult.error}</p>
         )}
       </div>
-    </main>
+    </div>
   );
 }

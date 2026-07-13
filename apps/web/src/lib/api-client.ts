@@ -25,8 +25,18 @@ async function parseJson<T>(res: Response): Promise<T> {
  * time, which breaks Node test environments where NEXT_PUBLIC_CONVEX_URL is
  * unset.
  */
-let _convexClient: ConvexReactClient | null = null;
-async function getConvexClient(): Promise<ConvexReactClient> {
+type SimulationActionClient = Pick<ConvexReactClient, "action">;
+
+let _convexClient: SimulationActionClient | null = null;
+
+/** Test seam for the Convex-backed simulation client. */
+export function __setSimulationClientForTests(
+  client: SimulationActionClient | null,
+): void {
+  _convexClient = client;
+}
+
+async function getConvexClient(): Promise<SimulationActionClient> {
   if (!_convexClient) {
     const mod = await import("@/app/ConvexClientProvider");
     _convexClient = mod.convex;

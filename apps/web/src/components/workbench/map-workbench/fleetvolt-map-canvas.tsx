@@ -1,25 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   APILoadingStatus,
   APIProvider,
-  Map,
+  Map as GoogleMap,
   RenderingType,
   useApiLoadingStatus,
   useMap,
 } from "@vis.gl/react-google-maps";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import { MapSoftBoundary } from "@/components/map/map-soft-boundary";
 import { MapTokenMissingBanner } from "@/components/map/map-token-missing-banner";
+import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
+import {
+  useMapWorkbenchStore,
+  type CaasGeoLevel,
+} from "@/stores/map-workbench-store";
 import { cn } from "@/lib/utils";
+import { distanceToPolylineM, ON_ROUTE_MAX_M } from "@/lib/maps/route-proximity";
+import {
+  caasVisibleAssets,
+  caasVisiblePointLayers,
+} from "@/lib/workbench/caas-visible-assets";
 import { PortAnchors } from "@/components/pulse/port-anchors";
 import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-layer";
+import {
+  CaasChoroplethLayer,
+} from "./layers/caas-choropleth-layer";
+import { CaasZoneHeatLayer } from "./layers/caas-zone-heat-layer";
 import { DetourLegsLayer } from "./layers/detour-legs-layer";
 import { FreightFlowLayer } from "./layers/freight-flow-layer";
 import { GeneratorMarkers } from "./layers/generator-markers";
-import { GeoRegionLayer, type WorkbenchGeoRegion } from "./layers/geo-region-layer";
+import { GeneratorSpokesLayer } from "./layers/generator-spokes-layer";
 import { PortDetailPopup } from "./layers/port-detail-popup";
 import { RouteLayer } from "./layers/route-layer";
 import { SelectedAssetCard } from "./layers/selected-asset-card";
@@ -42,179 +57,13 @@ const CA_BOUNDS: google.maps.LatLngBoundsLiteral = {
   west: -124.6,
 };
 
-const US_BOUNDS: google.maps.LatLngBoundsLiteral = {
-  north: 49.5,
-  south: 24.4,
-  east: -66.5,
-  west: -125.0,
-};
-
-/** West-coast freight overview framing (ports + inland corridors). */
+/** Full California framing — San Diego to Crescent City (+ border / Vegas). */
 const WC_FREIGHT_BOUNDS: google.maps.LatLngBoundsLiteral = {
-  north: 42.2,
-  south: 31.8,
-  east: -111.5,
-  west: -125.0,
+  north: 42.1,
+  south: 32.3,
+  east: -114.0,
+  west: -124.6,
 };
-
-const SAMPLE_ROUTES: Record<WorkbenchMode, RouteCoordinate[]> = {
-  driver_day_plan: [
-    { latitude: 33.7542, longitude: -118.2165 },
-    { latitude: 33.9022, longitude: -117.8854 },
-    { latitude: 34.1064, longitude: -117.5931 },
-    { latitude: 34.8958, longitude: -117.0173 },
-  ],
-  fleet_contract_plan: [
-    { latitude: 33.7542, longitude: -118.2165 },
-    { latitude: 34.0556, longitude: -117.1825 },
-    { latitude: 34.5361, longitude: -117.2912 },
-    { latitude: 35.3733, longitude: -119.0187 },
-  ],
-  caas_gap_map: [
-    { latitude: 37.8044, longitude: -122.2712 },
-    { latitude: 37.7397, longitude: -121.4252 },
-    { latitude: 36.7378, longitude: -119.7871 },
-    { latitude: 34.0522, longitude: -118.2437 },
-  ],
-};
-
-const SAMPLE_ASSETS: Record<WorkbenchMode, WorkbenchMapAsset[]> = {
-  driver_day_plan: [
-    {
-      id: "charger-ontario-hd",
-      type: "charger",
-      layerId: "chargers",
-      label: "Ontario Class 8 charging plaza",
-      latitude: 34.0573,
-      longitude: -117.6509,
-      subtitle: "350 kW · trailer friendly",
-      metric: "350 kW",
-      metadata: { status: "candidate", access: "trailer friendly", source: "sample layer" },
-    },
-    {
-      id: "parking-fontana-yard",
-      type: "parking",
-      layerId: "parking",
-      label: "Fontana overnight truck parking",
-      latitude: 34.0922,
-      longitude: -117.435,
-      subtitle: "secure parking near I-10",
-      metric: "42 bays",
-      metadata: { siteAccess: "24/7", source: "sample layer" },
-    },
-    {
-      id: "poi-barstow-rest",
-      type: "poi",
-      layerId: "pois",
-      label: "Barstow driver services",
-      latitude: 34.8958,
-      longitude: -117.0173,
-      subtitle: "food · rest · staging",
-      metric: "POI",
-      metadata: { category: "driver amenity", source: "sample layer" },
-    },
-  ],
-  fleet_contract_plan: [
-    {
-      id: "fleet-yard-redlands",
-      type: "fleet-yard",
-      layerId: "fleet-yards",
-      label: "Redlands fleet yard",
-      latitude: 34.0556,
-      longitude: -117.1825,
-      subtitle: "yard return candidate",
-      metric: "Yard",
-      metadata: { dwell: "45 min", source: "sample layer" },
-    },
-    {
-      id: "charger-victorville-hd",
-      type: "charger",
-      layerId: "chargers",
-      label: "Victorville HD charger",
-      latitude: 34.5361,
-      longitude: -117.2912,
-      subtitle: "contract route charge stop",
-      metric: "420 kW",
-      metadata: { status: "candidate", source: "sample layer" },
-    },
-    {
-      id: "highway-i15-flow",
-      type: "highway",
-      layerId: "highways",
-      label: "I-15 freight segment",
-      latitude: 34.2483,
-      longitude: -117.41,
-      subtitle: "high freight intensity",
-      metric: "AADT+",
-      metadata: { modeled: true, source: "sample layer" },
-    },
-  ],
-  caas_gap_map: [
-    {
-      id: "gap-central-valley",
-      type: "class8-gap",
-      layerId: "class8-gaps",
-      label: "Central Valley Class 8 gap",
-      latitude: 36.7378,
-      longitude: -119.7871,
-      subtitle: "modeled charger coverage gap",
-      metric: "Gap",
-      metadata: { method: "modeled", source: "sample layer" },
-    },
-    {
-      id: "carrier-stockton-cluster",
-      type: "carrier",
-      layerId: "carriers",
-      label: "Stockton carrier cluster",
-      latitude: 37.9577,
-      longitude: -121.2908,
-      subtitle: "drayage outreach cluster",
-      metric: "Carriers",
-      metadata: { method: "modeled", source: "sample layer" },
-    },
-    {
-      id: "caas-zone-la-basin",
-      type: "caas-zone",
-      layerId: "caas-zones",
-      label: "LA Basin mobile CaaS zone",
-      latitude: 34.0522,
-      longitude: -118.2437,
-      subtitle: "deployment opportunity",
-      metric: "Zone",
-      metadata: { priority: "medium", source: "sample layer" },
-    },
-  ],
-};
-
-const SAMPLE_REGIONS: WorkbenchGeoRegion[] = [
-  {
-    id: "ca-state-region",
-    name: "California freight opportunity",
-    level: "state",
-    centroid: { latitude: 36.7783, longitude: -119.4179 },
-    bbox: [-124.6, 32.3, -114.1, 42.1],
-    score: 0.82,
-    metadata: { method: "modeled", coverage: "state" },
-  },
-  {
-    id: "la-county-region",
-    name: "Los Angeles County",
-    level: "county",
-    centroid: { latitude: 34.3207, longitude: -118.2248 },
-    bbox: [-118.95, 33.7, -117.65, 34.85],
-    score: 0.73,
-    metadata: { method: "modeled", coverage: "county" },
-  },
-  {
-    id: "san-joaquin-region",
-    name: "San Joaquin freight corridor",
-    level: "county",
-    centroid: { latitude: 37.934, longitude: -121.2722 },
-    bbox: [-121.65, 37.48, -120.91, 38.28],
-    score: 0.58,
-    metadata: { method: "modeled", coverage: "county" },
-  },
-];
 
 type FleetVoltMapCanvasProps = {
   mode: WorkbenchMode;
@@ -304,7 +153,10 @@ function MapFocusController({
       return;
     }
 
-    map.fitBounds(mode === "caas_gap_map" ? US_BOUNDS : CA_BOUNDS, 36);
+    map.fitBounds(
+      mode === "caas_gap_map" ? WC_FREIGHT_BOUNDS : CA_BOUNDS,
+      36,
+    );
   }, [map, focusBounds, mode, routeCoordinates, selectedAsset]);
 
   return null;
@@ -326,6 +178,9 @@ function isValidLatLng(latitude: unknown, longitude: unknown): boolean {
 }
 
 function MapsAuthFallback({ message }: { message: string | null }) {
+  const reviewOrigin =
+    typeof window === "undefined" ? "this review origin" : `${window.location.origin}/*`;
+
   return (
     <div
       data-testid="map-auth-failure"
@@ -338,12 +193,13 @@ function MapsAuthFallback({ message }: { message: string | null }) {
             The Maps JavaScript key rejected this site (usually a missing HTTP referrer). Tools and
             result cards remain available.
           </p>
-          <p className="text-xs">
-            Allowlist must include both <code>https://fleetvolt.network/*</code> and{" "}
+          <p className="text-sm">
+            Add <code>{reviewOrigin}</code> to this key’s HTTP referrer allowlist. Production must
+            also include <code>https://fleetvolt.network/*</code> and{" "}
             <code>https://*.fleetvolt.network/*</code> (apex ≠ subdomain wildcard).
           </p>
           {message ? (
-            <p className="rounded-lg bg-black/5 px-3 py-2 font-mono text-xs">{message}</p>
+            <p className="rounded-lg bg-black/5 px-3 py-2 font-mono text-sm">{message}</p>
           ) : null}
         </AlertDescription>
       </Alert>
@@ -371,9 +227,13 @@ function MapCanvasBody({
   showPortAnchors,
   showRouteLayer,
   showGeoRegions,
+  showGeneratorSpokes,
   selectedPortCode,
   onSelectPort,
   freightViaFilter,
+  caasGeoLevel,
+  routeFocusActive,
+  onSelectRoute,
 }: {
   mode: WorkbenchMode;
   mapId: string;
@@ -389,9 +249,13 @@ function MapCanvasBody({
   showPortAnchors: boolean;
   showRouteLayer: boolean;
   showGeoRegions: boolean;
+  showGeneratorSpokes: boolean;
   selectedPortCode: string | null;
   onSelectPort: (code: string | null) => void;
   freightViaFilter: "all" | "I-15" | "I-40";
+  caasGeoLevel: CaasGeoLevel;
+  routeFocusActive: boolean;
+  onSelectRoute: () => void;
 }) {
   const status = useApiLoadingStatus();
 
@@ -410,16 +274,21 @@ function MapCanvasBody({
         data-testid="map-loading"
         className="flex h-full min-h-[420px] w-full items-center justify-center text-sm text-[var(--fv-steel)]"
       >
-        Loading map…
+        <FleetVoltLoader label="Loading map" />
       </div>
     );
   }
 
   return (
-    <Map
+      <GoogleMap
+      key={
+        focusBounds
+          ? `focus-${focusBounds.north}-${focusBounds.south}-${focusBounds.east}-${focusBounds.west}`
+          : `default-${mode}`
+      }
       mapId={mapId}
       renderingType={RenderingType.VECTOR}
-      defaultBounds={defaultBounds}
+      defaultBounds={focusBounds ? paddedBounds(focusBounds) : defaultBounds}
       gestureHandling="greedy"
       disableDefaultUI
       className="h-full w-full"
@@ -431,11 +300,23 @@ function MapCanvasBody({
         selectedAsset={selectedAsset}
         focusBounds={focusBounds}
       />
+      <CaasChoroplethLayer
+        level={caasGeoLevel}
+        visible={
+          !routeFocusActive && showGeoRegions && visibleLayer(activeLayers, "geo-regions")
+        }
+        selectedAsset={selectedAsset}
+        onSelectRegion={selectAsset}
+      />
       <FreightFlowLayer
-        visible={showFreightFlows && visibleLayer(activeLayers, "freight-flow")}
+        visible={!routeFocusActive && showFreightFlows}
         viaFilter={freightViaFilter}
       />
-      {showPortAnchors && visibleLayer(activeLayers, "ports") ? (
+      <GeneratorSpokesLayer
+        visible={!routeFocusActive && showGeneratorSpokes && !selectedPortCode}
+        onSelectGenerator={selectAsset}
+      />
+      {!routeFocusActive && showPortAnchors && visibleLayer(activeLayers, "ports") ? (
         <PortAnchors
           selectedPortCode={selectedPortCode}
           onSelect={(code) =>
@@ -443,41 +324,70 @@ function MapCanvasBody({
           }
         />
       ) : null}
-      {showPortAnchors ? (
+      {!routeFocusActive && showPortAnchors ? (
         <GeneratorMarkers
           portCode={selectedPortCode}
           visible={Boolean(selectedPortCode)}
+          onSelectGenerator={selectAsset}
         />
       ) : null}
       <RouteLayer
         coordinates={routeCoordinates}
         visible={visibleLayer(activeLayers, "route") && showRouteLayer}
+        onSelectRoute={onSelectRoute}
       />
       <DetourLegsLayer
         routeCoordinates={routeCoordinates}
         selectedAsset={selectedAsset}
         visible={visibleLayer(activeLayers, "route") && showRouteLayer}
       />
-      <GeoRegionLayer
-        regions={SAMPLE_REGIONS}
-        visible={
-          showGeoRegions && visibleLayer(activeLayers, "geo-regions")
-        }
-        selectedAsset={selectedAsset}
-        onSelectRegion={selectAsset}
+      <CaasZoneHeatLayer
+        assets={assets.filter((asset) => asset.type === "caas-zone")}
+        visible={!routeFocusActive && visibleLayer(activeLayers, "caas-zones")}
+        onSelectAsset={selectAsset}
       />
       <AssetMarkerLayer
-        assets={assets.filter((asset) => visibleLayer(activeLayers, asset.layerId))}
+        assets={assets.filter(
+          (asset) => asset.type !== "caas-zone" && visibleLayer(activeLayers, asset.layerId),
+        )}
         selectedAsset={selectedAsset}
         onSelectAsset={selectAsset}
       />
-    </Map>
+    </GoogleMap>
   );
 }
 
+function layerAssetToMapAsset(asset: {
+  id: string;
+  type: WorkbenchMapAsset["type"];
+  layerId: WorkbenchMapAsset["layerId"];
+  label: string;
+  latitude: number;
+  longitude: number;
+  subtitle?: string;
+  metric?: string;
+  metadata?: Record<string, unknown>;
+}): WorkbenchMapAsset {
+  return {
+    id: asset.id,
+    type: asset.type,
+    layerId: asset.layerId,
+    label: asset.label,
+    latitude: asset.latitude,
+    longitude: asset.longitude,
+    ...(asset.subtitle ? { subtitle: asset.subtitle } : {}),
+    ...(asset.metric ? { metric: asset.metric } : {}),
+    metadata: {
+      ...asset.metadata,
+      carrierHref:
+        typeof asset.metadata?.carrierHref === "string"
+          ? asset.metadata.carrierHref
+          : `/caas?view=summary&carriers=1&lat=${asset.latitude.toFixed(3)}&lng=${asset.longitude.toFixed(3)}`,
+    },
+  };
+}
+
 export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps) {
-  const storeMode = useMapWorkbenchStore((state) => state.mode);
-  const reset = useMapWorkbenchStore((state) => state.reset);
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
   const selectedAsset = useMapWorkbenchStore((state) => state.selectedAsset);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
@@ -494,24 +404,100 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const freightViaFilter = useMapWorkbenchStore(
     (state) => state.freightViaFilter,
   );
+  const caasGeoLevel = useMapWorkbenchStore((state) => state.caasGeoLevel);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [mapsAuthGuardReady, setMapsAuthGuardReady] = useState(false);
+  const [routeFocusActive, setRouteFocusActive] = useState(false);
 
+  // Google invokes this documented global callback when a browser key is
+  // rejected (including RefererNotAllowedMapError). Install it *before*
+  // APIProvider is allowed to load the script. Otherwise the API can report
+  // LOADED briefly and AdvancedMarkerElement will mount against a broken map,
+  // which is the source of the `getRootNode` runtime crash.
   useEffect(() => {
-    if (storeMode !== mode) {
-      reset(mode);
-    }
-  }, [mode, reset, storeMode]);
+    const mapsWindow = window as typeof window & {
+      gm_authFailure?: () => void;
+    };
+    const previousAuthFailure = mapsWindow.gm_authFailure;
 
-  const freightOverview =
-    mode === "caas_gap_map" && caasPhase === "freight_overview";
+    mapsWindow.gm_authFailure = () => {
+      setAuthError(
+        `Google Maps rejected ${window.location.origin}. Add ${window.location.origin}/* to the API key HTTP referrer allowlist.`,
+      );
+      previousAuthFailure?.();
+    };
+    const readyFrame = window.requestAnimationFrame(() => {
+      setMapsAuthGuardReady(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(readyFrame);
+      mapsWindow.gm_authFailure = previousAuthFailure;
+    };
+  }, []);
+
+  const isCaas = mode === "caas_gap_map";
+  const freightOverview = isCaas && caasPhase === "freight_overview";
+  // Always paint overview data layers on CaaS (freight/geo/assets) — route
+  // analysis adds the A→B line on top; it must not blank the data stack.
+  const showCaasDataLayers = isCaas;
+
+  const overviewLayers = useMemo(() => {
+    if (!showCaasDataLayers) return undefined;
+    return caasVisiblePointLayers(activeLayers);
+  }, [activeLayers, showCaasDataLayers]);
+
+  const assetBbox = useMemo(() => {
+    if (!showCaasDataLayers) return null;
+    // Prefer corridor focus for denser pins near A→B; else full west-coast frame.
+    if (
+      caasPhase === "route_analysis" &&
+      focusBounds &&
+      Number.isFinite(focusBounds.north)
+    ) {
+      return {
+        minLat: focusBounds.south,
+        minLng: focusBounds.west,
+        maxLat: focusBounds.north,
+        maxLng: focusBounds.east,
+      };
+    }
+    return {
+      minLat: WC_FREIGHT_BOUNDS.south,
+      minLng: WC_FREIGHT_BOUNDS.west,
+      maxLat: WC_FREIGHT_BOUNDS.north,
+      maxLng: WC_FREIGHT_BOUNDS.east,
+    };
+  }, [caasPhase, focusBounds, showCaasDataLayers]);
+
+  const overviewAssetsQuery = useQuery(
+    api.workbench.queries.visibleLayers,
+    showCaasDataLayers &&
+      overviewLayers &&
+      overviewLayers.length > 0 &&
+      assetBbox
+      ? {
+          bbox: assetBbox,
+          mode: "caas_gap_map" as const,
+          layers: overviewLayers,
+          limit: 400,
+        }
+      : "skip",
+  );
+  const caasDataSummary = useQuery(
+    api.workbench.queries.caasDataSummary,
+    isCaas ? {} : "skip",
+  );
 
   const routeCoordinates = useMemo(() => {
     // Freight overview: no sample A→B polyline — only animated port arcs.
     if (freightOverview) return [];
     const raw = routeGeometry?.coordinates ?? [];
     const valid = raw.filter((c) => isValidLatLng(c.latitude, c.longitude));
-    return valid.length >= 2 ? valid : SAMPLE_ROUTES[mode];
-  }, [freightOverview, mode, routeGeometry?.coordinates]);
+    // A route is only a route when it follows roads. Endpoint previews and
+    // short fallback polylines stay hidden instead of misleading planners.
+    return valid.length >= 8 ? valid : [];
+  }, [freightOverview, routeGeometry?.coordinates]);
 
   const roadSnapStatus =
     freightOverview
@@ -519,40 +505,82 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
       : routeCoordinates.length >= 8
         ? "road"
         : routeCoordinates.length >= 2
-          ? "preview"
+          ? "loading"
           : "empty";
+  const routeFocusEngaged = routeFocusActive && routeCoordinates.length >= 8;
 
   const assets = useMemo(() => {
-    // Prefer live Calculate pins; fall back to mode samples only before first run.
-    // Freight overview: hide sample route pins so arcs dominate.
-    if (freightOverview && mapAssets.length === 0) return [];
-    const source = mapAssets.length > 0 ? mapAssets : SAMPLE_ASSETS[mode];
-    const valid = source.filter((asset) =>
+    if (showCaasDataLayers) {
+      const live = overviewAssetsQuery?.assets;
+      const fromQuery = caasVisibleAssets(live).map(layerAssetToMapAsset);
+      // Merge Calculate pins (if any) on top of statewide/corridor query pins.
+      const byId = new Map<string, WorkbenchMapAsset>();
+      for (const asset of [...fromQuery, ...mapAssets]) {
+        if (isValidLatLng(asset.latitude, asset.longitude)) {
+          byId.set(asset.id, asset);
+        }
+      }
+      return [...byId.values()];
+    }
+    // Never fabricate planning evidence: render only live Calculate assets.
+    return mapAssets.filter((asset) =>
       isValidLatLng(asset.latitude, asset.longitude),
     );
-    // Route analysis: keep only pins near the corridor (drop statewide samples).
-    if (
-      mode === "caas_gap_map" &&
-      !freightOverview &&
-      mapAssets.length === 0 &&
-      focusBounds
-    ) {
-      return valid.filter(
-        (asset) =>
-          asset.latitude >= focusBounds.south &&
-          asset.latitude <= focusBounds.north &&
-          asset.longitude >= focusBounds.west &&
-          asset.longitude <= focusBounds.east,
-      );
+  }, [mapAssets, overviewAssetsQuery?.assets, showCaasDataLayers]);
+  const routeFocusedAssets = useMemo(() => {
+    if (!routeFocusEngaged) return assets;
+    const path = routeCoordinates.map((point) => ({
+      lat: point.latitude,
+      lng: point.longitude,
+    }));
+    return assets.filter(
+      (asset) =>
+        distanceToPolylineM(
+          { lat: asset.latitude, lng: asset.longitude },
+          path,
+        ) <= ON_ROUTE_MAX_M,
+    );
+  }, [assets, routeCoordinates, routeFocusEngaged]);
+
+  const routeProvider = routeGeometry?.provider;
+  const routeDistanceMeters = routeGeometry?.distanceMeters;
+  const gapLayerActive = activeLayers.includes("class8-gaps");
+  const gapCandidates = assets.filter(
+    (asset) => asset.layerId === "class8-gaps",
+  );
+  const gapCandidateCount = gapCandidates.length;
+  const routeGapCount = routeCoordinates.length >= 8
+    ? gapCandidates.filter((asset) => asset.metadata?.classification !== "modeled-zone").length
+    : 0;
+  const selectRoute = useCallback(() => {
+    if (routeCoordinates.length < 8) return;
+    if (routeFocusActive) {
+      setRouteFocusActive(false);
+      if (selectedAsset?.type === "route") selectAsset(null);
+      return;
     }
-    return valid;
-  }, [focusBounds, freightOverview, mapAssets, mode]);
+    const midpoint = routeCoordinates[Math.floor(routeCoordinates.length / 2)]!;
+    setRouteFocusActive(true);
+    selectAsset({
+      id: `route-${mode}`,
+      type: "route",
+      label: `${routeProvider?.toUpperCase() ?? "Road"} route`,
+      layerId: "route",
+      latitude: midpoint.latitude,
+      longitude: midpoint.longitude,
+      metadata: {
+        provider: routeProvider ?? "unknown",
+        roadPoints: routeCoordinates.length,
+        distanceMiles: routeDistanceMeters
+          ? Math.round((routeDistanceMeters / 1609.344) * 10) / 10
+          : "unavailable",
+        routeFocus: "Only assets within 0.5 miles of this route are shown",
+      },
+    });
+  }, [mode, routeCoordinates, routeDistanceMeters, routeFocusActive, routeProvider, selectAsset, selectedAsset?.type]);
+
   const defaultBounds =
-    mode === "caas_gap_map"
-      ? freightOverview
-        ? WC_FREIGHT_BOUNDS
-        : US_BOUNDS
-      : CA_BOUNDS;
+    mode === "caas_gap_map" ? WC_FREIGHT_BOUNDS : CA_BOUNDS;
 
   if (!API_KEY || !MAP_ID) {
     return (
@@ -561,6 +589,28 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
         className={cn("flex h-full min-h-[420px] w-full items-center justify-center p-4", className)}
       >
         <MapTokenMissingBanner />
+      </div>
+    );
+  }
+
+  if (!mapsAuthGuardReady) {
+    return (
+      <div
+        data-testid="fleetvolt-map-canvas"
+        className={cn("flex h-full min-h-[420px] w-full items-center justify-center", className)}
+      >
+        <FleetVoltLoader label="Preparing map" />
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div
+        data-testid="fleetvolt-map-canvas"
+        className={cn("h-full min-h-[420px] w-full", className)}
+      >
+        <MapsAuthFallback message={authError} />
       </div>
     );
   }
@@ -589,7 +639,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             mode={mode}
             mapId={MAP_ID}
             routeCoordinates={routeCoordinates}
-            assets={assets}
+            assets={routeFocusedAssets}
             activeLayers={activeLayers}
             selectedAsset={selectedAsset}
             focusBounds={focusBounds}
@@ -597,19 +647,32 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             defaultBounds={defaultBounds}
             authError={authError}
             showFreightFlows={
-              freightOverview && visibleLayer(activeLayers, "freight-flow")
+              showCaasDataLayers &&
+              (visibleLayer(activeLayers, "freight-flow") ||
+                visibleLayer(activeLayers, "highways"))
             }
-            showPortAnchors={freightOverview}
-            showRouteLayer={!freightOverview}
-            showGeoRegions={freightOverview}
+            showPortAnchors={
+              showCaasDataLayers && visibleLayer(activeLayers, "ports")
+            }
+            showRouteLayer={!freightOverview && routeCoordinates.length >= 2}
+            showGeoRegions={
+              showCaasDataLayers &&
+              visibleLayer(activeLayers, "geo-regions")
+            }
+            showGeneratorSpokes={
+              showCaasDataLayers && visibleLayer(activeLayers, "pois")
+            }
             selectedPortCode={selectedPortCode}
             onSelectPort={setSelectedPortCode}
             freightViaFilter={freightViaFilter}
+            caasGeoLevel={caasGeoLevel}
+            routeFocusActive={routeFocusEngaged}
+            onSelectRoute={selectRoute}
           />
         </APIProvider>
       </MapSoftBoundary>
 
-      {freightOverview && selectedPortCode ? (
+      {showCaasDataLayers && selectedPortCode && !routeFocusEngaged ? (
         <PortDetailPopup
           portCode={selectedPortCode}
           onClose={() => setSelectedPortCode(null)}
@@ -621,8 +684,10 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
           Google vector map
         </div>
         <div className="mt-1 text-sm font-semibold text-[var(--fv-graphite)]">
-          {freightOverview
-            ? "West-coast freight movement"
+          {isCaas
+            ? freightOverview
+              ? "California freight & truck traffic"
+              : "Corridor + freight data stack"
             : "Shared FleetVolt canvas"}
         </div>
         <div
@@ -630,7 +695,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
           data-status={freightOverview ? "freight" : roadSnapStatus}
           className={cn(
             "mt-2 text-[10px] font-bold uppercase tracking-[0.12em]",
-            freightOverview
+            freightOverview || isCaas
               ? "text-[var(--fv-blueprint-blue)]"
               : roadSnapStatus === "road"
                 ? "text-[var(--fv-signal-green)]"
@@ -638,12 +703,93 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
           )}
         >
           {freightOverview
-            ? "Static freight arcs · green / yellow / red by volume"
+            ? "Heavy = slow red pulse · light = fast green · fill ≤50%"
+            : isCaas && routeCoordinates.length >= 2
+              ? `${roadSnapStatus === "road" ? "Road-snapped" : "Preview"} · freight/geo/assets on`
             : roadSnapStatus === "road"
               ? `Road-snapped · ${routeCoordinates.length} pts`
-              : "Straight-line preview · snapping to roads…"}
+              : "Loading road geometry · no straight-line fallback"}
         </div>
+        {!freightOverview && routeCoordinates.length >= 8 ? (
+          <button
+            type="button"
+            data-testid="route-focus-toggle"
+            onClick={selectRoute}
+            className="pointer-events-auto mt-2 rounded-full border border-[var(--fv-blueprint-blue)]/35 bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--fv-blueprint-blue)] shadow-sm transition hover:bg-[var(--fv-blueprint-blue)] hover:text-white"
+          >
+            {routeFocusEngaged ? "Show all map layers" : "Focus this route"}
+          </button>
+        ) : null}
+        {isCaas && gapLayerActive ? (
+          <div
+            data-testid="class8-gap-layer-status"
+            data-state={
+              routeCoordinates.length < 8
+                ? "route-required"
+                : gapCandidateCount > 0
+                  ? "candidates"
+                  : "covered"
+            }
+            className={cn(
+              "mt-2 max-w-[17rem] border-l-2 px-2 py-1.5 text-[9px] font-bold uppercase leading-4 tracking-[0.09em]",
+              routeCoordinates.length < 8
+                ? "border-[#9a6a2b] bg-[#b8874c]/10 text-[#765019]"
+                : gapCandidateCount > 0
+                  ? "border-[var(--fv-alert-red)] bg-[var(--fv-alert-red)]/10 text-[var(--fv-alert-red)]"
+                  : "border-[var(--fv-signal-green)] bg-[var(--fv-signal-green)]/10 text-[var(--fv-signal-green)]",
+            )}
+          >
+            {routeCoordinates.length < 8
+              ? "GAP layer armed · build a road route to calculate siting candidates"
+              : gapCandidateCount > 0
+                ? `${gapCandidateCount} explainable mobile-charge GAP candidate${gapCandidateCount === 1 ? "" : "s"}`
+                : "Gap analysis complete · no modeled mobile siting candidate"}
+            {gapCandidateCount > 0 ? (
+              <button
+                type="button"
+                data-testid="class8-gap-review-candidate"
+                onClick={() => {
+                  const candidate = gapCandidates[0]!;
+                  selectAsset({
+                    id: candidate.id,
+                    type: candidate.type,
+                    label: candidate.label,
+                    layerId: candidate.layerId,
+                    latitude: candidate.latitude,
+                    longitude: candidate.longitude,
+                    metadata: {
+                      ...candidate.metadata,
+                      subtitle: candidate.subtitle,
+                      metric: candidate.metric,
+                    },
+                  });
+                }}
+                className="pointer-events-auto mt-1 block border-b border-current text-[8px] font-black uppercase tracking-[0.12em]"
+              >
+                Review candidate evidence
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
+
+      {isCaas ? (
+        <aside className="pointer-events-none absolute right-5 top-5 z-10 w-[min(28rem,calc(100vw-22rem))] rounded-2xl border border-black/10 bg-white/95 p-5 text-[var(--fv-graphite)] shadow-xl backdrop-blur" aria-label="Live CaaS data summary">
+          <div className="font-mono text-base font-black uppercase tracking-[0.12em] text-[var(--fv-blueprint-blue)]">Live data card</div>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            {[
+              ["Class 8-friendly chargers", caasDataSummary?.class8FriendlyChargers ?? "—"],
+              ["Route charger gaps", routeGapCount],
+              ["Traffic generators", caasDataSummary?.trafficGenerators ?? "—"],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl border border-black/10 bg-[var(--fv-bg)] p-3">
+                <div className="text-2xl font-black text-[var(--fv-graphite)]">{value}</div>
+                <div className="mt-1 text-base font-bold leading-5 text-[var(--fv-steel)]">{label}</div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      ) : null}
 
       <div className="absolute bottom-5 right-5 z-10">
         <SelectedAssetCard selection={selectedAsset} />

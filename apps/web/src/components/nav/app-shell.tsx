@@ -1,16 +1,12 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
-import { ReactNode, Suspense } from "react";
+import { usePathname } from "next/navigation";
+import { ReactNode } from "react";
 import { UserMenu } from "@/components/auth/user-menu";
-import { useWorkOSAuth } from "@/lib/auth";
 import { Sidebar } from "./sidebar";
 import { PageHeader } from "./page-header";
-import { MobileTabBar } from "./mobile-tab-bar";
 
-// ── Phase 16 / Wave 3: AppShell integrated with Sidebar, PageHeader, MobileTabBar ─
-//
-// The new app chrome for ALL authenticated pages. Replaces the old NavHeader.
+// Desktop application chrome for authenticated Fleet Manager and CaaS pages.
 //
 // Layout (dashboards / non-workbench):
 //   ┌──────────────────────────────────────────────────────┐
@@ -30,13 +26,12 @@ import { MobileTabBar } from "./mobile-tab-bar";
 //   Global Sidebar is HIDDEN. Left chrome is the workbench tool rail
 //   (role nav above, accordion tools below) inside MapWorkbenchShell.
 //
-// Sidebar: 260px expanded, 56px collapsed (Wave 3). PageHeader in top bar.
-// MobileTabBar: bottom-fixed on <768px screens (hidden on map-first routes).
+// Sidebar: 260px expanded, 56px collapsed. PageHeader remains in the top bar.
 //
 // Public routes (/, /role-select, /callback) bypass the AppShell entirely
 // and render children without the sidebar/top bar.
 
-const PUBLIC_ROUTES = new Set(["/", "/role-select", "/callback"]);
+const PUBLIC_ROUTES = new Set(["/", "/briefing", "/role-select", "/callback", "/design-system"]);
 
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;
@@ -59,6 +54,7 @@ function getPageTitle(pathname: string): string {
     "/load": "Load Management",
     "/status": "System Status",
     "/catalog": "Vehicle Catalog",
+    "/design-system": "Enterprise Design System",
   };
   // Exact match first
   if (map[pathname]) return map[pathname];
@@ -71,7 +67,7 @@ function getPageTitle(pathname: string): string {
 
 function TopBar({ pageTitle }: { pageTitle: string }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-black/8 bg-[var(--fv-paper)] px-4">
+    <header className="fv-command-topbar sticky top-0 z-30 flex h-14 items-center gap-3 px-4">
       <PageHeader title={pageTitle} />
       {/* Right: UserMenu */}
       <div className="flex shrink-0 items-center gap-3">
@@ -81,70 +77,61 @@ function TopBar({ pageTitle }: { pageTitle: string }) {
   );
 }
 
-/** "Sign In" button shown in top bar when unauthenticated on protected routes. */
-function SignInButton() {
-  const { signIn } = useWorkOSAuth();
-  return (
-    <button
-      onClick={() => signIn()}
-      className="fv-btn-primary"
-      style={{ padding: "6px 16px", fontSize: "13px", width: "auto" }}
-    >
-      Sign In
-    </button>
-  );
-}
-
-function isMapWorkbenchRoute(pathname: string, searchParams: URLSearchParams | null): boolean {
+function isMapWorkbenchRoute(pathname: string): boolean {
   if (pathname === "/workbench" || pathname.startsWith("/workbench/")) return true;
   if (pathname === "/driver/day-plan" || pathname.startsWith("/driver/day-plan/")) return true;
   if (pathname === "/fleet/contract-plan" || pathname.startsWith("/fleet/contract-plan/")) return true;
   if (pathname === "/caas/gap-map" || pathname.startsWith("/caas/gap-map/")) return true;
-  // /caas is map-first (freight overview); ?view=summary stays in chrome shell.
-  if (pathname === "/caas") {
-    return searchParams?.get("view") !== "summary";
-  }
+  // /caas is map-first. Its optional summary view retains this compact chrome
+  // so the global layout does not depend on search params during hydration.
+  if (pathname === "/caas") return true;
   return false;
 }
 
 function AppShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { isAuthenticated, loading } = useWorkOSAuth();
-
   // Public routes render without the shell
   if (isPublicRoute(pathname)) {
-    return <>{children}</>;
+    return (
+      <>
+        <a className="fv-skip-link" href="#main-content">
+          Skip to main content
+        </a>
+        {children}
+      </>
+    );
   }
 
   const pageTitle = getPageTitle(pathname);
   // Map workbench owns its own stacked left tool rail — hide global Sidebar.
-  const mapFirst = isMapWorkbenchRoute(pathname, searchParams);
+  const mapFirst = isMapWorkbenchRoute(pathname);
 
   return (
-    <div className="min-h-screen bg-[var(--fv-bg)]">
+    <div className={mapFirst ? "min-h-screen bg-[var(--fv-bg)]" : "fv-enterprise-shell min-h-screen"}>
+      <a className="fv-skip-link" href="#main-content">
+        Skip to main content
+      </a>
       {!mapFirst ? <Sidebar /> : null}
-      <div className={mapFirst ? "pl-0" : "pl-14 md:pl-[260px]"}>
+      <div className={mapFirst ? "pl-0" : "fv-shell-content pl-0 md:pl-[260px]"}>
         <TopBar pageTitle={pageTitle} />
-        <main
-          className={
-            mapFirst
-              ? "fv-app-main fv-app-main--map min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0"
-              : "fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0 pb-14 md:pb-0"
-          }
-        >
-          {children}
-        </main>
+        {mapFirst ? (
+          <div className="fv-app-main fv-app-main--map min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0">
+            {children}
+          </div>
+        ) : (
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="fv-app-main min-h-[calc(100dvh-3.5rem)] min-w-0 w-full max-w-none p-0"
+          >
+            {children}
+          </main>
+        )}
       </div>
-      {!mapFirst ? <MobileTabBar /> : null}
     </div>
   );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <Suspense fallback={<>{children}</>}>
-      <AppShellInner>{children}</AppShellInner>
-    </Suspense>
-  );
+  return <AppShellInner>{children}</AppShellInner>;
 }

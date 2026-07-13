@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Truck, MapPin, Users, Route, Plus, Check } from "lucide-react";
+import { MapPin, Users, Route, Plus, Check } from "lucide-react";
 import { FramedPanel } from "@/components/design/framed-panel";
 import { SkeuomorphicCard } from "@/components/design/skeuomorphic-card";
 import { TechnicalLabel } from "@/components/design/technical-label";
@@ -88,12 +88,16 @@ export default function FleetSetupPage() {
       </div>
 
       {/* Step navigation */}
-      <div className="mt-5 flex gap-2">
+      <div className="fv-segmented mt-5" role="group" aria-label="Fleet setup steps">
         {steps.map((s, i) => (
-          <button key={i} onClick={() => setStep(i)} className="fv-segmented" style={{ display: "inline-flex" }}>
-            <button type="button" data-active={step === i} onClick={() => setStep(i)} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-              {i + 1}. {s}
-            </button>
+          <button
+            key={s}
+            type="button"
+            aria-pressed={step === i}
+            data-active={step === i}
+            onClick={() => setStep(i)}
+          >
+            {i + 1}. {s}
           </button>
         ))}
       </div>

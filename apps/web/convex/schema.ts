@@ -523,6 +523,9 @@ export default defineSchema({
         maxLng: v.number(),
       }),
     ),
+    rings: v.optional(
+      v.array(v.array(v.object({ lat: v.number(), lng: v.number() }))),
+    ),
     aggregateScore: v.optional(v.number()),
     airDistrict: v.optional(v.string()),
     zipCodes: v.optional(v.array(v.string())),
@@ -531,6 +534,46 @@ export default defineSchema({
     .index("by_level", ["level"])
     .index("by_fips", ["fips"])
     .index("by_parent", ["parentFips"]),
+
+  // California State Geoportal ZIP areas (2024 vintage) — CA only.
+  // Simplified exterior rings for CaaS ZIP choropleth (fill ≤50%).
+  geoZcta: defineTable({
+    zcta: v.string(),
+    name: v.string(),
+    centroid: v.object({ lat: v.number(), lng: v.number() }),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    /** Simplified exterior ring (open; UI closes). Cap ~48 pts at ingest. */
+    ring: v.array(v.object({ lat: v.number(), lng: v.number() })),
+    aggregateScore: v.optional(v.number()),
+    countyFips: v.optional(v.string()),
+    airDistrict: v.optional(v.string()),
+    provenance,
+  })
+    .index("by_zcta", ["zcta"])
+    .index("by_county", ["countyFips"]),
+
+  // California Air Resources Board district boundaries. A district may be
+  // represented by more than one authoritative exterior polygon.
+  geoAirDistricts: defineTable({
+    code: v.string(),
+    name: v.string(),
+    centroid: v.object({ lat: v.number(), lng: v.number() }),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    rings: v.array(
+      v.array(v.object({ lat: v.number(), lng: v.number() })),
+    ),
+    provenance,
+  }).index("by_code", ["code"]),
 
   // ── Driver profiles (P-DRIVER) ──────────────────────────────────────────────
   //
@@ -820,6 +863,183 @@ export default defineSchema({
     .index("by_routeId", ["routeId"])
     .index("by_userId_updatedAt", ["userId", "updatedAt"])
     .index("by_fleetId", ["fleetId"]),
+
+  // Persistent provider geometry. PTV rows are authoritative for 90 days;
+  // enrichment snapshots intentionally live outside this table so they can
+  // refresh without purchasing another route pull.
+  routeGeometries: defineTable({
+    requestHash: v.string(),
+    provider: v.union(
+      v.literal("ptv"),
+      v.literal("google"),
+      v.literal("valhalla"),
+      v.literal("mock"),
+    ),
+    origin: v.object({ latitude: v.number(), longitude: v.number() }),
+    destination: v.object({ latitude: v.number(), longitude: v.number() }),
+    waypoints: v.array(
+      v.object({ latitude: v.number(), longitude: v.number() }),
+    ),
+    coordinates: v.array(
+      v.object({ latitude: v.number(), longitude: v.number() }),
+    ),
+    distanceMeters: v.optional(v.number()),
+    durationSeconds: v.optional(v.number()),
+    encodedPolyline: v.optional(v.string()),
+    warnings: v.array(v.string()),
+    providerMetadata: v.optional(v.any()),
+    pulledAt: v.number(),
+    expiresAt: v.number(),
+    refreshLeaseUntil: v.optional(v.number()),
+    refreshState: v.union(
+      v.literal("fresh"),
+      v.literal("refreshing"),
+      v.literal("failed"),
+    ),
+    lastRefreshAttemptAt: v.optional(v.number()),
+    lastRefreshError: v.optional(v.string()),
+    accessCount: v.number(),
+    refreshCount: v.number(),
+    lastAccessedAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_requestHash", ["requestHash"])
+    .index("by_expiresAt", ["expiresAt"])
+    .index("by_refreshState", ["refreshState"]),
+
+  // Independently freshened route intelligence. The requestHash references the
+  // authoritative road geometry above; snapshots never duplicate or mutate the
+  // 90-day provider geometry lifecycle.
+  routeEnrichments: defineTable({
+    requestHash: v.string(),
+    snapshot: v.optional(v.any()),
+    computedAt: v.number(),
+    expiresAt: v.number(),
+    refreshLeaseUntil: v.optional(v.number()),
+    refreshState: v.union(
+      v.literal("fresh"),
+      v.literal("refreshing"),
+      v.literal("failed"),
+    ),
+    lastRefreshAttemptAt: v.optional(v.number()),
+    lastRefreshError: v.optional(v.string()),
+    accessCount: v.number(),
+    refreshCount: v.number(),
+    lastAccessedAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_requestHash", ["requestHash"])
+    .index("by_expiresAt", ["expiresAt"])
+    .index("by_refreshState", ["refreshState"]),
+
+  // Promoted route catalog entries reference the independently cached road
+  // geometry + intelligence snapshot by requestHash. The provider payloads are
+  // deliberately not copied here: catalog curation cannot reset either cache.
+  routeCatalogEntries: defineTable({
+    catalogId: v.string(),
+    name: v.string(),
+    promoted: v.boolean(),
+    sortOrder: v.number(),
+    generatorId: v.string(),
+    originPortCode: v.string(),
+    origin: v.object({
+      label: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      kind: v.string(),
+      source: v.string(),
+      id: v.optional(v.string()),
+    }),
+    destination: v.object({
+      label: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      kind: v.string(),
+      source: v.string(),
+      id: v.optional(v.string()),
+    }),
+    requestHash: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_catalogId", ["catalogId"])
+    .index("by_promoted_sortOrder", ["promoted", "sortOrder"])
+    .index("by_requestHash", ["requestHash"]),
+
+  // Phase 23 statewide route generation is deliberately controlled one pair
+  // at a time. These rows are operational receipts, not provider payloads.
+  statewideRouteRuns: defineTable({
+    runId: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("paused"),
+      v.literal("complete"),
+      v.literal("failed"),
+    ),
+    totalPairs: v.number(),
+    verifiedPairs: v.number(),
+    missingPairs: v.number(),
+    invalidPairs: v.number(),
+    duplicatePairs: v.number(),
+    providerCalls: v.number(),
+    cacheHits: v.number(),
+    failures: v.number(),
+    activePairKey: v.optional(v.string()),
+    activeLeaseOwner: v.optional(v.string()),
+    activeLeaseUntil: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_runId", ["runId"])
+    .index("by_status_updatedAt", ["status", "updatedAt"])
+    .index("by_activeLeaseUntil", ["activeLeaseUntil"]),
+
+  statewideRouteAttempts: defineTable({
+    receiptId: v.string(),
+    runId: v.string(),
+    pairKey: v.string(),
+    generatorId: v.string(),
+    originPortCode: v.string(),
+    attempt: v.number(),
+    status: v.union(
+      v.literal("claimed"),
+      v.literal("succeeded"),
+      v.literal("failed"),
+      v.literal("skipped"),
+    ),
+    leaseOwner: v.string(),
+    leaseUntil: v.number(),
+    requestHash: v.optional(v.string()),
+    catalogId: v.optional(v.string()),
+    providerCall: v.boolean(),
+    cacheStatus: v.optional(v.string()),
+    pointCount: v.optional(v.number()),
+    errorCode: v.optional(v.string()),
+    errorSummary: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_receiptId", ["receiptId"])
+    .index("by_run_pair_attempt", ["runId", "pairKey", "attempt"])
+    .index("by_run_status", ["runId", "status"])
+    .index("by_pair_status", ["pairKey", "status"])
+    .index("by_leaseUntil", ["leaseUntil"]),
+
+  consumedAdminNonces: defineTable({
+    nonceDigest: v.string(),
+    keyId: v.string(),
+    operation: v.string(),
+    bodyHash: v.string(),
+    issuedAt: v.number(),
+    expiresAt: v.number(),
+    consumedAt: v.number(),
+  })
+    .index("by_nonceDigest", ["nonceDigest"])
+    .index("by_expiresAt", ["expiresAt"]),
 
   // Last successful map-workbench Calculate runs (driver / fleet / caas).
   // Used to restore route geometry + draft on "Start Day Plan" for returning users.

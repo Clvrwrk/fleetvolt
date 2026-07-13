@@ -5,13 +5,13 @@ import {
   useEffect,
   useId,
   useMemo,
-  useRef,
   useState,
   type ErrorInfo,
   type ReactNode,
 } from "react";
 import { useQuery } from "convex/react";
-import { Check, Loader2, MapPin, Navigation, Search } from "lucide-react";
+import { Check, MapPin, Navigation, Search } from "lucide-react";
+import { FleetVoltLoader } from "@/components/design/fleetvolt-loader";
 import { api } from "../../../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import {
@@ -143,7 +143,7 @@ function isAmbiguousSelection(suggestion: PlaceSuggestion, suggestions: PlaceSug
 
 function useLocalPlaceAssets(trimmedInput: string, fleetId?: string) {
   return useQuery(
-    api["workbench/queries"].searchPlaceAssets,
+    api.workbench.queries.searchPlaceAssets,
     trimmedInput.length >= 2 ? { query: trimmedInput, limit: 7, fleetId } : "skip",
   ) as FleetVoltAssetSuggestion[] | undefined;
 }
@@ -164,7 +164,8 @@ function PlaceInputBody({
   const [googleSuggestions, setGoogleSuggestions] = useState<GooglePlaceSuggestion[]>([]);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [pendingConfirmation, setPendingConfirmation] = useState<PlaceSuggestion | null>(null);
-  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const [sessionToken, setSessionToken] =
+    useState<google.maps.places.AutocompleteSessionToken | null>(null);
   const debouncedInput = useDebouncedValue(inputValue, 250);
   const trimmedInput = debouncedInput.trim();
 
@@ -175,7 +176,8 @@ function PlaceInputBody({
 
   useEffect(() => {
     if (value?.label && value.label !== inputValue && !isOpen) {
-      setInputValue(value.label);
+      const timeoutId = window.setTimeout(() => setInputValue(value.label), 0);
+      return () => window.clearTimeout(timeoutId);
     }
   }, [inputValue, isOpen, value?.label]);
 
@@ -188,11 +190,16 @@ function PlaceInputBody({
         return;
       }
 
+      if (!sessionToken) {
+        const token = await ensurePlacesSessionToken();
+        if (!cancelled) setSessionToken(token);
+        return;
+      }
+
       setIsLoadingGoogle(true);
-      sessionTokenRef.current ??= await ensurePlacesSessionToken();
       const results = await searchGooglePlaces({
         input: trimmedInput,
-        sessionToken: sessionTokenRef.current,
+        sessionToken,
       });
       if (!cancelled) {
         setGoogleSuggestions(results);
@@ -204,7 +211,7 @@ function PlaceInputBody({
     return () => {
       cancelled = true;
     };
-  }, [trimmedInput]);
+  }, [sessionToken, trimmedInput]);
 
   const manualCoordinate = useMemo(() => parseManualCoordinate(inputValue), [inputValue]);
 
@@ -228,11 +235,11 @@ function PlaceInputBody({
 
     let place: WorkbenchPlace | null = null;
     if (suggestion.source === "google") {
-      place = await resolveGooglePlaceDetails(suggestion, sessionTokenRef.current);
-      sessionTokenRef.current = await ensurePlacesSessionToken();
+      place = await resolveGooglePlaceDetails(suggestion, sessionToken);
+      setSessionToken(await ensurePlacesSessionToken());
     } else if (suggestion.source === "manual") {
       place = suggestion;
-      sessionTokenRef.current = await ensurePlacesSessionToken();
+      setSessionToken(await ensurePlacesSessionToken());
     } else {
       place = normalizeFleetVoltSuggestion(suggestion);
     }
@@ -269,7 +276,7 @@ function PlaceInputBody({
           onFocus={() => setIsOpen(true)}
         />
         {isLoadingGoogle ? (
-          <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-[var(--fv-steel)]" />
+          <FleetVoltLoader compact label="Searching places" className="absolute right-3 top-1/2 -translate-y-1/2" />
         ) : value ? (
           <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[var(--fv-signal-green)]" />
         ) : (

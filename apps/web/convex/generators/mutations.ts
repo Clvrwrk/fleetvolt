@@ -59,7 +59,8 @@ export const upsertGeneratorBatch = internalMutation({
       };
 
       if (existing) {
-        await ctx.db.patch(existing._id, doc);
+        // Replace so a missing portCode clears the prior value (patch would keep it).
+        await ctx.db.replace(existing._id, doc);
         patched += 1;
       } else {
         await ctx.db.insert("trafficGenerators", doc);

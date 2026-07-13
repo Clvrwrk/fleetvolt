@@ -6,7 +6,8 @@ import { test, expect, type Page } from "@playwright/test";
  */
 
 async function withWorkbenchSession(page: Page) {
-  const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+  const baseURL =
+    process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3017";
   await page.context().addCookies([
     {
       name: "fv_session",
@@ -21,22 +22,22 @@ async function withWorkbenchSession(page: Page) {
   ]);
 }
 
+function visibleTestId(page: Page, testId: string) {
+  return page.locator(`[data-testid="${testId}"]:visible`);
+}
+
 async function gotoWorkbench(page: Page, mode: string) {
   await withWorkbenchSession(page);
   await page.goto(`/workbench?mode=${mode}`);
-  await expect(page.getByTestId("map-workbench-shell")).toBeVisible({ timeout: 20_000 });
+  // Next may retain a hidden route tree while streaming the new one. Test the
+  // single user-visible workbench rather than matching the hidden cache tree.
+  const shell = visibleTestId(page, "map-workbench-shell");
+  await expect(shell).toHaveCount(1, { timeout: 20_000 });
+  await expect(shell).toBeVisible({ timeout: 20_000 });
+  await expect(shell).toHaveAttribute("data-workbench-mode", mode);
 }
 
 test.describe("map workbench — launchers and mode parsing", () => {
-  test("driver dashboard CTA launches day-plan workbench", async ({ page }) => {
-    await withWorkbenchSession(page);
-    await page.goto("/driver");
-    await page.getByRole("link", { name: /Start Day Plan/i }).click();
-    await expect(page).toHaveURL(/mode=driver_day_plan/);
-    await expect(page.getByTestId("map-workbench-shell")).toBeVisible();
-    await expect(page.getByTestId("workbench-mode-label")).toContainText(/Driver day plan/i);
-  });
-
   test("fleet dashboard CTA launches contract-plan workbench", async ({ page }) => {
     await withWorkbenchSession(page);
     await page.goto("/fleet");
@@ -44,88 +45,96 @@ test.describe("map workbench — launchers and mode parsing", () => {
     await expect(cta).toBeVisible({ timeout: 15_000 });
     await cta.click();
     await expect(page).toHaveURL(/mode=fleet_contract_plan/);
-    await expect(page.getByTestId("map-workbench-shell")).toBeVisible();
+    await expect(visibleTestId(page, "map-workbench-shell")).toBeVisible();
   });
 
-  test("caas dashboard CTA launches gap-map workbench", async ({ page }) => {
+  test("caas route opens the gap-map workbench", async ({ page }) => {
     await withWorkbenchSession(page);
     await page.goto("/caas");
-    await page.getByRole("link", { name: /Find Charger Gaps/i }).click();
-    await expect(page).toHaveURL(/mode=caas_gap_map/);
-    await expect(page.getByTestId("map-workbench-shell")).toBeVisible();
+    const shell = visibleTestId(page, "map-workbench-shell");
+    await expect(shell).toHaveCount(1, { timeout: 20_000 });
+    await expect(shell).toBeVisible();
+    await expect(shell).toHaveAttribute("data-workbench-mode", "caas_gap_map");
   });
 
   test("semantic launchers redirect into /workbench modes", async ({ page }) => {
     await withWorkbenchSession(page);
-    await page.goto("/driver/day-plan");
-    await expect(page).toHaveURL(/\/workbench\?mode=driver_day_plan/);
     await page.goto("/fleet/contract-plan");
     await expect(page).toHaveURL(/\/workbench\?mode=fleet_contract_plan/);
     await page.goto("/caas/gap-map");
-    await expect(page).toHaveURL(/\/workbench\?mode=caas_gap_map/);
+    await expect(page).toHaveURL(/\/caas$/);
+    await expect(visibleTestId(page, "map-workbench-shell")).toHaveAttribute(
+      "data-workbench-mode",
+      "caas_gap_map",
+    );
   });
 
   test("/workbench parses mode query param", async ({ page }) => {
     await gotoWorkbench(page, "fleet_contract_plan");
-    await expect(page.getByTestId("workbench-mode-label")).toContainText(/Fleet contract plan/i);
+    await expect(visibleTestId(page, "map-workbench-shell")).toHaveAttribute(
+      "data-workbench-mode",
+      "fleet_contract_plan",
+    );
     await gotoWorkbench(page, "caas_gap_map");
-    await expect(page.getByTestId("workbench-mode-label")).toContainText(/CaaS gap map/i);
+    await expect(visibleTestId(page, "map-workbench-shell")).toHaveAttribute(
+      "data-workbench-mode",
+      "caas_gap_map",
+    );
   });
 });
 
-test.describe("map workbench — desktop and mobile layout", () => {
+test.describe("map workbench — desktop layout", () => {
   test("desktop full-viewport layout shows left tools, map, right cards", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await gotoWorkbench(page, "driver_day_plan");
+    await gotoWorkbench(page, "caas_gap_map");
 
-    const shell = page.getByTestId("map-workbench-shell");
+    const shell = visibleTestId(page, "map-workbench-shell");
     await expect(shell).toBeVisible();
-    await expect(page.getByTestId("workbench-left-panel")).toBeVisible();
-    await expect(page.getByTestId("fleetvolt-map-canvas")).toBeVisible();
+    await expect(visibleTestId(page, "workbench-left-panel")).toBeVisible();
+    await expect(visibleTestId(page, "fleetvolt-map-canvas")).toBeVisible();
+    const summaryToggle = page.getByRole("button", { name: /CaaS opportunity cards/i });
+    await expect(summaryToggle).toBeVisible();
+    await expect(page.getByTestId("workbench-right-panel")).toBeHidden();
+    await summaryToggle.click();
     await expect(page.getByTestId("workbench-right-panel")).toBeVisible();
-    await expect(page.getByTestId("mobile-workbench-sheet")).toBeHidden();
-
     const box = await shell.boundingBox();
     expect(box).toBeTruthy();
     expect(box!.height).toBeGreaterThan(700);
-  });
-
-  test("mobile shows bottom sheet and hides desktop side panels", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await gotoWorkbench(page, "driver_day_plan");
-
-    await expect(page.getByTestId("mobile-workbench-sheet")).toBeVisible();
-    await expect(page.getByTestId("fleetvolt-map-canvas")).toBeVisible();
-    // Side panels use hidden md:flex — not visible on mobile
-    await expect(page.getByTestId("workbench-left-panel")).toBeHidden();
-    await expect(page.getByTestId("workbench-right-panel")).toBeHidden();
   });
 });
 
 test.describe("map workbench — layers, markers, AI smoke", () => {
   test("layer toggles update pressed state", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await gotoWorkbench(page, "driver_day_plan");
+    await gotoWorkbench(page, "caas_gap_map");
 
-    const parking = page.getByTestId("workbench-layer-parking");
-    await expect(parking).toHaveAttribute("aria-pressed", "true");
+    const parking = visibleTestId(page, "workbench-left-panel")
+      .getByTestId("workbench-layer-toggle-parking");
+    const initial = await parking.getAttribute("aria-pressed");
+    expect(initial === "true" || initial === "false").toBeTruthy();
     await parking.click();
-    await expect(parking).toHaveAttribute("aria-pressed", "false");
+    await expect(parking).toHaveAttribute(
+      "aria-pressed",
+      initial === "true" ? "false" : "true",
+    );
     await parking.click();
-    await expect(parking).toHaveAttribute("aria-pressed", "true");
+    await expect(parking).toHaveAttribute("aria-pressed", initial!);
   });
 
   test("marker click opens selected asset card when markers exist", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await gotoWorkbench(page, "driver_day_plan");
+    await gotoWorkbench(page, "caas_gap_map");
 
     const marker = page.getByTestId("workbench-asset-marker").first();
-    const mapsReady = Boolean(
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && process.env.NEXT_PUBLIC_GOOGLE_MAP_ID,
-    );
+    const mapsReady =
+      process.env.FLEETVOLT_E2E_MAPS === "1" &&
+      Boolean(
+        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY &&
+          process.env.NEXT_PUBLIC_GOOGLE_MAP_ID,
+      );
 
     if (!mapsReady) {
-      await expect(page.getByTestId("fleetvolt-map-canvas")).toBeVisible();
+      await expect(visibleTestId(page, "fleetvolt-map-canvas")).toBeVisible();
       test.skip(true, "Google Maps env missing — skip live marker interaction");
       return;
     }
@@ -141,11 +150,12 @@ test.describe("map workbench — layers, markers, AI smoke", () => {
     await expect(page.getByTestId("selected-asset-card")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("AI command bar applies map actions and cards (driver example)", async ({ page }) => {
+  test("AI command bar applies CaaS map actions and cards", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await gotoWorkbench(page, "driver_day_plan");
+    await gotoWorkbench(page, "caas_gap_map");
 
-    const bar = page.getByTestId("ai-command-bar");
+    const bar = visibleTestId(page, "workbench-left-panel")
+      .getByTestId("ai-command-bar");
     await expect(bar).toBeVisible();
 
     // Prefer example chip (deterministic local fallback) over free-text submit.
@@ -154,6 +164,7 @@ test.describe("map workbench — layers, markers, AI smoke", () => {
     const summary = page.getByTestId("ai-command-summary");
     const cards = page.getByTestId("workbench-result-card");
     await expect(summary.or(cards.first())).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: /CaaS opportunity cards/i }).click();
     await expect(cards.first()).toBeVisible();
   });
 });

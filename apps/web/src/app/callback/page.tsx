@@ -57,7 +57,7 @@ function CallbackHandler() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
-  const upsertUserAccount = useMutation(api["userData/mutations"].upsertMyUserAccount);
+  const upsertUserAccount = useMutation(api.userData.mutations.upsertMyUserAccount);
 
   const code = searchParams.get("code");
   const stateParam = searchParams.get("state");

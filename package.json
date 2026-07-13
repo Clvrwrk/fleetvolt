@@ -7,6 +7,10 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "docker:review": "docker compose --env-file apps/web/.env.local -f compose.review.yml -p fleetvolt-review up -d --build",
+    "docker:review:status": "docker compose --env-file apps/web/.env.local -f compose.review.yml -p fleetvolt-review ps",
+    "docker:review:logs": "docker compose --env-file apps/web/.env.local -f compose.review.yml -p fleetvolt-review logs -f web",
+    "docker:review:down": "docker compose --env-file apps/web/.env.local -f compose.review.yml -p fleetvolt-review down",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

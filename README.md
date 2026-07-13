@@ -50,6 +50,11 @@ pnpm dev
 
 Open http://localhost:3000 — the app loads with Convex dev data.
 
+For every local-branch change, follow the mandatory
+[Local Visual Handoff Protocol](./docs/LOCAL_VISUAL_HANDOFF.md): serve the exact
+branch, visually review it, leave localhost running, and create a Chris-assigned
+FLE-1 sub-issue containing the exact localhost URL before requesting acceptance.
+
 Verify the health endpoint:
 
 ```bash

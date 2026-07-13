@@ -8,6 +8,7 @@
 import { v } from "convex/values";
 import { action } from "../_generated/server";
 import { api } from "../_generated/api";
+import { ROUTE_PLANNING_SKILL_PROMPT } from "./routePlanningSkill";
 
 type WorkbenchMode = "driver_day_plan" | "fleet_contract_plan" | "caas_gap_map";
 type PlannerRole = "driver" | "fleet_manager" | "caas";
@@ -24,6 +25,7 @@ type WorkbenchPlace = {
 };
 
 type WorkbenchLayerId =
+  | "ports"
   | "route"
   | "chargers"
   | "parking"
@@ -96,6 +98,7 @@ export type WorkbenchAiResult = {
 };
 
 const LAYER_IDS = new Set<WorkbenchLayerId>([
+  "ports",
   "route",
   "chargers",
   "parking",
@@ -665,10 +668,14 @@ export const workbenchPlanWithAi = action({
     if (example === "caas") return buildCaasExample(trimmed);
 
     try {
+      const skillContext =
+        mode === "caas_gap_map"
+          ? [ROUTE_PLANNING_SKILL_PROMPT, context].filter(Boolean).join("\n\n")
+          : context;
       const plannerResult = await ctx.runAction(api.planner.planWithAi, {
         message: trimmed,
         role: modeToRole(mode),
-        context,
+        context: skillContext,
       });
 
       const answerSummary = humanizeInternalPath(

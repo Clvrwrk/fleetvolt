@@ -71,7 +71,7 @@ export function DetourLegsLayer({
   visible = true,
 }: DetourLegsLayerProps) {
   const map = useMap();
-  const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
+  const fetchRouteGeometry = useAction(api.workbench.actions.routeGeometry);
   const linesRef = useRef<google.maps.Polyline[]>([]);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const [paths, setPaths] = useState<DetourPaths | null>(null);
@@ -87,9 +87,9 @@ export function DetourLegsLayer({
       !Number.isFinite(selectedAsset.longitude) ||
       routeCoordinates.length < 2
     ) {
-      setPaths(null);
       requestKey.current = null;
-      return;
+      const timeoutId = window.setTimeout(() => setPaths(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     const corridor: LatLng[] = routeCoordinates.map((c) => ({
@@ -102,15 +102,16 @@ export function DetourLegsLayer({
     };
     const nearest = nearestPointOnPolyline(asset, corridor);
     if (!nearest) {
-      setPaths(null);
-      return;
+      requestKey.current = null;
+      const timeoutId = window.setTimeout(() => setPaths(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     // On-route assets don't need a spur.
     if (nearest.distanceM <= ON_ROUTE_MAX_M) {
-      setPaths(null);
       requestKey.current = null;
-      return;
+      const timeoutId = window.setTimeout(() => setPaths(null), 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     const key = `${selectedAsset.id}:${asset.lat.toFixed(5)},${asset.lng.toFixed(5)}:${nearest.point.lat.toFixed(5)},${nearest.point.lng.toFixed(5)}`;
@@ -130,21 +131,16 @@ export function DetourLegsLayer({
             latitude: asset.lat,
             longitude: asset.lng,
           },
-          provider: "google",
+          provider: "ptv",
         });
 
         if (cancelled) return;
 
         const spurPath = toPath(spur.coordinates ?? []);
-        if (spurPath.length < 2) {
-          // Fallback: straight spur so the driver still sees the exit intent.
-          setPaths({
-            spur: [
-              { lat: nearest.point.lat, lng: nearest.point.lng },
-              { lat: asset.lat, lng: asset.lng },
-            ],
-            junction: nearest.point,
-          });
+        if (spurPath.length < 8) {
+          // No road geometry means no line. A straight segment would look like
+          // a usable detour even though it may cross buildings or waterways.
+          setPaths(null);
           return;
         }
 
@@ -155,13 +151,7 @@ export function DetourLegsLayer({
       } catch (error) {
         if (cancelled) return;
         console.warn("[workbench] detour spur failed", error);
-        setPaths({
-          spur: [
-            { lat: nearest.point.lat, lng: nearest.point.lng },
-            { lat: asset.lat, lng: asset.lng },
-          ],
-          junction: nearest.point,
-        });
+        setPaths(null);
       }
     })();
 

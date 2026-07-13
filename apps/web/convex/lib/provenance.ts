@@ -8,7 +8,7 @@
 // provenance-contract unit test assert against the single runtime helper
 // `assertProvenance` below, so there is exactly one enforcement path.
 //
-// Phase 12 (P12-01): source count grew from nine to THIRTEEN — AFDC (chargers),
+// Phase 12 (P12-01): source count grew from nine — AFDC (chargers),
 // OSM (POI extraction), Census (geo rollup FIPS/TIGER), NATD (truck-stop
 // parking + alt-fuel corridors) were added for the converged data+spatial
 // layer. Two OPTIONAL fields — `method` and `inputs` — are the modeled-
@@ -21,7 +21,7 @@ import { Infer, v } from "convex/values";
  *  synthetic values from measured ones (SRC-04). AFDC/OSM/Census/NATD were
  *  added in Phase 12 (P12-01) for the converged data+spatial layer.
  *  CARB (California Air Resources Board) added in P-ROLES for air-district
- *  geo enrichment. */
+ *  geo enrichment; CA_Geoportal identifies state-hosted boundary layers. */
 export const PROVENANCE_SOURCES = [
   "FAF5",
   "Caltrans_AADT",
@@ -37,6 +37,7 @@ export const PROVENANCE_SOURCES = [
   "Census",
   "NATD",
   "CARB",
+  "CA_Geoportal",
 ] as const;
 
 export type ProvenanceSource = (typeof PROVENANCE_SOURCES)[number];
@@ -71,6 +72,7 @@ export const provenance = v.object({
     v.literal("Census"),
     v.literal("NATD"),
     v.literal("CARB"),
+    v.literal("CA_Geoportal"),
   ),
   year: v.optional(v.number()), // dataset vintage
   fetchedAt: v.number(), // epoch ms of ingest

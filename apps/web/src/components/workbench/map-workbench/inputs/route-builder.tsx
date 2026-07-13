@@ -4,6 +4,7 @@ import { ArrowRightLeft } from "lucide-react";
 import { useMapWorkbenchStore } from "@/stores/map-workbench-store";
 import type { WorkbenchPlace } from "../types";
 import { PlaceInput } from "./place-input";
+import { RouteCatalogSelect } from "./route-catalog-select";
 
 type RouteBuilderProps = {
   fleetId?: string;
@@ -28,6 +29,16 @@ export function RouteBuilder({ fleetId }: RouteBuilderProps) {
 
   return (
     <div className="space-y-3">
+      <RouteCatalogSelect />
+
+      <div className="flex items-center gap-2 py-0.5" aria-hidden="true">
+        <span className="h-px flex-1 bg-black/10" />
+        <span className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--fv-steel)]">
+          or enter endpoints
+        </span>
+        <span className="h-px flex-1 bg-black/10" />
+      </div>
+
       <PlaceInput
         label="Origin"
         value={origin}

@@ -8,7 +8,8 @@
     "start": "next start --hostname 0.0.0.0 --port ${PORT:-3000}",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test 'src/lib/*.test.ts' 'src/lib/**/*.test.ts' 'src/stores/*.test.ts' 'convex/**/*.test.ts'",
+    "test": "node scripts/run-tests.mjs unit",
+    "test:live": "node scripts/run-tests.mjs live",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -41,6 +42,7 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/google.maps": "3.65.2",

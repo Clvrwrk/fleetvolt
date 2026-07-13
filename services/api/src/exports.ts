@@ -42,7 +42,7 @@ async function defaultRenderPdf(html: string): Promise<Buffer> {
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: "load" });
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -104,7 +104,7 @@ export function createExportsHandlers(deps: ExportsDeps = defaultDeps) {
       });
     }
 
-    const row = result.rows[0] as SimulationRunRow;
+    const row = result.rows[0] as unknown as SimulationRunRow;
 
     if (row.status !== "COMPLETE" || !row.outputs) {
       return reply.status(409).send({

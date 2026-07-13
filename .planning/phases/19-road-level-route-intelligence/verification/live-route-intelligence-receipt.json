@@ -1,0 +1,37 @@
+{
+  "verifiedAt": "2026-07-11T21:50:00-07:00",
+  "deployment": "sensible-oriole-832",
+  "requestHash": "29241a81c5496c3c27c99aca9805605258c48d62d42e6785dc06b670693e55ac",
+  "refresh": {
+    "cacheStatus": "database-refreshed",
+    "computedAt": 1783831779754,
+    "expiresAt": 1784436579754,
+    "accessCount": 4,
+    "refreshCount": 2
+  },
+  "identicalSecondRequest": {
+    "cacheStatus": "database-hit",
+    "accessCount": 5,
+    "refreshCount": 2
+  },
+  "geometryRegression": {
+    "cacheStatus": "database-hit",
+    "pointCount": 800,
+    "pulledAt": 1783830141862,
+    "expiresAt": 1791606141862,
+    "refreshCount": 1
+  },
+  "coverage": {
+    "trafficSegments": 171,
+    "truckAadt": { "min": 28, "max": 16593, "mean": 5387.5, "p90": 13628, "unit": "trucks/day" },
+    "fafRows": 15047,
+    "fafTruncated": false,
+    "chargers": 218,
+    "class8Chargers": 3,
+    "parkingSites": 2,
+    "parkingSpots": 89,
+    "amenities": 3294,
+    "carriers": 593,
+    "fleetYards": 0
+  }
+}

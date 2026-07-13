@@ -236,6 +236,64 @@ Use these entry points:
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- gsd-workflow-end -->
 
+## Mandatory Branch and PR Safety
+
+- Never commit directly to `main`.
+- Never push changes directly to `main`.
+- Never merge a pull request or merge a work branch into `main` unless Chris
+  gives separate, explicit approval for that merge.
+- Implement on a dedicated work branch, commit only the intended files, push
+  that branch, and open a pull request as the default delivery path.
+- A passing PR or preview deployment is not production approval.
+
+## Mandatory Local Visual Handoff Gate
+
+This gate applies whenever an agent changes FleetVolt through a local branch,
+including UI, routing, authentication, data presentation, or behavior that a
+human can evaluate in the browser.
+
+An agent must not tell Chris that a local change is ready for his review until
+all of the following are true:
+
+1. Run the relevant automated checks and record the exact results.
+2. Start the current branch on a stable localhost port. Prefer
+   `http://localhost:3000`; if another port is required, report the exact URL.
+3. Open the localhost build and visually inspect every changed surface. Check
+   desktop and mobile breakpoints when responsive behavior is in scope.
+4. Use `SCREENSHOTONE_TAKE_SCREENSHOT` to capture every documented visual
+   change included in the PR or local change set. Each screenshot receipt must
+   state what changed, why the screenshot passes the agent visual test, and
+   exactly what Chris must review at the linked localhost route.
+5. Fix material defects found in that inspection, then repeat the checks. A
+   failed agent visual review blocks human handoff.
+6. Leave the reviewed localhost server running on the reported URL.
+7. Create a **sub-issue of FLE-1**, assign it directly to Chris Hussey, and put
+   the exact localhost URL plus the verification receipt in that sub-issue.
+8. Update the existing cw-codex entries on FLE-1 and CLE-6 in place.
+
+The handoff sub-issue must include: branch, commit SHA, localhost URL, reviewed
+routes and viewport sizes, automated checks, agent visual-review result, known
+limitations, ScreenshotOne evidence for every documented visual change, and a
+clear `Pass` / `Needs changes` request for Chris. A localhost
+URL is valid only on the machine running the server. If the server stops, the
+handoff is stale: restart it at the same URL and update the issue before asking
+Chris to review.
+
+Never describe a localhost-only change as deployed, released, available on
+staging, or available in production. Local acceptance, staging acceptance, and
+production acceptance are separate gates. See
+`docs/LOCAL_VISUAL_HANDOFF.md` for the operating checklist and issue template.
+
+If ScreenshotOne is unavailable or unconnected, the visual handoff is blocked.
+Do not silently substitute a browser screenshot or claim the evidence gate
+passed. Record the blocker and connect ScreenshotOne before handoff.
+
+ScreenshotOne is an external service and cannot directly access a private
+`localhost` URL. Before transmitting unpublished FleetVolt content or exposing
+localhost through a temporary public tunnel, explain the exact exposure and
+obtain Chris's explicit approval for that handoff. Approval to make local code
+changes alone is not approval to publish or transmit the private preview.
+
 <!-- gsd-profile-start -->
 
 ## Developer Profile

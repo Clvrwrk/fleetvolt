@@ -6,6 +6,8 @@ import type {
   WorkbenchSelection,
   WorkbenchSelectionType,
 } from "../types";
+import { Fuel, Zap } from "lucide-react";
+import { assetMarkerPresentation } from "@/lib/workbench/asset-presentation";
 import { cn } from "@/lib/utils";
 
 export type WorkbenchMapAsset = {
@@ -24,34 +26,17 @@ export type AssetMarkerLayerProps = {
   assets: WorkbenchMapAsset[];
   visible?: boolean;
   selectedAsset?: WorkbenchSelection | null;
-  onSelectAsset?: (selection: WorkbenchSelection) => void;
-};
-
-const ASSET_STYLE: Record<
-  WorkbenchSelectionType,
-  { fill: string; ring: string; shortLabel: string }
-> = {
-  route: { fill: "bg-slate-700", ring: "ring-slate-200", shortLabel: "RT" },
-  charger: { fill: "bg-emerald-600", ring: "ring-emerald-200", shortLabel: "E" },
-  parking: { fill: "bg-amber-600", ring: "ring-amber-200", shortLabel: "P" },
-  poi: { fill: "bg-sky-600", ring: "ring-sky-200", shortLabel: "POI" },
-  "fleet-yard": { fill: "bg-indigo-700", ring: "ring-indigo-200", shortLabel: "YD" },
-  highway: { fill: "bg-zinc-700", ring: "ring-zinc-200", shortLabel: "HW" },
-  "geo-region": { fill: "bg-cyan-700", ring: "ring-cyan-200", shortLabel: "RG" },
-  "class8-gap": { fill: "bg-rose-600", ring: "ring-rose-200", shortLabel: "GAP" },
-  carrier: { fill: "bg-violet-700", ring: "ring-violet-200", shortLabel: "CAR" },
-  "freight-flow": { fill: "bg-orange-700", ring: "ring-orange-200", shortLabel: "FL" },
-  "caas-zone": { fill: "bg-lime-700", ring: "ring-lime-200", shortLabel: "CaaS" },
+  onSelectAsset?: (selection: WorkbenchSelection | null) => void;
 };
 
 function markerTone(asset: WorkbenchMapAsset) {
   if (asset.type === "class8-gap" && asset.metadata?.classification === "detour-solvable") {
-    return { fill: "bg-amber-600", ring: "ring-amber-200", shortLabel: "DTR" };
+    return { ...assetMarkerPresentation(asset), fill: "bg-amber-600", ring: "ring-amber-200", label: "DTR" };
   }
   if (asset.type === "caas-zone" && asset.metadata?.priority === "high") {
-    return { fill: "bg-rose-700", ring: "ring-rose-200", shortLabel: "MOB" };
+    return { ...assetMarkerPresentation(asset), fill: "bg-rose-700", ring: "ring-rose-200", label: "MOB" };
   }
-  return ASSET_STYLE[asset.type];
+  return assetMarkerPresentation(asset);
 }
 
 function assetToSelection(asset: WorkbenchMapAsset): WorkbenchSelection {
@@ -101,11 +86,11 @@ export function AssetMarkerLayer({
           <AdvancedMarker
             key={`${asset.type}-${asset.id}`}
             position={{ lat: asset.latitude, lng: asset.longitude }}
-            title={asset.label}
+            title={`${asset.label} · ${style.title}`}
             onClick={() => onSelectAsset?.(assetToSelection(asset))}
             zIndex={isSelected ? 40 : 20}
           >
-            <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="relative flex h-11 w-11 items-center justify-center">
               {isSelected ? (
                 <>
                   <span
@@ -129,16 +114,22 @@ export function AssetMarkerLayer({
                 data-layer-id={asset.layerId}
                 data-selected={isSelected ? "true" : "false"}
                 className={cn(
-                  "relative z-10 flex min-h-8 min-w-8 items-center justify-center rounded-full border-2 border-white px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white shadow-lg transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
+                  "relative z-10 flex h-11 min-w-11 items-center justify-center rounded-full border-2 border-white px-2 text-base font-black uppercase tracking-[0.04em] text-white shadow-lg transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]",
                   style.fill,
                   isSelected ? `ring-4 ${style.ring} scale-110` : "ring-0",
                 )}
                 aria-label={isSelected ? `Deselect ${asset.label}` : `Select ${asset.label}`}
                 aria-pressed={isSelected}
+                onDoubleClick={(event) => {
+                  event.stopPropagation();
+                  onSelectAsset?.(null);
+                }}
               >
-                <span>{style.shortLabel}</span>
+                {style.icon === "bolt" ? <Zap size={23} strokeWidth={3} aria-hidden /> : null}
+                {style.icon === "fuel" ? <Fuel size={22} strokeWidth={2.5} aria-hidden /> : null}
+                {style.icon === "text" ? <span>{style.label}</span> : null}
                 {asset.metric ? (
-                  <span className="pointer-events-none absolute left-1/2 top-full mt-1 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-[10px] font-bold normal-case tracking-normal text-[var(--fv-graphite)] shadow-md group-hover:block">
+                  <span className="pointer-events-none absolute left-1/2 top-full mt-1 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-base font-bold normal-case tracking-normal text-[var(--fv-graphite)] shadow-md group-hover:block">
                     {asset.metric}
                   </span>
                 ) : null}

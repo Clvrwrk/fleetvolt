@@ -1,5 +1,7 @@
 # FleetVolt Route
 
+> **Active source of truth — 2026-07-12:** FleetVolt.Network CaaS Desktop MVP is the current product and release target. The production architecture is Next.js + Convex + Google Maps/Routes + Vercel. Docker, PostGIS, Valhalla, Fastify, Python services, and the former Freight Pulse milestone are historical implementation context only; they are not executable requirements for the desktop release. Tablet/mobile work is owned by the separate FleetVolt.Network Mobile/Tablet Design project.
+
 ## What This Is
 
 FleetVolt Route is a desktop-first web application that models physics-grounded energy consumption, charging requirements, and corridor feasibility for Class 8 battery-electric trucks (BETs) in intermodal drayage and regional freight. It serves fleet transition analysts, dispatch planners, and CleverWork consultants who need credible, auditable answers to "can this EV truck make this move?" on POLB-focused corridors — with exportable reports suitable for client deliverables and internal zero-emission strategy work.

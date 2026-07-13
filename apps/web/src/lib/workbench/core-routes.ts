@@ -68,6 +68,46 @@ export const CORE_CORRIDORS: CoreCorridor[] = [
       source: "manual",
     },
   },
+  {
+    id: "polb-shafter-ze",
+    label: "LB → Shafter (ZE)",
+    meta: "Energy Forward · 60-truck interim",
+    origin: {
+      id: "polb",
+      label: "Port of Long Beach",
+      latitude: 33.7542,
+      longitude: -118.2165,
+      kind: "port",
+      source: "fleetvolt",
+    },
+    destination: {
+      label: "Shafter, CA",
+      latitude: 35.5005,
+      longitude: -119.2718,
+      kind: "manual",
+      source: "manual",
+    },
+  },
+  {
+    id: "polb-tijuana-ze",
+    label: "LB → Otay / Tijuana (ZE)",
+    meta: "Energy Forward · US + MX border",
+    origin: {
+      id: "polb",
+      label: "Port of Long Beach",
+      latitude: 33.7542,
+      longitude: -118.2165,
+      kind: "port",
+      source: "fleetvolt",
+    },
+    destination: {
+      label: "Otay Mesa / Tijuana border",
+      latitude: 32.555,
+      longitude: -116.938,
+      kind: "manual",
+      source: "manual",
+    },
+  },
 ];
 
 /** Deterministic pick so the same user always sees the same first-use corridor. */
@@ -85,7 +125,7 @@ export function endpointGeometry(
   destination: WorkbenchPlace,
 ) {
   return {
-    provider: "google" as const,
+    provider: "ptv" as const,
     // RouteCoordinate uses latitude/longitude — not Google's {lat,lng}.
     coordinates: [
       { latitude: origin.latitude, longitude: origin.longitude },

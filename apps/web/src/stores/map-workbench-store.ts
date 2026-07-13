@@ -23,6 +23,9 @@ export type CaasMapPhase = "freight_overview" | "route_analysis";
 /** Dual-corridor filter for road-traced freight (I-15 vs I-40). */
 export type FreightViaFilter = "all" | "I-15" | "I-40";
 
+/** CaaS choropleth drilldown: air districts → counties → zip markers. */
+export type CaasGeoLevel = "air-district" | "county" | "zip";
+
 export type MapWorkbenchState = {
   mode: WorkbenchMode;
   draft: WorkbenchPlanDraft;
@@ -46,6 +49,8 @@ export type MapWorkbenchState = {
   selectedPortCode: string | null;
   /** I-15 / I-40 compare filter for freight corridors. */
   freightViaFilter: FreightViaFilter;
+  /** Choropleth level for CaaS freight overview. */
+  caasGeoLevel: CaasGeoLevel;
   reset: (mode?: WorkbenchMode) => void;
   applyDraftPatch: (patch: Partial<WorkbenchPlanDraft>) => void;
   toggleLayer: (layerId: WorkbenchLayerId) => void;
@@ -55,6 +60,8 @@ export type MapWorkbenchState = {
   setCaasPhase: (phase: CaasMapPhase) => void;
   setSelectedPortCode: (code: string | null) => void;
   setFreightViaFilter: (filter: FreightViaFilter) => void;
+  setCaasGeoLevel: (level: CaasGeoLevel) => void;
+  hydrateLayerProfile: (mode?: WorkbenchMode) => void;
   applyMapActions: (actions: WorkbenchMapAction[]) => void;
   applyAiResult: (result: WorkbenchAiResult) => void;
 };
@@ -74,23 +81,51 @@ const ALLOWED_LAYERS = new Set<WorkbenchLayerId>([
   "caas-zones",
 ]);
 
-/** Statewide overview layers — hide once a CaaS route is built. */
-const CAAS_OVERVIEW_ONLY_LAYERS = new Set<WorkbenchLayerId>([
-  "geo-regions",
-  "freight-flow",
+/** Full CaaS layer stack — kept on in both freight overview and route analysis. */
+const CAAS_FULL_LAYERS: WorkbenchLayerId[] = [
   "ports",
-]);
-
-/** Corridor-focused layers for CaaS route / gap analysis. */
-const CAAS_ROUTE_ANALYSIS_LAYERS: WorkbenchLayerId[] = [
+  "freight-flow",
   "route",
   "chargers",
   "parking",
   "class8-gaps",
   "carriers",
+  "geo-regions",
   "caas-zones",
   "highways",
+  "pois",
+  "fleet-yards",
 ];
+
+const LAYER_PROFILE_STORAGE_KEY = "fleetvolt_workbench_layer_profile_v1";
+
+type LayerProfiles = Partial<Record<WorkbenchMode, WorkbenchLayerId[]>>;
+
+function readLayerProfile(mode: WorkbenchMode): WorkbenchLayerId[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LAYER_PROFILE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LayerProfiles;
+    const allowed = new Set(ROLE_LAYER_IDS[mode]);
+    const saved = parsed[mode]?.filter((id) => allowed.has(id));
+    return saved && saved.length > 0 ? sortLayersForMode(mode, saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLayerProfile(mode: WorkbenchMode, layers: WorkbenchLayerId[]) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(LAYER_PROFILE_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as LayerProfiles) : {};
+    parsed[mode] = layers;
+    window.localStorage.setItem(LAYER_PROFILE_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // Private browsing and locked-down storage keep the in-memory profile.
+  }
+}
 
 function boundsFromPlaces(
   origin?: WorkbenchPlace | null,
@@ -130,16 +165,6 @@ function boundsFromPlaces(
   };
 }
 
-function stripCaasOverviewLayers(
-  mode: WorkbenchMode,
-  layers: WorkbenchLayerId[],
-): WorkbenchLayerId[] {
-  if (mode !== "caas_gap_map") return layers;
-  const filtered = layers.filter((id) => !CAAS_OVERVIEW_ONLY_LAYERS.has(id));
-  if (!filtered.includes("route")) filtered.push("route");
-  return sortLayersForMode(mode, filtered.length > 0 ? filtered : CAAS_ROUTE_ANALYSIS_LAYERS);
-}
-
 function cloneDraft(draft: WorkbenchPlanDraft): WorkbenchPlanDraft {
   const cloned: WorkbenchPlanDraft = { ...draft };
 
@@ -161,25 +186,17 @@ function cloneDraft(draft: WorkbenchPlanDraft): WorkbenchPlanDraft {
 
 function initialStateForMode(mode: WorkbenchMode) {
   const config = WORKBENCH_MODE_CONFIG[mode];
-  const caasOverviewLayers: WorkbenchLayerId[] = [
-    "ports",
-    "freight-flow",
-    "chargers",
-    "parking",
-    "class8-gaps",
-    "carriers",
-    "geo-regions",
-    "caas-zones",
-    "highways",
-  ];
-
   return {
     mode,
     draft: cloneDraft(config.defaultDraft),
+    // First visit: every icon set available to the role is visible. Returning
+    // visits restore that role's last layer profile.
     activeLayers:
-      mode === "caas_gap_map"
-        ? sortLayersForMode(mode, caasOverviewLayers)
-        : [...config.defaultLayers],
+      readLayerProfile(mode) ??
+      sortLayersForMode(
+        mode,
+        mode === "caas_gap_map" ? CAAS_FULL_LAYERS : ROLE_LAYER_IDS[mode],
+      ),
     selectedAsset: null,
     routeGeometry: null,
     mapAssets: [],
@@ -193,6 +210,7 @@ function initialStateForMode(mode: WorkbenchMode) {
         : ("route_analysis" as CaasMapPhase),
     selectedPortCode: null,
     freightViaFilter: "all" as FreightViaFilter,
+    caasGeoLevel: "air-district" as CaasGeoLevel,
   };
 }
 
@@ -310,16 +328,23 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
         ? state.activeLayers.filter((activeLayer) => activeLayer !== layerId)
         : sortLayersForMode(state.mode, [...state.activeLayers, layerId]);
 
+      writeLayerProfile(state.mode, nextLayers);
       return { activeLayers: nextLayers };
     });
   },
   setLayers: (layerIds) => {
-    set((state) => ({
-      activeLayers: sortLayersForMode(
+    set((state) => {
+      const activeLayers = sortLayersForMode(
         state.mode,
         layerIds.filter((layer) => ALLOWED_LAYERS.has(layer)),
-      ),
-    }));
+      );
+      writeLayerProfile(state.mode, activeLayers);
+      return { activeLayers };
+    });
+  },
+  hydrateLayerProfile: (mode = get().mode) => {
+    const saved = readLayerProfile(mode);
+    if (saved) set({ activeLayers: saved });
   },
   selectAsset: (selection) => {
     set((state) => {
@@ -344,6 +369,9 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
   setFreightViaFilter: (filter) => {
     set({ freightViaFilter: filter });
   },
+  setCaasGeoLevel: (level) => {
+    set({ caasGeoLevel: level });
+  },
   setCaasPhase: (phase) => {
     set((state) => {
       if (state.mode !== "caas_gap_map") return {};
@@ -353,25 +381,17 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
           state.draft.destination,
           state.routeGeometry?.coordinates,
         );
+        // Keep freight / geo / assets on — route analysis adds focus, it does not blank the map.
         return {
           caasPhase: phase,
-          activeLayers: sortLayersForMode(state.mode, CAAS_ROUTE_ANALYSIS_LAYERS),
+          activeLayers: state.activeLayers,
           focusBounds,
-          // Drop statewide sample pins; Calculate / AI can re-seed corridor assets.
-          mapAssets: [],
         };
       }
       return {
         caasPhase: phase,
         focusBounds: null,
-        activeLayers: sortLayersForMode(state.mode, [
-          "ports",
-          "freight-flow",
-          ...state.activeLayers.filter(
-            (id) => id !== "route" && !CAAS_OVERVIEW_ONLY_LAYERS.has(id),
-          ),
-          "geo-regions",
-        ]),
+        activeLayers: state.activeLayers,
       };
     });
   },
@@ -379,6 +399,9 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
     for (const action of actions) {
       const patch = applyMapAction(get(), action);
       if (Object.keys(patch).length > 0) {
+        if (patch.activeLayers) {
+          writeLayerProfile(get().mode, patch.activeLayers);
+        }
         set(patch);
       }
     }
@@ -415,14 +438,20 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
     ];
 
     const nextDraft = get().draft;
+    const hasBothEndpoints = Boolean(nextDraft.origin && nextDraft.destination);
+    const hasUsableGeometry = Boolean(
+      result.routeGeometry?.coordinates &&
+        result.routeGeometry.coordinates.length >= 2,
+    );
+    const patchCompletesRoute = Boolean(
+      result.draftPatch?.origin && result.draftPatch?.destination,
+    );
+    // Only leave freight overview when AI produced a complete OD pair
+    // (not origin-only, destination-only, or notes-only patches).
     const aiBuiltRoute =
       state.mode === "caas_gap_map" &&
-      Boolean(
-        result.routeGeometry ||
-          result.draftPatch?.origin ||
-          result.draftPatch?.destination ||
-          (nextDraft.origin && nextDraft.destination && result.draftPatch),
-      );
+      hasBothEndpoints &&
+      (hasUsableGeometry || patchCompletesRoute);
 
     if (aiBuiltRoute && get().caasPhase === "freight_overview") {
       get().setCaasPhase("route_analysis");
@@ -433,15 +462,12 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
       afterPhase.mode === "caas_gap_map" &&
       afterPhase.caasPhase === "route_analysis";
 
-    let nextLayers = result.activeLayers
+    const nextLayers = result.activeLayers
       ? sortLayersForMode(
           afterPhase.mode,
           result.activeLayers.filter((layer) => ALLOWED_LAYERS.has(layer)),
         )
       : undefined;
-    if (nextLayers && inRouteAnalysis) {
-      nextLayers = stripCaasOverviewLayers(afterPhase.mode, nextLayers);
-    }
 
     const routeFocus =
       inRouteAnalysis && (aiBuiltRoute || result.routeGeometry)
@@ -452,6 +478,10 @@ export const useMapWorkbenchStore = create<MapWorkbenchState>((set, get) => ({
               afterPhase.routeGeometry?.coordinates,
           )
         : undefined;
+
+    if (nextLayers) {
+      writeLayerProfile(afterPhase.mode, nextLayers);
+    }
 
     set({
       ...(cards ? { resultCards: cards } : {}),

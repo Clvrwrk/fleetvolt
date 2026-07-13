@@ -1,8 +1,17 @@
 # Roadmap: FleetVolt Route
 
+## Active execution order — 2026-07-12
+
+1. FLE-5: authenticated CaaS desktop live-data path and honest demo states.
+2. FLE-9: Monday demo rehearsal with a verified POLB → Shafter path.
+3. FLE-37 decision gate, then FLE-7 report/export implementation.
+4. FLE-33 Fleet Manager Alpha only if the CaaS gates pass with capacity remaining.
+
+Phases 1–20 below are historical implementation records unless explicitly referenced by this active order. Phase 21 is backlog. Phase 22 responsive work moved to FleetVolt.Network Mobile/Tablet Design and does not block the desktop release. The retired Docker/VPS roadmap below is preserved as history, not current direction.
+
 ## Overview
 
-FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics-validated POLB/Cajon simulation → charging intelligence with job pipeline → analyst dashboard with exports → corridor intelligence and emissions economics → full TCO chart and production deployment. Each phase delivers an end-to-end increment testable without waiting for later phases. Priority corridors are POLB drayage and Cajon Pass; truck library is eCascadia 438 kWh and T680E 375 kWh; deployment target is Docker Compose on VPS.
+The original FleetVolt Route roadmap shipped six vertical MVP phases. It remains below as historical context. The active FleetVolt.Network roadmap and production stack are defined in the execution order above and `.planning/STATE.md`.
 
 ## Phases
 
@@ -436,6 +445,7 @@ Plans:
   4. docker-compose.yml and self-hosted services are decommissioned; README/AGENTS/Makefile updated
 
 **Carried-over obligations from Phase 11 (deferred here):**
+
   5. **Verify MAP-01/02/03 visually on the deployed app** — SoC-gradient polyline, power-scaled charger markers + popups, hover→chart sync (deferred from Phase 11 because the docker-compose web container can't render end-to-end).
   6. **Fix the web build/proxy** — the current `apps/web/Dockerfile` rewrite is half-finished (omits copying `apps/web/convex/`) and `API_URL` bakes to `localhost:4000` at build time instead of resolving to the API host. Vercel deploy must resolve the API base correctly (no ECONNREFUSED).
 
@@ -495,7 +505,6 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 
 **Plans**: TBD
 
-
 ---
 
 ### Phase 17: Role-Based Map Workbench — Driver Day Plan, Fleet Contract Plan, CaaS Gap Map
@@ -522,5 +531,148 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 **Plans**: 1/1 plans complete
 
 Plans:
+
 - [x] 17-00-PLAN.md — Hybrid map workbench: launchers, shell, layers, Routes, autocomplete, Convex aggregation, Driver/Fleet/CaaS vertical slices, map-first AI, Playwright verification (completed 2026-07-08)
 
+### Phase 23: Statewide Route Intelligence, Prime Charging Sites, and Executive Briefs
+
+**Goal:** Complete one evidence-honest, cached port-to-generator route for each of 69 California traffic generators, identify one explainable modeled charging-prime candidate per route, and publish a route-native HTML/PDF/CSV/JSON executive brief.
+**Mode:** mvp
+**Requirements**: STATE-ROUTE-01, STATE-ROUTE-02, PRIME-SITE-01, ROUTE-MAP-01, ROUTE-BRIEF-01, ROUTE-BRIEF-02, ROUTE-CARRIER-01
+**Depends on:** Phase 18, Phase 19, Phase 20
+**Success Criteria**:
+
+1. Coverage reports exactly 69 designated routes with valid road geometry and receipts; the 63 missing routes are generated sequentially and resumably without concurrent provider fan-out.
+2. Route color is derived only from measured Caltrans truck AADT, while width/pulse uses explicitly labeled port/FAF freight context; unavailable evidence is never substituted or displayed as zero.
+3. Every promoted route exposes one explainable modeled prime charging candidate on its actual PTV path using the standard 438-kWh Class 8 planning profile, inclusive 20–40% arrival SoC window, and inclusive 10-mile maximum detour.
+4. The CaaS map renders all promoted routes and a clickable pulsing FleetVolt prime-site marker without clearing selected-route focus.
+5. Every catalog route has an accessible live HTML brief plus PDF, CSV, and JSON downloads containing route evidence, modeled emissions, verified carriers only, sources, assumptions, and unavailable reasons.
+
+**Plans:** 2/11 plans executed
+
+Plans:
+
+**Wave 1**
+
+- [x] 23-01-PLAN.md — Dedicated PR-branch/worktree protection, signed admin envelope, deterministic route-run receipts (completed 2026-07-12)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [x] 23-02-PLAN.md — Sequential, resumable PTV generation and 69-route coverage gate (completed 2026-07-13)
+- [ ] 23-03-PLAN.md — Typed truck-AADT and port/FAF freight-context policy
+- [ ] 23-05-PLAN.md — Normal-operations route energy and prime-site scoring contract
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 23-04-PLAN.md — Statewide route map with evidence-honest route styling
+- [ ] 23-06-PLAN.md — Prime-site persistence, backfill, and 69/69 reconciliation
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 23-07-PLAN.md — Pulsing prime-site marker, evidence card, and persistent route focus
+- [ ] 23-08-PLAN.md — Route-native briefing contract and verified-carrier evidence
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 23-09-PLAN.md — Accessible HTML/PDF briefing with CSV/JSON appendices and high-resolution route render
+
+**Wave 6** *(blocked on Wave 5)*
+
+- [ ] 23-10-PLAN.md — Live briefing UI, localhost review, ScreenshotOne evidence, and Linear human gate
+
+**Wave 7** *(blocked on Wave 6)*
+
+- [ ] 23-11-PLAN.md — Hunk-isolated delivery, focused validation, push, and PR-only handoff
+
+---
+
+# Milestone v3.1 — Persistent Route Intelligence
+
+## Overview
+
+Turn every PTV-planned route into a reusable FleetVolt data asset. PTV geometry is persisted for 90 days, route enrichment refreshes independently, curated routes become dropdown options, overlapping road clicks resolve through a route chooser, and the CaaS workspace is reorganized for desktop, iPad, and mobile.
+
+## Locked Decisions
+
+1. Successful PTV geometry is reused for 90 days; the same directional canonical request cannot call PTV during that window.
+2. At expiry, serve stale geometry while one refresh lease permits a single PTV refresh. Failed refreshes retain stale geometry and record the error.
+3. Geometry freshness is independent from charger, parking, amenity, fleet-yard, carrier, gap, AADT, and freight enrichment freshness.
+4. Cache every planned route; show only curated/promoted shared routes plus user Recents in selectors.
+5. A→B and B→A are distinct cache/catalog routes.
+6. Convex is the system of record behind a route-repository boundary; do not dual-write to the parallel Supabase effort.
+7. Mandatory UI viewports: Desktop 1440×900, iPad 1024×1366, Mobile 390×844.
+
+## Execution Order
+
+18 → 19 → 20 → 21 → 22
+
+### Phase 18: Persistent PTV Route Cache
+
+**Goal**: Every successful PTV route is persisted and reused for 90 days, with directional canonical identity, single-refresh leasing, stale recovery, and auditable cache receipts.
+**Mode:** mvp
+**Depends on**: Phase 17
+**Requirements**: ROUTE-CACHE-01, ROUTE-CACHE-02, ROUTE-CACHE-03, ROUTE-CACHE-04, ROUTE-CACHE-05
+**Success Criteria**:
+
+1. Successful PTV results persist request inputs, geometry, pulled/expiry timestamps, warnings, source metadata, and access/refresh counters.
+2. Identical directional requests before expiry perform zero PTV fetches.
+3. Expired geometry is served stale while only one caller receives a refresh lease.
+4. Failed refresh preserves stale geometry; missing-route failure never fabricates geometry.
+5. Tests cover direction-sensitive hashing, fresh hits, expiry boundary, lease contention, refresh success, and refresh failure.
+
+**Plans**: 1/1 plans complete
+
+Plans:
+
+- [x] 18-01-PLAN.md — Convex schema/repository, PTV action integration, policy tests, deployment verification (completed 2026-07-11)
+
+### Phase 19: Road-Level Route Intelligence
+
+**Goal**: Enrich the actual persisted road polyline with truck AADT, labeled FAF context, chargers, Class 8 gaps, parking, amenities, carriers, and fleet yards.
+**Depends on**: Phase 18
+**Requirements**: ROUTE-INTEL-01, ROUTE-INTEL-02, ROUTE-INTEL-03, ROUTE-INTEL-04, ROUTE-INTEL-05
+**Success Criteria**:
+
+1. An existing persisted PTV request hash produces a stored enrichment snapshot derived from its actual road polyline, never an endpoint chord or whole-bbox assumption.
+2. Snapshot covers Caltrans 5-axle truck AADT, explicitly regional FAF annual context, AFDC chargers and honest Class 8 gap, NATD parking, OSM truck amenities, carriers, and fleet yards.
+3. Every category carries source, method/scope, freshness, coverage, and unavailable reasons; unknown data is never converted to zero.
+4. Enrichment has an independent seven-day lifetime and single-refresh lease; route geometry remains usable when enrichment refresh fails.
+5. Live verification proves a persisted PTV route can be enriched and then served from the enrichment cache without changing its 90-day geometry receipt.
+
+**Plans**: 1/1 plans complete
+
+Plans:
+
+- [x] 19-01-PLAN.md — Route-enrichment repository, road-proximity aggregation, provenance, cache policy, tests, and live verification (completed 2026-07-11)
+
+### Phase 20: Freight POI Route Catalog
+
+**Goal**: Precompute associated-port routes for curated freight POIs and expose grouped Preconfigured and Recent route selectors without amenity clutter.
+**Depends on**: Phase 19
+**Requirements**: ROUTE-CATALOG-01, ROUTE-CATALOG-02, ROUTE-CATALOG-03, ROUTE-CATALOG-04, ROUTE-CATALOG-05
+**Success Criteria**:
+
+1. A one-route-at-a-time action resolves a curated traffic generator to its associated or nearest California freight port, reuses/persists PTV geometry, refreshes route intelligence, and upserts a promoted catalog record.
+2. The Alpha catalog contains five verified freight-generator routes with road geometry and Phase-19 intelligence receipts; no mass PTV batch action exists.
+3. The workbench route selector groups shared `Preconfigured` routes and authenticated deduplicated `Recent` routes while retaining manual origin/destination entry.
+4. Selecting a catalog route immediately restores its road geometry and shows a compact ROAD / TRAFFIC / CHARGE manifest; amenity detail remains outside the selector.
+5. Selector and manifest pass Desktop 1440x900, iPad 1024x1366, and Mobile 390x844 visual/interaction gates, keyboard focus, and honest empty/loading states.
+
+**Plans**: 2/2 plans complete; human visual verification pending
+
+Plans:
+
+- [x] 20-01-PLAN.md — Catalog schema, policy, query, one-at-a-time precompute action, and five-route Alpha seed (completed 2026-07-11)
+- [x] 20-02-PLAN.md — Grouped Preconfigured/Recent selector, route manifest, responsive interaction, and local visual verification (completed 2026-07-11; ScreenshotOne/Chris UAT pending)
+
+### Phase 21: Overlapping Route Chooser
+
+**Goal**: Resolve cached route membership on road click and ask which route to open when several overlap.
+**Depends on**: Phase 20
+**Plans**: TBD
+
+### Phase 22: Responsive CaaS Workspace
+
+**Goal**: Move CaaS mode/opportunity panels right on wide desktop, use a drawer on iPad, retain a Plan/CaaS/Results sheet on mobile, and pass all three viewport gates.
+**Depends on**: Phase 21
+**Plans**: TBD

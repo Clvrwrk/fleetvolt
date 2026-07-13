@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FleetVolt — Brand & Design System v1.0</title>
+<style>@font-face{font-family:"Arcline";src:url("/Arcline-Regular.ttf") format("truetype");font-weight:400;font-display:swap}@font-face{font-family:"Arcline";src:url("/Arcline-Bold.ttf") format("truetype");font-weight:600 900;font-display:swap}@font-face{font-family:"Arcline";src:url("/Arcline-Light.ttf") format("truetype");font-weight:300;font-display:swap}@font-face{font-family:"Brokline";src:url("/Brokline-Regular.otf") format("opentype");font-weight:400;font-display:swap}</style>
+<style>
+:root{
+  --char:#07090C; --ember:#42A5D9; --ember-deep:#175574; --cream:#F3F7FA;
+  --char-70:#536573; --char-40:#8A9AA6; --hairline:#D2DDE4;
+  --bg:var(--cream); --fg:var(--char); --muted:var(--char-70); --rule:var(--hairline);
+  --accent-text:var(--ember-deep);
+  --font:"Arcline","Inter","Helvetica Neue",Arial,sans-serif;
+  --t--1:1rem; --t0:1.125rem; --t1:1.27rem; --t2:1.62rem; --t3:2.06rem;
+  --t4:2.62rem; --t5:3.33rem; --t6:4.24rem; --t7:6.85rem;
+  --s-3xs:4px; --s-2xs:8px; --s-xs:16px; --s-sm:24px; --s-md:40px;
+  --s-lg:64px; --s-xl:104px; --s-2xl:168px;
+  --radius:8px; --pill:999px;
+  --sh-sm:0 1px 2px rgba(34,27,22,.06);
+  --sh-md:0 4px 16px rgba(34,27,22,.08);
+  --sh-lg:0 16px 40px rgba(34,27,22,.12);
+  --content:1128px;
+}
+[data-theme="dark"]{
+  --bg:#07090C; --fg:#F3F7FA; --muted:#A5B2BC; --rule:#202A34;
+  --accent-text:var(--ember);
+  --sh-sm:0 1px 2px rgba(0,0,0,.4); --sh-md:0 4px 16px rgba(0,0,0,.45); --sh-lg:0 16px 40px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:var(--t0);line-height:1.6;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%;transition:background .3s,color .3s}
+.wrap{max-width:var(--content);min-width:0;margin:0 auto;padding:0 var(--s-sm)}
+.skip-link{position:fixed;z-index:100;top:8px;left:8px;transform:translateY(-150%);background:var(--fg);color:var(--bg);font-weight:700;padding:10px 14px;border-radius:var(--radius)}
+.skip-link:focus{transform:translateY(0);outline:2px solid var(--ember);outline-offset:2px}
+h1,h2,h3,h4{line-height:1.15;letter-spacing:-.02em;margin:0}
+h2{font-size:var(--t4);font-weight:800;margin-bottom:var(--s-xs)}
+h3{font-size:var(--t2);font-weight:700;margin:var(--s-md) 0 var(--s-xs)}
+h4{font-size:var(--t1);font-weight:700;margin:var(--s-sm) 0 var(--s-2xs)}
+p{margin:0 0 var(--s-xs);max-width:68ch}
+a{color:var(--accent-text)}
+code{font-family:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;font-size:1em;background:color-mix(in srgb,var(--fg) 7%,transparent);padding:2px 6px;border-radius:4px}
+.eyebrow{font-size:var(--t--1);letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--accent-text);margin-bottom:var(--s-2xs)}
+.muted{color:var(--muted)}
+section{padding:var(--s-xl) 0;border-top:1px solid var(--rule)}
+section:first-of-type{border-top:0}
+
+/* header */
+header{padding:var(--s-lg) 0 var(--s-md)}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:var(--s-sm);flex-wrap:wrap}
+.toggle{border:2px solid var(--fg);background:transparent;color:var(--fg);font-family:var(--font);font-weight:600;font-size:var(--t--1);padding:10px 18px;border-radius:var(--pill);cursor:pointer;min-height:44px}
+.toggle:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.hero{margin-top:var(--s-lg);display:flex;align-items:center;gap:var(--s-md);flex-wrap:wrap}
+.hero h1{font-size:var(--t6);font-weight:800}
+.hero .sub{font-size:var(--t1);color:var(--muted);max-width:60ch;margin-top:var(--s-xs)}
+
+/* logo */
+.mark{display:block}
+.sweep{transform-origin:48px 48px}
+.spin .sweep{animation:sweep 1.2s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin .sweep{animation:none!important}}
+.lockup{display:flex;align-items:center;gap:var(--s-xs)}
+.lockup .wm{font-weight:700;font-size:var(--t3);letter-spacing:-.02em;line-height:1}
+.lockup .desc{font-size:var(--t--1);letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--accent-text);margin-top:6px}
+.stack{flex-direction:column;text-align:center}
+
+.grid{display:grid;gap:var(--s-sm)}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.card{background:var(--bg);border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-sm);box-shadow:var(--sh-sm)}
+
+/* swatches */
+.sw{border-radius:var(--radius);overflow:hidden;border:1px solid var(--rule);box-shadow:var(--sh-sm)}
+.sw .chip{height:120px;display:flex;align-items:flex-end;padding:var(--s-xs)}
+.sw .meta{padding:var(--s-xs);font-size:var(--t--1)}
+.sw .meta b{display:block;font-size:var(--t0);margin-bottom:2px}
+.sw .meta code{display:inline-block;margin:2px 4px 2px 0}
+
+table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:var(--t--1);font-variant-numeric:tabular-nums;margin:var(--s-xs) 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);overflow-wrap:anywhere}
+th{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:1rem;color:var(--muted)}
+.pass{color:#1E7A46;font-weight:700}
+[data-theme="dark"] .pass{color:#5BC98B}
+.fail{color:#B3261E;font-weight:700}
+[data-theme="dark"] .fail{color:#F2857A}
+
+.callout{border-left:4px solid var(--ember);background:color-mix(in srgb,var(--ember) 8%,transparent);padding:var(--s-sm);border-radius:0 var(--radius) var(--radius) 0;margin:var(--s-sm) 0}
+.callout.warn{border-left-color:#B3261E;background:color-mix(in srgb,#B3261E 8%,transparent)}
+.callout p:last-child{margin-bottom:0}
+
+.typerow{display:flex;min-width:0;align-items:baseline;gap:var(--s-sm);padding:var(--s-2xs) 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.typerow .lbl{font-size:var(--t--1);color:var(--muted);min-width:150px;font-variant-numeric:tabular-nums}
+.typerow .spec{min-width:0;max-width:100%;overflow-wrap:anywhere}
+pre{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+.typerow .spec{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;letter-spacing:-.02em}
+
+.spacebar{background:var(--ember);height:16px;border-radius:2px}
+.spacerow{display:flex;align-items:center;gap:var(--s-xs);padding:6px 0}
+.spacerow .lbl{font-size:var(--t--1);min-width:120px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.btn{font-family:var(--font);font-weight:600;font-size:var(--t0);padding:12px 24px;border-radius:var(--radius);min-height:44px;cursor:pointer;border:2px solid transparent}
+.btn-primary{background:var(--ember);color:var(--char);border-color:var(--ember)}
+.btn-secondary{background:transparent;color:var(--fg);border-color:var(--fg)}
+.btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:var(--t--1);font-weight:700;color:var(--accent-text);letter-spacing:.04em}
+
+.prompt{position:relative;background:color-mix(in srgb,var(--fg) 5%,transparent);border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-xs);padding-right:90px;font-size:var(--t--1);line-height:1.6;margin-bottom:var(--s-xs)}
+.prompt .n{font-weight:700;color:var(--accent-text);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em;font-size:1rem}
+.copy{position:absolute;top:8px;right:8px;min-height:44px;font-size:1rem;font-family:var(--font);font-weight:700;padding:6px 12px;border-radius:var(--pill);border:1px solid var(--rule);background:var(--bg);color:var(--fg);cursor:pointer}
+.copy:hover{border-color:var(--ember)}
+.copy:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+
+.clearspace{position:relative;display:inline-block;padding:24px;border:1px dashed var(--ember);border-radius:4px}
+.dont{border:1px solid var(--rule);border-radius:var(--radius);padding:var(--s-xs);text-align:center;font-size:var(--t--1)}
+.dont .x{color:#B3261E;font-weight:800;font-size:var(--t1);display:block}
+.confirm{background:color-mix(in srgb,var(--ember) 14%,transparent);border-radius:4px;padding:1px 6px;font-weight:700;font-size:1em;color:var(--accent-text)}
+footer{padding:var(--s-xl) 0 var(--s-lg);border-top:1px solid var(--rule);color:var(--muted);font-size:var(--t--1)}
+.footer-links{display:flex;flex-wrap:wrap;gap:var(--s-xs);margin-top:var(--s-xs)}
+.footer-links a{min-height:44px;display:inline-flex;align-items:center}
+@media(max-width:640px){
+  html,body{overflow-x:hidden}
+  .wrap{overflow:hidden}
+  .hero h1{font-size:var(--t5)}
+  h2{font-size:var(--t3)}
+  section,.card,.prompt{min-width:0;max-width:100%}
+  .typerow .spec{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+  table{display:block;max-width:100%;overflow-x:auto}
+  pre{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+}
+@media(prefers-reduced-motion:reduce){body{transition:none}.skip-link{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header>
+  <div class="topbar">
+    <div class="lockup">
+      <svg class="mark" width="44" height="44" viewBox="0 0 96 96" role="img" aria-label="FleetVolt">
+        <circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/>
+      </svg>
+      <div><div class="wm" style="font-size:var(--t1)">FLEETVOLT</div></div>
+    </div>
+    <button class="toggle" id="themeBtn" aria-pressed="false">View dark ◐</button>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Brand &amp; Design System · v1.0 · Electric Command</div>
+      <h1>Electric Command System</h1>
+      <p class="sub">A live electric trace around the FleetVolt bolt — intelligence in motion. The single source of truth for every expression of FleetVolt: product, reports, print, apparel, events, and press.</p>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+
+<!-- ================= LOGO ================= -->
+<section id="logo">
+  <div class="eyebrow">01 — Identity</div>
+  <h2>The mark</h2>
+  <p>Built on a 96×96 viewBox. The bolt is stored energy released with purpose; the circular trace is the network being measured around it. Together they communicate power plus intelligence. The mark doubles as the product loading state — <b>the logo is the interaction</b>.</p>
+
+  <div class="grid g2" style="margin-top:var(--s-md)">
+    <div class="card">
+      <h4>Primary lockup — light</h4>
+      <div style="background:#F3F7FA;color:#07090C;border-radius:var(--radius);padding:var(--s-md);display:flex;justify-content:center">
+        <div class="lockup">
+          <svg class="mark" width="72" height="72" viewBox="0 0 96 96" role="img" aria-label="FleetVolt">
+            <circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/>
+          </svg>
+          <div>
+            <div class="wm">FLEETVOLT</div>
+            <div class="desc" style="color:#175574">EV freight intelligence</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Primary lockup — dark</h4>
+      <div style="background:#07090C;color:#F3F7FA;border-radius:var(--radius);padding:var(--s-md);display:flex;justify-content:center">
+        <div class="lockup">
+          <svg class="mark" width="72" height="72" viewBox="0 0 96 96" role="img" aria-label="FleetVolt">
+            <circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/>
+          </svg>
+          <div>
+            <div class="wm">FLEETVOLT</div>
+            <div class="desc" style="color:#42A5D9">EV freight intelligence</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Construction — exact, do not eyeball a rebuild</h3>
+  <table tabindex="0" aria-label="FleetVolt logo construction specification">
+    <tr><th scope="col">Element</th><th scope="col">Geometry (96×96 viewBox)</th><th scope="col">Colour</th></tr>
+    <tr><td>Orbit</td><td><code>circle cx=48 cy=48 r=38</code>, stroke-width <code>2</code>, no fill, 28% opacity</td><td>Carbon / Signal White</td></tr>
+    <tr><td>Trace</td><td>Same 38 radius, <code>36 203</code> dash, round cap</td><td>Electric</td></tr>
+    <tr><td>Bolt</td><td><code>M54 12 29 53h16l-5 34 28-46H50z</code></td><td>Electric</td></tr>
+  </table>
+  <p class="muted"><b>Draw order:</b> orbit → trace → bolt. The trace remains outside the bolt silhouette and always rotates clockwise.</p>
+
+  <h3>Clear space &amp; minimum size</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Clear space = 25% of mark height</h4>
+      <div style="display:flex;justify-content:center;padding:var(--s-sm)">
+        <div class="clearspace">
+          <svg class="mark" width="80" height="80" viewBox="0 0 96 96" aria-hidden="true">
+            <circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/>
+          </svg>
+        </div>
+      </div>
+      <p class="muted" style="font-size:var(--t--1)">Nothing enters the dashed box — not a page edge, a fold, another logo, or dense route imagery. On co-branded material, clear space doubles.</p>
+    </div>
+    <div class="card">
+      <h4>Scaling &amp; the favicon problem</h4>
+      <div style="display:flex;align-items:center;gap:var(--s-sm);justify-content:center;padding:var(--s-sm)">
+        <svg width="64" height="64" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/></svg>
+        <svg width="32" height="32" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/></svg>
+        <svg width="16" height="16" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/></svg>
+        <span class="muted" style="font-size:var(--t--1)">64 / 32 / 16px</span>
+      </div>
+      <div class="callout" style="margin:0">
+        <p style="font-size:var(--t--1)"><b>At 16px the orbit is removed and the bolt becomes the entire mark.</b> Otherwise the trace muddies the silhouette. That is a <i>separate hinted asset</i> — <code>favicon-16.svg</code> — never a scaled full lockup. Use the same rule in embroidery below 25mm.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Misuse — never</h3>
+  <div class="grid g4" style="margin-top:var(--s-xs)">
+    <div class="dont"><span class="x">✕</span> Recolour the bolt</div>
+    <div class="dont"><span class="x">✕</span> Rotate the bolt at rest</div>
+    <div class="dont"><span class="x">✕</span> Decorative gradients or bevels</div>
+    <div class="dont"><span class="x">✕</span> Stretch or condense</div>
+    <div class="dont"><span class="x">✕</span> Lowercase the wordmark</div>
+    <div class="dont"><span class="x">✕</span> Re-typeset in another face</div>
+    <div class="dont"><span class="x">✕</span> Photo without a scrim</div>
+    <div class="dont"><span class="x">✕</span> Trace anti-clockwise</div>
+  </div>
+  <p class="muted" style="margin-top:var(--s-xs)"><b>The trace always rotates clockwise.</b> The bolt rotates only during loading and no more than once per minute in the live lockup.</p>
+</section>
+
+<!-- ================= COLOUR ================= -->
+<section id="colour">
+  <div class="eyebrow">02 — Colour</div>
+  <h2>Palette</h2>
+  <p>Industrial, electric, restrained. Carbon is the operating canvas. Signal White is the report surface. Electric is <b>an action and energy signal, not decoration</b> — 10% of any surface, no more.</p>
+
+  <div class="grid g3" style="margin-top:var(--s-md)">
+    <div class="sw"><div class="chip" style="background:#07090C"></div><div class="meta"><b>Carbon</b><code>#07090C</code><code>7,9,12</code><span class="muted">Command canvas. Deepest chrome.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#42A5D9"></div><div class="meta"><b>Electric</b><code>#42A5D9</code><code>66,165,217</code><span class="muted">Primary action, energy, selected state.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#175574"></div><div class="meta"><b>Electric Deep</b><code>#175574</code><code>23,85,116</code><span class="muted">Accessible electric text on light surfaces.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#F3F7FA;border-bottom:1px solid var(--hairline)"></div><div class="meta"><b>Signal White</b><code>#F3F7FA</code><code>243,247,250</code><span class="muted">Report and light-data surface.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#121820"></div><div class="meta"><b>Gunmetal</b><code>#121820</code><span class="muted">Raised command surface.</span></div></div>
+    <div class="sw"><div class="chip" style="background:#202A34"></div><div class="meta"><b>Armor</b><code>#202A34</code><span class="muted">Interactive and secondary surface.</span></div></div>
+  </div>
+
+  <h3>Measured contrast — WCAG 2.2</h3>
+  <p>These are computed, not estimated.</p>
+  <table tabindex="0" aria-label="FleetVolt color contrast measurements">
+    <tr><th scope="col">Foreground / Background</th><th scope="col">Ratio</th><th scope="col">Verdict</th></tr>
+    <tr><td>Carbon on Signal White</td><td>18.51:1</td><td class="pass">AAA — all sizes</td></tr>
+    <tr><td>Signal White on Carbon</td><td>18.51:1</td><td class="pass">AAA — all sizes</td></tr>
+    <tr><td>Carbon on Electric <span class="muted">(primary button)</span></td><td>7.23:1</td><td class="pass">AAA normal</td></tr>
+    <tr><td>Electric on Carbon</td><td>7.23:1</td><td class="pass">AAA normal</td></tr>
+    <tr><td><b>Electric on Signal White</b></td><td>2.56:1</td><td class="fail">FAILS AA for normal text</td></tr>
+    <tr><td><b>Electric Deep on Signal White</b></td><td>5.61:1</td><td class="pass">AA normal — use this</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <p><b>The one trap in this brand.</b> Electric text on Signal White is only <b>2.56:1, a WCAG AA failure</b>. It is acceptable for large graphics and non-text route geometry, not small labels.</p>
+    <p><b>Resolution:</b> the mark and route trace stay Electric. All Electric text under 24px on Signal White uses <b>Electric Deep #175574</b>. Command Dark keeps plain Electric.</p>
+    <p>This is not pedantry. FleetVolt sells defensible analysis to operational and executive buyers. A product that claims precision but fails basic legibility injures the evidence story.</p>
+  </div>
+
+  <h3>Pantone — candidates, and why you must verify them</h3>
+  <p>Pantone numbers <b>cannot be responsibly derived from a hex value</b>. Hex is screen light; ink is pigment on a substrate; thread is dyed fibre. The maths gets close; the physical guide decides. Everything below is a <b>candidate for verification</b>, not a spec.</p>
+  <table tabindex="0" aria-label="FleetVolt physical color candidates">
+    <tr><th scope="col">Colour</th><th scope="col">Candidate</th><th scope="col">Alternate</th><th scope="col">Notes</th></tr>
+    <tr><td><b>Electric</b></td><td><span class="confirm">[PHYSICAL MATCH]</span></td><td><span class="confirm">[TEXTILE MATCH]</span></td><td>Screen blue shifts by substrate and finish. Approve coated, uncoated, vinyl, and thread separately.</td></tr>
+    <tr><td><b>Carbon</b></td><td>PMS Black 6 C candidate</td><td>Neutral Black candidate</td><td><b>Never assume K100.</b> Carbon is cool and dense; production black must be physically matched.</td></tr>
+    <tr><td><b>Signal White</b></td><td colspan="2"><b>Specify the substrate where possible</b></td><td>Use the stock or textile white rather than flooding near-white ink unless color consistency requires it.</td></tr>
+  </table>
+
+  <div class="callout">
+    <p><b>Verification protocol — binding before any production spend</b></p>
+    <p>1. Pull physical chips: Pantone Solid Coated <i>and</i> Uncoated for print; <b>Pantone TCX (Cotton)</b> for anything textile. <b>Never convert a coated "C" number to fabric</b> — textile is a different system with different dyes.<br>
+    2. Match against the <b>real substrate</b>, in daylight (D50/D65). Electric on a black polo, a truck wrap, and a matte booth wall are three different colours to the eye.<br>
+    3. Order a physical proof / <b>stitch-out</b> / strike-off / wrap sample before any run above <span class="confirm">[CONFIRM threshold]</span>.<br>
+    4. <b>One named human signs off the physical object under daylight</b> — never a photo of it, never a screen render. <span class="confirm">[CONFIRM who]</span><br>
+    5. Record approved values back into the system. They become LOCKED, and every future order references them. <i>This is how you stop the brand drifting one supplier at a time.</i></p>
+    <p style="margin-top:var(--s-xs)"><b>Why this matters commercially:</b> the classic failure is booth banner, team apparel, and truck wrap all “matching the hex” and arriving in three visibly different blues. For a freight-intelligence brand whose promise is precision, that is a strategic wound, not a cosmetic one.</p>
+  </div>
+</section>
+
+<!-- ================= TYPE ================= -->
+<section id="type">
+  <div class="eyebrow">03 — Typography</div>
+  <h2>Arcline, and a golden-ratio scale that actually works</h2>
+  <p>Arcline carries product and brand copy. JetBrains Mono carries telemetry, provenance, coordinates, and system state. Brokline is a controlled campaign signature used only for “OWN THE TRANSITION.”</p>
+
+  <div class="callout">
+    <p><b>Age-friendly floor, then golden rhythm.</b> FleetVolt serves primarily 40+ engineering and logistics professionals. No readable text or form control may render below 16px; body copy starts at 18px. Above that operational floor, the display scale uses <b>√φ = 1.272</b> so every second step is exactly φ apart.</p>
+    <p>Small space is earned through layout, progressive disclosure, and concise language—never by shrinking labels into microtype. Text must scale to 200% without loss of content or horizontal page scrolling.</p>
+  </div>
+
+  <div style="margin-top:var(--s-md)">
+    <div class="typerow"><span class="lbl">110px · φ⁴ · Hero</span><span class="spec" style="font-size:var(--t7);font-weight:800">FLEETVOLT</span></div>
+    <div class="typerow"><span class="lbl">68px · φ³ · Campaign</span><span class="spec" style="font-family:&quot;Brokline&quot;,&quot;Arcline&quot;,sans-serif;font-size:var(--t6);font-weight:400;letter-spacing:.01em">Own the transition</span></div>
+    <div class="typerow"><span class="lbl">53px · H1</span><span class="spec" style="font-size:var(--t5);font-weight:700">Find the Class 8 gap</span></div>
+    <div class="typerow"><span class="lbl">42px · φ² · H2</span><span class="spec" style="font-size:var(--t4);font-weight:700">Road-level freight intelligence</span></div>
+    <div class="typerow"><span class="lbl">33px · H3</span><span class="spec" style="font-size:var(--t3);font-weight:700">What the route proves</span></div>
+    <div class="typerow"><span class="lbl">26px · φ · H4</span><span class="spec" style="font-size:var(--t2);font-weight:700">Traffic, energy, dwell, opportunity</span></div>
+    <div class="typerow"><span class="lbl">20px · Lead</span><span class="spec" style="font-size:var(--t1);font-weight:400">Move freight with evidence.</span></div>
+    <div class="typerow"><span class="lbl">18px · Body (primary)</span><span class="spec" style="font-size:var(--t0);font-weight:400">FleetVolt models road-level energy demand and charging opportunity.</span></div>
+    <div class="typerow"><span class="lbl">16px · UI floor</span><span class="spec" style="font-size:var(--t--1);font-weight:400">PTV route · Caltrans AADT · refreshed 12 Jul 2026</span></div>
+  </div>
+
+  <h3>Rules</h3>
+  <table tabindex="0" aria-label="FleetVolt typography rules">
+    <tr><th scope="col">Rule</th><th scope="col">Value</th></tr>
+    <tr><td>Line height</td><td>Body 1.6 · Headings 1.15 · Display 1.0</td></tr>
+    <tr><td>Absolute floor</td><td>16px / 1rem for labels, captions, telemetry, buttons, inputs, and helper text. Body defaults to 18px / 1.125rem.</td></tr>
+    <tr><td>Scaling</td><td>Use rem/em and support 200% text resize without clipping, lost controls, or horizontal page scrolling.</td></tr>
+    <tr><td>Measure</td><td>60–75 characters. Hard cap 80. <code>max-width: 68ch</code></td></tr>
+    <tr><td>Letterspacing</td><td>Display/headings −0.02em · Body 0 · ALL-CAPS labels +0.14em</td></tr>
+    <tr><td>Case</td><td><b>Sentence case</b> for headings and buttons. Wordmark is <b>always uppercase</b>.</td></tr>
+    <tr><td>Alignment</td><td><b>Never justify.</b> Ragged-right always.</td></tr>
+    <tr><td>Numbers</td><td>Tabular figures in tables — <code>font-variant-numeric: tabular-nums</code></td></tr>
+  </table>
+</section>
+
+<!-- ================= SPACE ================= -->
+<section id="space">
+  <div class="eyebrow">04 — Space &amp; layout</div>
+  <h2>8pt grid, φ-derived stops</h2>
+  <p>The practical reconciliation of "golden ratio" with "engineers must be able to build it." From <code>xs</code> upward each step climbs ≈1.6× — golden rhythm, 4px-snapped.</p>
+
+  <div style="margin-top:var(--s-md);max-width:640px">
+    <div class="spacerow"><span class="lbl">3xs · 4px</span><div class="spacebar" style="width:4px"></div></div>
+    <div class="spacerow"><span class="lbl">2xs · 8px <b>base</b></span><div class="spacebar" style="width:8px"></div></div>
+    <div class="spacerow"><span class="lbl">xs · 16px</span><div class="spacebar" style="width:16px"></div></div>
+    <div class="spacerow"><span class="lbl">sm · 24px</span><div class="spacebar" style="width:24px"></div></div>
+    <div class="spacerow"><span class="lbl">md · 40px <span class="muted">×1.618</span></span><div class="spacebar" style="width:40px"></div></div>
+    <div class="spacerow"><span class="lbl">lg · 64px <span class="muted">×1.6</span></span><div class="spacebar" style="width:64px"></div></div>
+    <div class="spacerow"><span class="lbl">xl · 104px <span class="muted">×1.625</span></span><div class="spacebar" style="width:104px"></div></div>
+    <div class="spacerow"><span class="lbl">2xl · 168px <span class="muted">×1.615</span></span><div class="spacebar" style="width:168px"></div></div>
+  </div>
+
+  <h3>Grid &amp; the golden split</h3>
+  <div class="grid g2">
+    <div class="card">
+      <table tabindex="0" aria-label="FleetVolt layout grid specification" style="margin:0">
+        <tr><th scope="col">Property</th><th scope="col">Value</th></tr>
+        <tr><td>Columns</td><td>12, 24px gutters</td></tr>
+        <tr><td>Content max</td><td>1128px</td></tr>
+        <tr><td>Page max</td><td>1440px</td></tr>
+        <tr><td>Margins</td><td>64 / 24 / 16px</td></tr>
+        <tr><td>Radius</td><td>0 · 8px · 999px — nothing between</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Two-column = 61.8% / 38.2%</h4>
+      <div style="display:flex;gap:8px;height:110px;margin-top:var(--s-xs)">
+        <div style="flex:0 0 61.8%;background:var(--ember);border-radius:4px;display:flex;align-items:center;justify-content:center;color:#07090C;font-weight:700;font-size:var(--t--1)">61.8% — main</div>
+        <div style="flex:1;background:color-mix(in srgb,var(--fg) 15%,transparent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:var(--t--1)">38.2%</div>
+      </div>
+      <p class="muted" style="font-size:var(--t--1);margin-top:var(--s-xs)">Where φ earns its keep visually: route evidence / decision rail, executive narrative / map.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMPONENTS ================= -->
+<section id="components">
+  <div class="eyebrow">05 — Components &amp; accessibility</div>
+  <h2>Built to WCAG 2.2 AA, targeting AAA where it counts</h2>
+
+  <div class="grid g2" style="margin-top:var(--s-md)">
+    <div class="card">
+      <h4 style="margin-top:0">Buttons</h4>
+      <div style="display:flex;gap:var(--s-xs);flex-wrap:wrap;margin:var(--s-xs) 0">
+        <button class="btn btn-primary">Calculate route</button>
+        <button class="btn btn-secondary">View evidence</button>
+      </div>
+      <p class="muted" style="font-size:var(--t--1)"><b>Primary = Electric fill + Carbon text (7.23:1 ✓).</b> Never Signal White text on Electric. Min height 44px. Focus: 2px Carbon or Signal White ring, 2px offset — never removed.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Verified badge</h4>
+      <div style="margin:var(--s-sm) 0">
+        <span class="badge">✓ Verified <span class="muted" style="font-weight:400">· road geometry &amp; source receipt · 12 Jul 2026</span></span>
+      </div>
+      <p class="muted" style="font-size:var(--t--1)"><b>Colour is never the only signal.</b> Electric + a check glyph + the word “Verified” + what was checked and when. A color-blind fleet operator receives identical information.</p>
+    </div>
+  </div>
+
+  <h3>Non-negotiables</h3>
+  <table tabindex="0" aria-label="FleetVolt WCAG requirements">
+    <tr><th scope="col">WCAG</th><th scope="col">Rule</th></tr>
+    <tr><td>2.5.8 Target size</td><td>Min 24×24px required; <b>we adopt 44×44px</b> — drivers and field teams use phones in imperfect conditions.</td></tr>
+    <tr><td>1.4.11 Non-text contrast</td><td>Meaningful borders ≥3:1. <b>Hairlines are decorative only.</b> Any border carrying meaning uses Carbon, Signal White, or Electric Deep as appropriate.</td></tr>
+    <tr><td>1.4.1 Use of colour</td><td>Colour is never the sole carrier of information.</td></tr>
+    <tr><td>2.4.7/2.4.11 Focus</td><td>2px Carbon or Signal White outline, 2px offset. Never <code>outline:none</code>.</td></tr>
+    <tr><td>1.4.10 Reflow</td><td>320px, no horizontal scroll.</td></tr>
+    <tr><td>1.4.12 Text spacing</td><td>Survives line-height 1.5×, letter-spacing 0.12em, word-spacing 0.16em.</td></tr>
+    <tr><td>2.3.3 Motion</td><td><code>prefers-reduced-motion</code> → <b>the trace and bolt do not rotate.</b> Static mark + explicit loading text. Hard requirement.</td></tr>
+  </table>
+</section>
+
+<!-- ================= MOTION ================= -->
+<section id="motion">
+  <div class="eyebrow">06 — Motion</div>
+  <h2>The signature: the logo <i>is</i> the spinner</h2>
+  <p>The Electric trace rotates clockwise while FleetVolt retrieves or calculates route evidence. The bolt rotates once at the start of a blocking load, then no more than once per minute.</p>
+  <div class="card" style="margin-top:var(--s-md);display:flex;align-items:center;gap:var(--s-md);flex-wrap:wrap">
+    <div class="spin" id="spinDemo">
+      <svg class="mark" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Searching">
+        <circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/>
+      </svg>
+    </div>
+    <div>
+      <h4 style="margin-top:0">Calculating road-level route…</h4>
+      <p class="muted" style="font-size:var(--t--1);margin:0">Micro 150ms · standard 250ms · entrance 400ms · trace rotation 1200ms · bolt rotation 60s. Easing <code>cubic-bezier(.4,0,.2,1)</code>. <b>No bounce, no elastic</b> — freight decisions require calm motion.</p>
+      <button class="btn btn-secondary" style="margin-top:var(--s-xs);font-size:var(--t--1);padding:8px 16px;min-height:44px" id="spinBtn" aria-pressed="false">Toggle animation</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TOKENS ================= -->
+<section id="tokens">
+  <div class="eyebrow">07 — Tokens</div>
+  <h2>Design tokens</h2>
+  <div class="prompt" style="padding-right:90px">
+    <span class="n">CSS custom properties</span>
+    <button class="copy" data-copy="css" aria-label="Copy CSS custom properties" aria-live="polite">Copy</button>
+<pre id="css" style="margin:0;white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:1rem;line-height:1.5">:root{
+  --fv-carbon:#07090C; --fv-electric:#42A5D9; --fv-electric-deep:#175574;
+  --fv-signal-white:#F3F7FA; --fv-gunmetal:#121820; --fv-armor:#202A34;
+  --fv-font:"Arcline","Inter",Arial,sans-serif;
+  --fv-mono:"JetBrains Mono",ui-monospace,monospace;
+  --fv-text-floor:1rem; --fv-text-body:1.125rem; /* 40+ readability contract */
+  --fv-text-2:1.62rem;  /* body/display scale */
+  --fv-text-4:2.62rem; --fv-text-6:4.24rem; /* phi^2, phi^3 */
+  --fv-space-2xs:8px; --fv-space-xs:16px; --fv-space-sm:24px;
+  --fv-space-md:40px; --fv-space-lg:64px; --fv-space-xl:104px;
+  --fv-radius:8px; --fv-content:1128px;
+  --fv-golden-main:61.8%; --fv-golden-rail:38.2%;
+}
+[data-theme="dark"]{
+  --fv-carbon:#F3F7FA; --fv-signal-white:#07090C;
+  --fv-electric-deep:#42A5D9; /* plain Electric passes AAA on Carbon */
+  --fv-hairline:#202A34;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}</pre>
+  </div>
+</section>
+
+<!-- ================= SWAG ================= -->
+<section id="swag">
+  <div class="eyebrow">08 — Swag &amp; trade show</div>
+  <h2>Image-generation prompts</h2>
+  <p>For concepting and mockups — <b>not production art</b>. Production art comes from the vector assets. Append the shared style suffix to every prompt so the family stays coherent.</p>
+
+  <div class="prompt">
+    <span class="n">Shared style suffix — append to all</span>
+    <button class="copy" data-copy="p0" aria-label="Copy shared image style suffix" aria-live="polite">Copy</button>
+    <span id="p0">Photorealistic industrial transportation photography, directional hard light, cool high-contrast grade. Brand palette strictly: Carbon #07090C, Electric blue #42A5D9, Signal White #F3F7FA. Logo: a blue lightning bolt inside a thin circular orbit with a short blue tracing arc; uppercase FLEETVOLT wordmark in Arcline. Premium, masculine, technical, operationally credible. No invented product UI, no extra text, no gradients or effects on the logo.</span>
+  </div>
+
+  <div class="prompt"><span class="n">01 · Trade-show booth</span><button class="copy" data-copy="p1" aria-label="Copy trade-show booth prompt" aria-live="polite">Copy</button><span id="p1">A 10x20ft FleetVolt trade-show booth. Carbon back wall with one oversized Electric route trace crossing behind the blue bolt mark. Signal White headline: “OWN THE TRANSITION.” A large live freight map display and executive briefing table. Two fleet executives in conversation. Convention-hall lighting.</span></div>
+  <div class="prompt"><span class="n">02 · Retractable banner</span><button class="copy" data-copy="p2" aria-label="Copy retractable banner prompt" aria-live="polite">Copy</button><span id="p2">A 33x80in FleetVolt retractable banner, Carbon field, stacked bolt lockup in the top third, Electric road trace rising from the base. “ROAD-LEVEL EV FREIGHT INTELLIGENCE.” Photographed at an advanced-transportation conference.</span></div>
+  <div class="prompt"><span class="n">03 · Embroidered polo</span><button class="copy" data-copy="p3" aria-label="Copy embroidered polo prompt" aria-live="polite">Copy</button><span id="p3">Close-up of a black technical polo, FleetVolt blue bolt-and-orbit mark embroidered on the left chest at 50mm, thread texture visible in raking cool light. Mark only, no wordmark.</span></div>
+  <div class="prompt"><span class="n">04 · Hard hat + hi-vis</span><button class="copy" data-copy="p4" aria-label="Copy hard hat and high-visibility prompt" aria-live="polite">Copy</button><span id="p4">A matte-black hard hat with the Electric FleetVolt bolt on the side, resting beside a high-visibility vest with a small chest lockup inside a Class 8 charging depot. Real equipment, honest wear.</span></div>
+  <div class="prompt"><span class="n">05 · Class 8 truck livery</span><button class="copy" data-copy="p5" aria-label="Copy Class 8 truck livery prompt" aria-live="polite">Copy</button><span id="p5">A white Class 8 electric tractor with a restrained Carbon lower wrap, Electric route line, and uppercase FLEETVOLT wordmark. Parked at a California freight terminal at blue hour. Legible from a distance.</span></div>
+  <div class="prompt"><span class="n">06 · Executive report kit</span><button class="copy" data-copy="p6" aria-label="Copy executive report kit prompt" aria-live="polite">Copy</button><span id="p6">FleetVolt executive briefing on Signal White heavyweight stock, Carbon cover with blind-embossed bolt orbit, Electric foil trace, route maps and charts visible inside. Macro paper texture, technical and expensive.</span></div>
+  <div class="prompt"><span class="n">07 · Field kit</span><button class="copy" data-copy="p7" aria-label="Copy field kit prompt" aria-live="polite">Copy</button><span id="p7">Black rugged field notebook, die-cut bolt stickers, Electric lanyard, black metal pen, and route-review cards arranged on a steel work surface. Overhead industrial flat lay.</span></div>
+  <div class="prompt"><span class="n">08 · Enamel pin</span><button class="copy" data-copy="p8" aria-label="Copy enamel pin prompt" aria-live="polite">Copy</button><span id="p8">Macro shot of a hard enamel FleetVolt lapel pin — Electric bolt, thin dark orbit, short blue tracing arc — on a Carbon presentation card with uppercase wordmark below.</span></div>
+  <div class="prompt"><span class="n">09 · Mobile charger unit</span><button class="copy" data-copy="p9" aria-label="Copy mobile charger unit prompt" aria-live="polite">Copy</button><span id="p9">A rugged mobile battery charging trailer in a California truck parking area, Carbon body, Electric FleetVolt bolt and route trace, small Signal White safety labels. Operational documentary photography.</span></div>
+  <div class="prompt"><span class="n">10 · Table throw + lanyards</span><button class="copy" data-copy="p10" aria-label="Copy table throw and lanyards prompt" aria-live="polite">Copy</button><span id="p10">A trade-show table with a Carbon fitted throw carrying a subtle route-grid pattern, Electric lanyards with gunmetal hardware, and a stack of FleetVolt Executive Briefings.</span></div>
+
+  <div class="callout">
+    <p><b>Embroidery — the trap nobody warns you about.</b> The short trace disappears and the bolt counters can fill in below 25mm. Use the approved bolt-only small asset. Orbit stroke must be ≥1.5mm at final size. And <b>thread ≠ Pantone C</b>: specify <b>Pantone TCX</b>, demand a thread-card match and a <b>physical stitch-out</b>. Never approve embroidery from a digital mock-up.</p>
+  </div>
+</section>
+
+<!-- ================= PRESS ================= -->
+<section id="press">
+  <div class="eyebrow">09 — Press &amp; media kit</div>
+  <h2>Enterprise press kit</h2>
+  <div class="callout warn">
+    <p><b>Every fact here is <span class="confirm">[CONFIRM]</span> until a human verifies it.</b> A press kit is a document journalists quote. A fabricated figure becomes a correction, then a credibility problem. Nothing in this section invents a corporate fact.</p>
+  </div>
+
+  <h3>Boilerplate — copied, never paraphrased</h3>
+  <div class="card">
+    <h4 style="margin-top:0">Short (25 words) <span class="confirm">[CONFIRM]</span></h4>
+    <p>FleetVolt turns freight routes into decision-ready intelligence, exposing Class 8 energy demand, charging gaps, operational constraints, and commercial opportunity.</p>
+    <h4>Long (75 words) <span class="confirm">[CONFIRM]</span></h4>
+    <p>FleetVolt is an EV freight-intelligence platform for fleets, infrastructure developers, and energy-transition teams. It combines road-level truck routing with traffic, energy, charging, parking, dwell, carrier, and proximity evidence to identify viable corridors and Class 8 charging opportunities. FleetVolt converts that analysis into an executive briefing built for operational and commercial decisions. Founded in <span class="confirm">[YEAR]</span> and based in <span class="confirm">[CITY]</span>, FleetVolt currently models <span class="confirm">[CONFIRM COVERAGE]</span>.</p>
+  </div>
+
+  <h3>The evidence claim — the most sensitive paragraph we own</h3>
+  <div class="grid g2">
+    <div class="card" style="border-color:#1E7A46">
+      <h4 style="margin-top:0;color:#1E7A46">✓ Say</h4>
+      <p style="font-size:var(--t--1)">“We identify the source, method, scope, freshness, and limitations behind every material route-intelligence claim.”</p>
+    </div>
+    <div class="card" style="border-color:#B3261E">
+      <h4 style="margin-top:0;color:#B3261E">✕ Never say</h4>
+      <p style="font-size:var(--t--1)">“Guaranteed savings.” “Complete coverage.” “Verified Class 8” without evidence. Or any phrasing that converts modeled data into observed fact.</p>
+    </div>
+  </div>
+  <p><b>We model decisions; we do not guarantee outcomes.</b> A route model is only as current and complete as its inputs. Distinguish measured, sourced, modeled, estimated, mock, and unavailable data every time. <span class="confirm">[CONFIRM final wording with counsel]</span></p>
+
+  <h3>Fact sheet <span class="confirm">[CONFIRM — every row]</span></h3>
+  <table tabindex="0" aria-label="FleetVolt corporate fact sheet">
+    <tr><th scope="row">Legal entity</th><td><span class="confirm">[CONFIRM]</span></td><th scope="row">Founded</th><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><th scope="row">HQ</th><td><span class="confirm">[CONFIRM]</span></td><th scope="row">Leadership</th><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><th scope="row">Employees</th><td><span class="confirm">[CONFIRM]</span></td><th scope="row">Funding</th><td><span class="confirm">[CONFIRM or "privately held"]</span></td></tr>
+    <tr><th scope="row">Coverage</th><td><span class="confirm">[CONFIRM corridors/ports]</span></td><th scope="row">Modeled routes</th><td><span class="confirm">[CONFIRM + as-of date]</span></td></tr>
+  </table>
+  <p class="muted"><b>Metric discipline:</b> every number ships with an <b>as-of date</b>. A journalist who quotes a March number as current in September has been misled by <i>us</i>, not by themselves.</p>
+
+  <h3>Media assets — press usage rules</h3>
+  <ul style="max-width:68ch">
+    <li>Use supplied assets <b>unaltered</b>. No recolouring, rotating, effects, or placing inside another shape.</li>
+    <li>Respect clear space and minimum size. Dark backgrounds → light lockup.</li>
+    <li>Do not imply partnership, endorsement, or investment that does not exist.</li>
+    <li>Every press image ships with a caption, credit line, licence terms, and <b>alt text</b>.</li>
+    <li>Screenshots show <b>real UI</b> — never mocked-up fake data.</li>
+    <li>The mark is a trademark of <span class="confirm">[CONFIRM entity]</span>.</li>
+  </ul>
+
+  <h3>Embargo policy</h3>
+  <p>Embargoes are agreed <b>in writing, in advance</b>, with an explicit date + timezone. Materials are marked <b>EMBARGOED UNTIL [date, time, tz]</b> in the subject line, first line of body, and on every attachment. <b>No embargo is assumed</b> — absent a written agreement, everything sent is on the record. A broken embargo ends future early access; say it once, politely, and mean it.</p>
+
+  <h3>Crisis holding statements <span class="confirm">[CONFIRM wording with counsel]</span></h3>
+  <p>Pre-approved lines exist so nobody improvises under pressure at 6pm. Draft in advance for at least:</p>
+  <table tabindex="0" aria-label="FleetVolt crisis response guidance">
+    <tr><th scope="col">Scenario</th><th scope="col">Structure</th></tr>
+    <tr><td><b>A published route finding is materially wrong</b></td><td>Acknowledge → state affected source/model scope → remove or label the finding → publish correction and prevention step. Never defend stale evidence.</td></tr>
+    <tr><td><b>Data / privacy incident</b></td><td>Acknowledge → scope → what users should do → what we're doing → when we'll update next. Never speculate on cause before forensics.</td></tr>
+    <tr><td><b>A provenance error</b> (modeled data presented as verified)</td><td><b>Existential — the brand IS the evidence chain.</b> Own it plainly, correct publicly, state the systemic fix.</td></tr>
+    <tr><td><b>Downtime / outage</b></td><td>Status, ETA, next update time — and hit it.</td></tr>
+  </table>
+  <p><b>The rule under pressure:</b> say only what is confirmed, say when you'll say more, and hit that time. Speed of <i>acknowledgement</i> buys the room; speculation loses it.</p>
+
+  <h3>Journalist contact &amp; SLA</h3>
+  <p>Press contact <span class="confirm">[CONFIRM]</span> · <b>Response SLA: 4 business hours.</b> A journalist on deadline who doesn't hear back writes the story without you, using whatever they found. We don't do "no comment" — we say what we can, or say why we can't yet.</p>
+</section>
+
+<!-- ================= REFUSALS ================= -->
+<section id="refusals">
+  <div class="eyebrow">10 — Governance</div>
+  <h2>What this system deliberately refuses</h2>
+  <p>A design system is defined as much by its refusals as its rules.</p>
+  <div class="grid g2" style="margin-top:var(--s-sm)">
+    <div class="card"><h4 style="margin-top:0">No uncontrolled typeface</h4><p class="muted" style="font-size:var(--t--1);margin:0">Arcline, telemetry mono, and the approved Brokline campaign signature already cover every role.</p></div>
+    <div class="card"><h4 style="margin-top:0">No decorative Electric</h4><p class="muted" style="font-size:var(--t--1);margin:0">Electric means action, energy, focus, or selection. Dilute it and the signal dies.</p></div>
+    <div class="card"><h4 style="margin-top:0">No evidence theatre</h4><p class="muted" style="font-size:var(--t--1);margin:0">No verified badges without a source, method, freshness, and scope behind them.</p></div>
+    <div class="card"><h4 style="margin-top:0">No disaster marketing</h4><p class="muted" style="font-size:var(--t--1);margin:0">We sell operational advantage and commercial clarity, not anxiety about the transition.</p></div>
+    <div class="card"><h4 style="margin-top:0">No effects on the mark</h4><p class="muted" style="font-size:var(--t--1);margin:0">The trace may animate; the mark never becomes a bauble.</p></div>
+    <div class="card" style="border-color:var(--ember)"><h4 style="margin-top:0">No claim we cannot evidence</h4><p class="muted" style="font-size:var(--t--1);margin:0">This is the line the whole company stands on.</p></div>
+  </div>
+
+  <h3>Open items before launch</h3>
+  <table tabindex="0" aria-label="FleetVolt pre-launch governance items">
+    <tr><th scope="col">#</th><th scope="col">Item</th><th scope="col">Owner</th></tr>
+    <tr><td>1</td><td>Physical Pantone verification — all three colours, coated + uncoated + TCX</td><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><td>2</td><td>Embroidery stitch-out approval</td><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><td>3</td><td>Fill every <span class="confirm">[CONFIRM]</span> in the press kit</td><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><td>4</td><td><b>Trademark search + filing on name and mark — before any spend on signage or stock</b></td><td><span class="confirm">[CONFIRM — counsel]</span></td></tr>
+    <tr><td>5</td><td>Domain + social handle acquisition</td><td><span class="confirm">[CONFIRM]</span></td></tr>
+    <tr><td>6</td><td><b>Confirm every use of “verified,” “Class 8 capable,” and savings language is defensible</b> — the source and method must support the claim.</td><td><span class="confirm">[CONFIRM — counsel]</span></td></tr>
+  </table>
+
+  <h3>Change control</h3>
+  <p>Colour, type, mark geometry and clear space are <b>LOCKED</b>. Changing any of them requires CEO written sign-off, bumps the version, and <b>invalidates existing printed and embroidered stock</b> — so the cost of the change is the cost of the reprint, and that number gets stated <i>before</i> the decision.</p>
+</section>
+</main>
+
+<footer>
+  <div class="lockup" style="margin-bottom:var(--s-xs)">
+    <svg width="32" height="32" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="38" fill="none" stroke="currentColor" stroke-width="2" opacity=".28"/><circle class="sweep" cx="48" cy="48" r="38" fill="none" stroke="#42A5D9" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 203"/><path d="M54 12 29 53h16l-5 34 28-46H50z" fill="#42A5D9"/></svg>
+    <span style="font-weight:700">FLEETVOLT</span>
+  </div>
+  Brand &amp; Design System v1.0 · Electric Command "Electric Command System" · Drafted 12 Jul 2026 · Cleverwork / AIA4<br>
+  Status: controlled Alpha · awaiting CEO sign-off + the physical-production and legal items above.
+  <nav class="footer-links" aria-label="Compliance resources">
+    <a href="#components">Accessibility requirements</a>
+    <a href="#press">Legal and evidence guidance</a>
+    <span>Privacy: this document uses no tracking, analytics, cookies, or data collection.</span>
+  </nav>
+</footer>
+</div>
+
+<script>
+const html=document.documentElement, btn=document.getElementById('themeBtn');
+btn.addEventListener('click',()=>{
+  const dark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',dark?'light':'dark');
+  btn.textContent=dark?'View dark ◐':'View light ◑';
+  btn.setAttribute('aria-pressed',String(!dark));
+});
+const spin=document.getElementById('spinDemo'), spinBtn=document.getElementById('spinBtn');
+spinBtn.addEventListener('click',()=>{
+  const active=spin.classList.toggle('spin');
+  spinBtn.setAttribute('aria-pressed',String(active));
+});
+document.querySelectorAll('.copy').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const t=document.getElementById(b.dataset.copy).innerText;
+    navigator.clipboard.writeText(t).then(()=>{
+      const o=b.textContent; b.textContent='Copied ✓';
+      setTimeout(()=>b.textContent=o,1400);
+    }).catch(()=>{b.textContent='Copy unavailable';});
+  });
+});
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { action } from "../_generated/server";
 import {
   GOOGLE_TRUCK_ROUTE_WARNING,
@@ -109,17 +109,6 @@ function chargerDistanceM(row: unknown): number | null {
   const charger = row as { distanceM?: unknown; distance_m?: unknown };
   const value = typeof charger.distanceM === "number" ? charger.distanceM : charger.distance_m;
   return typeof value === "number" ? value : null;
-}
-
-function chargerPowerKw(row: unknown): number | null {
-  const charger = row as { powerKw?: unknown; power_kw?: unknown };
-  const value = typeof charger.powerKw === "number" ? charger.powerKw : charger.power_kw;
-  return typeof value === "number" ? value : null;
-}
-
-function chargerIsClass8(row: unknown): boolean {
-  const charger = row as { isClass8Capable?: unknown; hd_capable?: unknown };
-  return charger.isClass8Capable === true || charger.hd_capable === true;
 }
 
 function parkingSummary(row: unknown): string {
@@ -333,7 +322,7 @@ type GoogleRouteResponse = {
 const routeCache = new Map<string, RouteGeometryResult>();
 
 function normalizeProvider(provider: RouteGeometryProvider | undefined): RouteGeometryProvider {
-  return provider ?? "google";
+  return provider ?? "ptv";
 }
 
 function normalizeRequest(request: RouteGeometryRequest): RouteGeometryRequest {
@@ -375,111 +364,279 @@ export const routeGeometry = action({
       ),
     ),
   },
-  handler: async (_ctx, args): Promise<RouteGeometryResult> => {
+  handler: async (ctx, args): Promise<RouteGeometryResult> => {
     const request = normalizeRequest(args as RouteGeometryRequest);
     const requestHash = await getRouteRequestHash(request);
 
-    if (request.provider !== "google") {
-      return routeGeometryFallback(
-        request,
-        `${request.provider?.toUpperCase()} route geometry provider is not configured yet`,
-        { requestHash },
-      );
-    }
-
-    const cached = routeCache.get(requestHash);
-    if (cached) {
+    const processCached = routeCache.get(requestHash);
+    if (request.provider !== "ptv" && processCached) {
       return {
-        ...cached,
+        ...processCached,
         metadata: {
-          ...(cached.metadata ?? {}),
+          ...(processCached.metadata ?? {}),
           cacheStatus: "hit",
         },
       };
     }
 
-    const apiKey = process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      return routeGeometryFallback(request, "Google Routes API key is not configured", {
+    // Default: PTV Class-8 truck routing.
+    if (request.provider === "ptv" || request.provider === undefined) {
+      const now = Date.now();
+      const claim = await ctx.runMutation(internal.routes.cache.claim, {
         requestHash,
-      });
-    }
-
-    const body = {
-      origin: { location: { latLng: request.origin } },
-      destination: { location: { latLng: request.destination } },
-      intermediates: request.waypoints?.map((waypoint) => ({
-        location: { latLng: waypoint },
-      })),
-      travelMode: "DRIVE",
-      routingPreference: "TRAFFIC_AWARE",
-      computeAlternativeRoutes: false,
-      polylineQuality: "HIGH_QUALITY",
-      polylineEncoding: "ENCODED_POLYLINE",
-      units: "IMPERIAL",
-    };
-
-    try {
-      const response = await fetch(GOOGLE_ROUTES_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": GOOGLE_ROUTES_FIELD_MASK,
-        },
-        body: JSON.stringify(body),
+        provider: "ptv",
+        origin: request.origin,
+        destination: request.destination,
+        waypoints: request.waypoints ?? [],
+        now,
       });
 
-      if (!response.ok) {
-        const message = await readGoogleError(response);
+      if (claim.state === "fresh" && claim.cached) {
+        return claim.cached as RouteGeometryResult;
+      }
+      if (claim.state === "stale-refreshing") {
+        if (claim.cached) return claim.cached as RouteGeometryResult;
         return routeGeometryFallback(
           request,
-          `Google Routes request failed: ${response.status} ${message}`,
-          { requestHash },
+          "PTV route refresh is already in progress; retry shortly",
+          { requestHash, cacheStatus: "database-refreshing" },
         );
       }
 
-      const data = (await response.json()) as GoogleRouteResponse;
-      const route = data.routes?.[0];
-      const encodedPolyline = route?.polyline?.encodedPolyline;
-
-      if (!route || !encodedPolyline) {
-        return routeGeometryFallback(
-          request,
-          "Google Routes returned no route geometry",
-          { requestHash },
-        );
-      }
-
-      const decoded = decodeGoogleEncodedPolyline(encodedPolyline);
-      const coordinates = downsampleRouteCoordinates(decoded);
-      const result: RouteGeometryResult = {
-        provider: "google",
-        coordinates,
-        distanceMeters: route.distanceMeters,
-        durationSeconds: parseGoogleDurationSeconds(route.duration),
-        // Encoded polyline can exceed Convex return size; keep decoded sample only.
-        warnings: [GOOGLE_TRUCK_ROUTE_WARNING],
-        metadata: {
+      const { fetchPtvRouteGeometry } = await import("../../src/lib/maps/ptv-routes");
+      const ptvKey = process.env.PTV_DEVELOPER_API_KEY;
+      if (!ptvKey) {
+        const stale = await ctx.runMutation(internal.routes.cache.fail, {
           requestHash,
-          cacheStatus: "miss",
-          coordinateCountRaw: decoded.length,
-          coordinateCountReturned: coordinates.length,
-        },
-      };
+          error: "PTV_DEVELOPER_API_KEY is not configured",
+          now,
+        });
+        if (stale) {
+          return {
+            ...(stale as RouteGeometryResult),
+            warnings: [
+              ...(stale.warnings ?? []),
+              "PTV refresh skipped because credentials are unavailable; serving stale geometry.",
+            ],
+          };
+        }
+        // Fall back to Google with an explicit warning if PTV key missing.
+        const googleKey =
+          process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+        if (!googleKey) {
+          return routeGeometryFallback(
+            { ...request, provider: "ptv" },
+            "PTV_DEVELOPER_API_KEY is not configured (and no Google Routes fallback key)",
+            { requestHash },
+          );
+        }
+        const googleResult = await fetchGoogleRouteInternal(
+          { ...request, provider: "google" },
+          googleKey,
+          requestHash,
+        );
+        return {
+          ...googleResult,
+          warnings: [
+            ...(googleResult.warnings ?? []),
+            "PTV_DEVELOPER_API_KEY missing — used Google Routes fallback (not truck-certified).",
+          ],
+        };
+      }
+      let result: RouteGeometryResult | null = null;
+      let ptvFailure = "PTV returned no usable road geometry";
+      try {
+        result = await fetchPtvRouteGeometry(
+          { ...request, provider: "ptv" },
+          { apiKey: ptvKey },
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        ptvFailure = `PTV request failed: ${message}`;
+      }
 
-      routeCache.set(requestHash, result);
-      return result;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      if (result && result.coordinates.length >= 8) {
+        const receipt = await ctx.runMutation(internal.routes.cache.complete, {
+          requestHash,
+          provider: "ptv",
+          coordinates: result.coordinates,
+          distanceMeters: result.distanceMeters,
+          durationSeconds: result.durationSeconds,
+          encodedPolyline: result.encodedPolyline,
+          warnings: result.warnings,
+          providerMetadata: result.metadata,
+          now: Date.now(),
+        });
+        return {
+          ...result,
+          metadata: {
+            ...(result.metadata ?? {}),
+            requestHash,
+            cacheStatus: claim.cached
+              ? "database-refreshed"
+              : "database-miss-write",
+            freshness: "fresh",
+            pulledAt: receipt.pulledAt,
+            expiresAt: receipt.expiresAt,
+            refreshCount: receipt.refreshCount,
+          },
+        };
+      }
+
+      if (result) {
+        ptvFailure =
+          result.warnings.join("; ") || "PTV returned no usable road geometry";
+      }
+      const stale = await ctx.runMutation(internal.routes.cache.fail, {
+        requestHash,
+        error: ptvFailure,
+        now: Date.now(),
+      });
+      if (stale) {
+        return {
+          ...(stale as RouteGeometryResult),
+          warnings: [
+            ...(stale.warnings ?? []),
+            `PTV refresh failed; serving stale geometry. ${ptvFailure}`,
+          ],
+        };
+      }
+
+      // PTV may return an endpoint fallback on provider/profile failures. Use
+      // Google road geometry when available rather than drawing a straight
+      // line and presenting it as a route.
+      const googleKey =
+        process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+      if (googleKey) {
+        const googleResult = await fetchGoogleRouteInternal(
+          { ...request, provider: "google" },
+          googleKey,
+          requestHash,
+        );
+        if (googleResult.coordinates.length >= 8) {
+          const fallback = {
+            ...googleResult,
+            warnings: [
+              ...(result?.warnings ?? []),
+              ...(googleResult.warnings ?? []),
+              "PTV road geometry was unavailable — used Google road geometry (not truck-certified).",
+            ],
+          };
+          return fallback;
+        }
+      }
       return routeGeometryFallback(
         request,
-        `Google Routes request failed: ${message}`,
+        "Road geometry unavailable from PTV and Google; no route should be drawn",
         { requestHash },
       );
     }
+
+    if (request.provider === "google") {
+      const apiKey =
+        process.env.GOOGLE_ROUTES_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return routeGeometryFallback(
+          request,
+          "Google Routes API key is not configured",
+          { requestHash },
+        );
+      }
+      const result = await fetchGoogleRouteInternal(request, apiKey, requestHash);
+      if (result.coordinates.length >= 2) {
+        routeCache.set(requestHash, result);
+      }
+      return result;
+    }
+
+    return routeGeometryFallback(
+      request,
+      `${request.provider?.toUpperCase()} route geometry provider is not configured yet`,
+      { requestHash },
+    );
   },
 });
+
+async function fetchGoogleRouteInternal(
+  request: RouteGeometryRequest,
+  apiKey: string,
+  requestHash: string,
+): Promise<RouteGeometryResult> {
+  const body = {
+    origin: { location: { latLng: request.origin } },
+    destination: { location: { latLng: request.destination } },
+    intermediates: request.waypoints?.map((waypoint) => ({
+      location: { latLng: waypoint },
+    })),
+    travelMode: "DRIVE",
+    routingPreference: "TRAFFIC_AWARE",
+    computeAlternativeRoutes: false,
+    polylineQuality: "HIGH_QUALITY",
+    polylineEncoding: "ENCODED_POLYLINE",
+    units: "IMPERIAL",
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(GOOGLE_ROUTES_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": GOOGLE_ROUTES_FIELD_MASK,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const message = await readGoogleError(response);
+      return routeGeometryFallback(
+        request,
+        `Google Routes request failed: ${response.status} ${message}`,
+        { requestHash },
+      );
+    }
+
+    const data = (await response.json()) as GoogleRouteResponse;
+    const route = data.routes?.[0];
+    const encodedPolyline = route?.polyline?.encodedPolyline;
+
+    if (!route || !encodedPolyline) {
+      return routeGeometryFallback(
+        request,
+        "Google Routes returned no route geometry",
+        { requestHash },
+      );
+    }
+
+    const decoded = decodeGoogleEncodedPolyline(encodedPolyline);
+    const coordinates = downsampleRouteCoordinates(decoded);
+    return {
+      provider: "google",
+      coordinates,
+      distanceMeters: route.distanceMeters,
+      durationSeconds: parseGoogleDurationSeconds(route.duration),
+      warnings: [GOOGLE_TRUCK_ROUTE_WARNING],
+      metadata: {
+        requestHash,
+        cacheStatus: "miss",
+        coordinateCountRaw: decoded.length,
+        coordinateCountReturned: coordinates.length,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return routeGeometryFallback(
+      request,
+      `Google Routes request failed: ${message}`,
+      { requestHash },
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export const driverDayPlan = action({
   args: {
@@ -506,7 +663,7 @@ export const driverDayPlan = action({
     const routeRequest = normalizeRequest({
       origin: coordinateFromPlace(args.origin),
       destination: coordinateFromPlace(args.destination),
-      provider: "google" as const,
+      provider: "ptv" as const,
     });
     const routeHash = await getRouteRequestHash(routeRequest);
     let route = routeGeometryFallback(
@@ -515,8 +672,8 @@ export const driverDayPlan = action({
       { requestHash: routeHash },
     );
     try {
-      // Road-snapped Google Routes polyline (same path as fleet contract plan).
-      route = await ctx.runAction(api["workbench/actions"].routeGeometry, routeRequest);
+      // Road-snapped PTV Class-8 truck polyline (same path as fleet contract plan).
+      route = await ctx.runAction(api.workbench.actions.routeGeometry, routeRequest);
     } catch {
       // Keep labeled fallback — providerWarnings surface the assumption.
     }
@@ -531,7 +688,7 @@ export const driverDayPlan = action({
     let simulation: unknown = null;
     let simulationError: string | null = null;
     try {
-      simulation = await ctx.runAction(api["physics/simulate"].simulate, {
+      simulation = await ctx.runAction(api.physics.simulate.simulate, {
         request: {
           route: {
             origin: { lat: args.origin.latitude, lon: args.origin.longitude },
@@ -565,7 +722,7 @@ export const driverDayPlan = action({
         }
       | null;
 
-    const gapAnalysis = (await ctx.runQuery(api["workbench/queries"].analyzeClass8GapAlongRoute, {
+    const gapAnalysis = (await ctx.runQuery(api.workbench.queries.analyzeClass8GapAlongRoute, {
       corridorPoints,
       radiusM: CLASS8_GAP_RADIUS_M,
     })) as {
@@ -578,13 +735,13 @@ export const driverDayPlan = action({
     };
     const gap = gapAnalysis.gap;
 
-    const destinationNearestClass8 = (await ctx.runQuery(api["chargers/queries"].nearestClass8, {
+    const destinationNearestClass8 = (await ctx.runQuery(api.chargers.queries.nearestClass8, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       radiusM: 50_000,
       limit: 5,
     })) as unknown[];
-    const destinationFiveClosest = (await ctx.runQuery(api["chargers/queries"].fiveClosest, {
+    const destinationFiveClosest = (await ctx.runQuery(api.chargers.queries.fiveClosest, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       limit: 5,
@@ -598,23 +755,23 @@ export const driverDayPlan = action({
     const midProbe = corridorPoints[Math.floor(corridorPoints.length / 2)] ?? originProbe;
     const [originFiveClosest, midFiveClosest, originNearestClass8, midNearestClass8] =
       (await Promise.all([
-        ctx.runQuery(api["chargers/queries"].fiveClosest, {
+        ctx.runQuery(api.chargers.queries.fiveClosest, {
           lat: originProbe.lat,
           lng: originProbe.lng,
           limit: 4,
         }),
-        ctx.runQuery(api["chargers/queries"].fiveClosest, {
+        ctx.runQuery(api.chargers.queries.fiveClosest, {
           lat: midProbe.lat,
           lng: midProbe.lng,
           limit: 4,
         }),
-        ctx.runQuery(api["chargers/queries"].nearestClass8, {
+        ctx.runQuery(api.chargers.queries.nearestClass8, {
           lat: originProbe.lat,
           lng: originProbe.lng,
           radiusM: 50_000,
           limit: 3,
         }),
-        ctx.runQuery(api["chargers/queries"].nearestClass8, {
+        ctx.runQuery(api.chargers.queries.nearestClass8, {
           lat: midProbe.lat,
           lng: midProbe.lng,
           radiusM: 50_000,
@@ -626,12 +783,12 @@ export const driverDayPlan = action({
       sim?.charging_stops?.map(stopPointFromChargingStop).filter((point): point is { lat: number; lng: number } => Boolean(point)) ?? [];
     const accessProbePoint = stopPoints[0] ?? { lat: args.destination.latitude, lng: args.destination.longitude };
     const [parking, pois] = (await Promise.all([
-      ctx.runQuery(api["pois/queries"].parkingInRadius, {
+      ctx.runQuery(api.pois.queries.parkingInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         limit: 5,
       }),
-      ctx.runQuery(api["pois/queries"].poisInRadius, {
+      ctx.runQuery(api.pois.queries.poisInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         types: ["fuel", "food", "rest_area", "truck_stop", "repair"],
@@ -825,7 +982,7 @@ export const fleetContractPlan = action({
     const routeRequest = normalizeRequest({
       origin: coordinateFromPlace(args.origin),
       destination: coordinateFromPlace(args.destination),
-      provider: "google" as const,
+      provider: "ptv" as const,
     });
     const routeHash = await getRouteRequestHash(routeRequest);
     let route = routeGeometryFallback(
@@ -834,7 +991,7 @@ export const fleetContractPlan = action({
       { requestHash: routeHash },
     );
     try {
-      route = await ctx.runAction(api["workbench/actions"].routeGeometry, routeRequest);
+      route = await ctx.runAction(api.workbench.actions.routeGeometry, routeRequest);
     } catch {
       // Keep the labeled fallback above. The provider warning card makes the assumption visible.
     }
@@ -849,7 +1006,7 @@ export const fleetContractPlan = action({
     let simulation: unknown = null;
     let simulationError: string | null = null;
     try {
-      simulation = await ctx.runAction(api["physics/simulate"].simulate, {
+      simulation = await ctx.runAction(api.physics.simulate.simulate, {
         request: {
           route: {
             origin: { lat: args.origin.latitude, lon: args.origin.longitude },
@@ -883,7 +1040,7 @@ export const fleetContractPlan = action({
         }
       | null;
 
-    const gapAnalysis = (await ctx.runQuery(api["workbench/queries"].analyzeClass8GapAlongRoute, {
+    const gapAnalysis = (await ctx.runQuery(api.workbench.queries.analyzeClass8GapAlongRoute, {
       corridorPoints,
       radiusM: CLASS8_GAP_RADIUS_M,
     })) as {
@@ -896,13 +1053,13 @@ export const fleetContractPlan = action({
     };
     const gap = gapAnalysis.gap;
 
-    const destinationNearestClass8 = (await ctx.runQuery(api["chargers/queries"].nearestClass8, {
+    const destinationNearestClass8 = (await ctx.runQuery(api.chargers.queries.nearestClass8, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       radiusM: 50_000,
       limit: 5,
     })) as unknown[];
-    const destinationFiveClosest = (await ctx.runQuery(api["chargers/queries"].fiveClosest, {
+    const destinationFiveClosest = (await ctx.runQuery(api.chargers.queries.fiveClosest, {
       lat: args.destination.latitude,
       lng: args.destination.longitude,
       limit: 5,
@@ -916,12 +1073,12 @@ export const fleetContractPlan = action({
     };
     const accessProbePoint = stopPoints[0] ?? midpoint;
     const [parking, pois] = (await Promise.all([
-      ctx.runQuery(api["pois/queries"].parkingInRadius, {
+      ctx.runQuery(api.pois.queries.parkingInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         limit: 5,
       }),
-      ctx.runQuery(api["pois/queries"].poisInRadius, {
+      ctx.runQuery(api.pois.queries.poisInRadius, {
         ...accessProbePoint,
         radiusM: NEAR_STOP_RADIUS_M,
         types: ["fuel", "food", "rest_area", "truck_stop", "repair"],

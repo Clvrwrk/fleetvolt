@@ -11,25 +11,15 @@ export type RouteLayerProps = {
   casingColor?: string;
   strokeOpacity?: number;
   zIndex?: number;
+  onSelectRoute?: () => void;
 };
 
 function toLatLngPath(coordinates: RouteCoordinate[]): google.maps.LatLngLiteral[] {
   return coordinates
-    .map((coordinate) => {
-      const lat =
-        typeof coordinate.latitude === "number"
-          ? coordinate.latitude
-          : typeof (coordinate as { lat?: number }).lat === "number"
-            ? (coordinate as { lat: number }).lat
-            : NaN;
-      const lng =
-        typeof coordinate.longitude === "number"
-          ? coordinate.longitude
-          : typeof (coordinate as { lng?: number }).lng === "number"
-            ? (coordinate as { lng: number }).lng
-            : NaN;
-      return { lat, lng };
-    })
+    .map((coordinate) => ({
+      lat: coordinate.latitude,
+      lng: coordinate.longitude,
+    }))
     .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 }
 
@@ -46,6 +36,7 @@ export function RouteLayer({
   casingColor = "#ffffff",
   strokeOpacity = 0.95,
   zIndex = 20,
+  onSelectRoute,
 }: RouteLayerProps) {
   const map = useMap();
   const linesRef = useRef<google.maps.Polyline[]>([]);
@@ -62,7 +53,7 @@ export function RouteLayer({
       strokeColor: casingColor,
       strokeOpacity: 0.9,
       strokeWeight: 9,
-      clickable: false,
+      clickable: Boolean(onSelectRoute),
       zIndex: zIndex - 1,
     });
 
@@ -72,11 +63,18 @@ export function RouteLayer({
       strokeColor,
       strokeOpacity,
       strokeWeight: 5,
-      clickable: false,
+      clickable: Boolean(onSelectRoute),
       zIndex,
     });
 
     linesRef.current = [casing, routeLine];
+
+    if (onSelectRoute) {
+      casing.addListener("click", onSelectRoute);
+      casing.addListener("dblclick", onSelectRoute);
+      routeLine.addListener("click", onSelectRoute);
+      routeLine.addListener("dblclick", onSelectRoute);
+    }
 
     return () => {
       for (const line of linesRef.current) {
@@ -84,7 +82,7 @@ export function RouteLayer({
       }
       linesRef.current = [];
     };
-  }, [casingColor, map, path, strokeColor, strokeOpacity, visible, zIndex]);
+  }, [casingColor, map, onSelectRoute, path, strokeColor, strokeOpacity, visible, zIndex]);
 
   return null;
 }

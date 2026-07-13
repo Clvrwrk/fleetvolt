@@ -1,18 +1,21 @@
 "use client";
 
 import { Suspense, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
-import { BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { CatalogVehicleList } from "@/components/catalog/catalog-vehicle-list";
 import {
   CatalogActiveChips,
+  CatalogInlineFilters,
   catalogFiltersToQueryArgs,
   useCatalogFilterParams,
 } from "@/components/catalog/catalog-filters";
 import { TechnicalLabel } from "@/components/design/technical-label";
 
 function CatalogShellInner({ children }: { children?: ReactNode }) {
+  const router = useRouter();
   const { filters, clearAll, clearOne } = useCatalogFilterParams();
   const vehicles = useQuery(
     api.catalog.queries.list,
@@ -25,6 +28,19 @@ function CatalogShellInner({ children }: { children?: ReactNode }) {
       className="min-h-[calc(100dvh-3.5rem)] w-full max-w-none bg-[var(--fv-bg)]"
     >
       <div className="border-b border-black/8 bg-[var(--fv-paper)] px-5 py-5 md:px-8">
+        <button
+          type="button"
+          data-testid="catalog-back-button"
+          onClick={() => {
+            if (window.history.length > 1) router.back();
+            else router.push("/caas");
+          }}
+          className="mb-5 inline-flex min-h-12 items-center gap-2 rounded-lg border border-[var(--fv-blueprint-blue)]/60 bg-[#0b1016] px-4 text-base font-bold text-[var(--fv-blueprint-blue)] shadow-sm transition hover:border-[var(--fv-blueprint-blue)] hover:bg-[var(--fv-blueprint-blue)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-blueprint-blue)]"
+          aria-label="Back to previous page"
+        >
+          <ArrowLeft size={20} aria-hidden />
+          Back
+        </button>
         <div className="flex flex-wrap items-start gap-3">
           <BookOpen
             size={20}
@@ -52,6 +68,7 @@ function CatalogShellInner({ children }: { children?: ReactNode }) {
             onClearOne={clearOne}
           />
         </div>
+        <CatalogInlineFilters />
       </div>
 
       <div className="px-5 py-5 md:px-8">

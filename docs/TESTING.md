@@ -37,10 +37,13 @@ Optional: browse https://fleetvolt.network/catalog for HVIP EPA truck cards (pub
 
 On `/caas` (freight overview phase):
 
-1. Confirm dotted corridors follow roads (not straight ocean/land chords) after corridors are built.
-2. Use **Corridor compare** (Both / I-15 / I-40) for POLB→Vegas dual paths.
-3. Click a **port tag** (e.g. POLB) → popup with annual TEU + nearby Major Traffic Generators.
-4. Colors = CalTrans 5-axle truck AADT samples along the path (CA coverage; Google geometry not truck-certified).
+1. Map frames full California (San Diego → Crescent City). Dotted corridors follow roads after rebuild.
+2. **Pulse:** heavy truck AADT = slow red dash; light = fast green dash.
+3. **Geo boundaries:** Air districts → Counties → ZIP (red/yellow/green; fill opacity ≤50%).
+4. Toggle **chargers / parking / carriers** in Full map suite — they load on the overview.
+5. Click a region, port, or generator → popup includes **See carriers in this region**.
+6. **Energy Forward ZE** cards: Long Beach → Shafter and Long Beach → Otay/Tijuana (60-truck interim + US/MX capacity questions).
+7. Corridor compare (Both / I-15 / I-40) still filters POLB→Vegas dual paths.
 
 Operator rebuild (dev):
 
@@ -49,14 +52,19 @@ python3 data/ingest/caltrans/prep_traffic_generators.py
 node scripts/generators_load.mjs
 # requires GOOGLE_MAPS_API_KEY on Convex:
 npx convex run faf/buildCorridors:run
+# optional — only ZE corridors:
+npx convex run faf/buildCorridors:run '{"corridorKeys":["polb-shafter-ze","polb-tijuana-ze","oak-crescent-city-us101","sd-la-i5"]}'
 ```
 
 ## Known follow-ups (not blockers for first testers)
 
+- Air-district / ZIP choropleth uses county bbox unions until true CARB / ZCTA polygons are ingested
+- Generator→port spokes are straight (road-trace deferred); statewide generator coverage depends on CalTrans ingest
 - Parking/POI corridor density thinner than chargers
 - Catalog OEM alias (Daimler vs Freightliner) for some physics truck links
 - AI command bar may use client fallback until `OPENAI_API_KEY` is set on Convex prod
 - I-40 east of CA has thinner CalTrans AADT samples (CA postmiles only)
+- Mexico-side charger inventory for Tijuana is assumption-labeled until verified sources land
 
 ## Report bugs
 

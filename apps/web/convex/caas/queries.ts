@@ -13,6 +13,8 @@ import { query } from "../_generated/server";
 import { v } from "convex/values";
 import { api } from "../_generated/api";
 import { nearestPoints } from "../lib/spatial";
+// Shared Class-8 gap primitive — one in-index read shared with report + class8Gap.
+import { class8WithinRadius } from "../chargers/class8";
 
 /** Get a CaaS company by caasId. Returns null if not found. */
 export const getCaasCompany = query({
@@ -227,6 +229,7 @@ export const getChargerGapByArea = query({
     const zonesWithGap: string[] = [];
 
     for (const zone of zones) {
+      // Any-class total (unchanged) — the honest "how many chargers at all".
       const chargerHits = await nearestPoints(ctx, {
         table: "chargers",
         point: zone.centroid,
@@ -234,7 +237,13 @@ export const getChargerGapByArea = query({
         limit: 50,
       });
       totalChargers += chargerHits.length;
-      const c8 = chargerHits.filter((h) => h.doc.isClass8Capable).length;
+      // Class-8 count via the shared in-index primitive — no longer undercounts
+      // by JS-filtering the nearest-50 any-class set (matches report/class8Gap).
+      const { count: c8 } = await class8WithinRadius(ctx, {
+        point: zone.centroid,
+        radiusM: zone.radiusM,
+        limit: 50,
+      });
       class8Chargers += c8;
       if (c8 === 0) zonesWithGap.push(zone.zoneId);
     }

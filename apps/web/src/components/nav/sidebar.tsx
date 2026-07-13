@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -23,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { CatalogSidebarFilters } from "@/components/catalog/catalog-filters";
+import { FleetVoltBrand } from "@/components/design/fleetvolt-brand";
 import {
   loadSavedFleets,
   SAVED_FLEETS_EVENT,
@@ -90,6 +90,7 @@ function NavItemLink({
   return (
     <Link
       href={item.href}
+      aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={`
         group relative flex items-center gap-3 rounded-lg transition-all
@@ -99,9 +100,9 @@ function NavItemLink({
           ? "bg-gradient-to-br from-white/10 to-white/5 text-[var(--fv-paper)]"
           : "text-[var(--fv-slate)] hover:-translate-y-px hover:text-[var(--fv-fog)]"
         }
-        ${collapsed ? "mx-auto h-10 w-10" : "h-10 w-full"}
+        ${collapsed ? "mx-auto h-11 w-11" : "h-11 w-full"}
       `}
-      style={{ minHeight: 40 }}
+      style={{ minHeight: 44 }}
     >
       {/* Active accent bar on left edge */}
       {active && (
@@ -148,8 +149,11 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
 
   // Load persisted collapse state after mount (avoids hydration mismatch)
   useEffect(() => {
-    setCollapsed(forceCollapsed ? true : getInitialCollapsed());
-    setMounted(true);
+    const frame = window.requestAnimationFrame(() => {
+      setCollapsed(forceCollapsed ? true : getInitialCollapsed());
+      setMounted(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [forceCollapsed]);
 
   useEffect(() => {
@@ -201,13 +205,14 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
 
   return (
     <aside
-      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/8"
+      className="fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-white/8 md:flex"
       style={{
         width,
         background: "var(--fv-graphite)",
         transition: "width 200ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
       aria-label="Primary navigation"
+      data-collapsed={effectiveCollapsed ? "true" : "false"}
       data-catalog-filters={showCatalogFilters ? "true" : "false"}
     >
       {/* Logo at top */}
@@ -215,26 +220,11 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
         className="flex h-14 shrink-0 items-center border-b border-white/8"
         style={{ padding: effectiveCollapsed ? "0 14px" : "0 20px" }}
       >
-        <Link href="/" className="flex items-center no-underline">
+        <Link href="/" className="flex min-h-11 items-center no-underline" aria-label="FleetVolt home">
           {effectiveCollapsed ? (
-            // Compact: icon-only logo (vertical variant fits 56px)
-            <Image
-              src="/fleetvolt-logo-vertical-light.svg"
-              alt="FleetVolt"
-              width={28}
-              height={28}
-              priority
-            />
+            <FleetVoltBrand size="compact" />
           ) : (
-            // Expanded: horizontal light logo on dark Graphite bg
-            <Image
-              src="/fleetvolt-logo-horizontal-light.svg"
-              alt="FleetVolt"
-              width={130}
-              height={28}
-              priority
-              style={{ filter: "brightness(0) invert(1)" }}
-            />
+            <FleetVoltBrand size="standard" />
           )}
         </Link>
       </div>
@@ -316,7 +306,7 @@ export function Sidebar({ forceCollapsed = false }: SidebarProps) {
             `}
             aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={effectiveCollapsed ? "Expand" : "Collapse"}
-            style={{ minHeight: 36 }}
+            style={{ minHeight: 44 }}
           >
             {effectiveCollapsed ? (
               <ChevronRight size={16} />

@@ -121,6 +121,7 @@ export default function FleetDashboardPage() {
   const addDriver = useMutation(api.fleet.mutations.addDriverToFleet);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- hydrate persisted browser state after mount */
     setSelection(loadSelection());
     setVehicleNames(loadNames());
     try {
@@ -130,6 +131,7 @@ export default function FleetDashboardPage() {
       // ignore
     }
     setMounted(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   // Sidebar hash links (#fleets, #drivers, …) → scroll + open matching setup step
@@ -355,10 +357,10 @@ export default function FleetDashboardPage() {
                   type="button"
                   onClick={() => setStep(i)}
                   className={cn(
-                    "rounded-md border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition",
+                    "min-h-11 rounded-sm border px-3 text-[11px] font-mono uppercase tracking-wider transition",
                     step === i
-                      ? "border-[var(--fv-graphite)] bg-[var(--fv-graphite)] text-white"
-                      : "border-black/10 bg-white text-[var(--fv-steel)] hover:text-[var(--fv-graphite)]",
+                      ? "border-[#42a5d9] bg-[#42a5d9] text-[#061018]"
+                      : "border-white/12 bg-[#121820] text-[#a5b2bc] hover:border-[#42a5d9]/50 hover:text-white",
                   )}
                 >
                   {i + 1}. {s}

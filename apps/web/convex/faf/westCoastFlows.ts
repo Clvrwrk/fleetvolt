@@ -21,6 +21,11 @@ const DESTINATIONS: Record<
   tracy: { label: "Tracy / I-205", lat: 37.7397, lng: -121.4252 },
   las_vegas: { label: "Las Vegas", lat: 36.1699, lng: -115.1398 },
   sacramento: { label: "Sacramento / I-80", lat: 38.5816, lng: -121.4944 },
+  shafter: { label: "Shafter / CA-99", lat: 35.5005, lng: -119.2718 },
+  otay: { label: "Otay Mesa / Tijuana", lat: 32.555, lng: -116.938 },
+  crescent_city: { label: "Crescent City / US-101", lat: 41.7558, lng: -124.2016 },
+  redding: { label: "Redding / I-5", lat: 40.5865, lng: -122.3917 },
+  la_basin: { label: "LA Basin / I-5", lat: 33.75, lng: -118.2 },
 };
 
 const PORT_ARCS: Array<{
@@ -46,12 +51,17 @@ const PORT_ARCS: Array<{
   { portCode: "HUE", destKey: "ontario", intensity: 24, directionHint: "US-101 south" },
   { portCode: "SD", destKey: "phoenix", intensity: 40, directionHint: "I-8 east" },
   { portCode: "SD", destKey: "ontario", intensity: 30, directionHint: "I-15 north" },
+  { portCode: "SD", destKey: "la_basin", intensity: 76, directionHint: "I-5 north" },
   { portCode: "POLB", destKey: "las_vegas", intensity: 58, directionHint: "I-15 north" },
+  { portCode: "POLB", destKey: "shafter", intensity: 85, directionHint: "I-5 / CA-99 ZE" },
+  { portCode: "POLB", destKey: "otay", intensity: 80, directionHint: "I-5 south ZE" },
+  { portCode: "OAK", destKey: "redding", intensity: 42, directionHint: "I-5 north" },
+  { portCode: "OAK", destKey: "crescent_city", intensity: 28, directionHint: "US-101 north" },
 ];
 
 function tierForIntensity(intensity: number): FreightTrafficTier {
-  if (intensity >= 70) return "heavy";
-  if (intensity >= 40) return "medium";
+  if (intensity >= 85) return "heavy";
+  if (intensity >= 50) return "medium";
   return "low";
 }
 
@@ -160,7 +170,9 @@ export const westCoastFreightFlows = query({
             ? "POLB → Las Vegas (I-15 vs I-40)"
             : id === "pola-vegas"
               ? "POLA → Las Vegas (I-15 vs I-40)"
-              : id,
+              : id === "energy-forward-ze"
+                ? "Energy Forward ZE (Shafter + Tijuana)"
+                : id,
         corridorKeys: keys,
       }));
 

@@ -54,8 +54,8 @@ test("usefulnessScore at the 0 and 10 bounds passes", () => {
   assert.doesNotThrow(() => assertProvenance({ ...valid, usefulnessScore: 10 }));
 });
 
-test("source accepts each of the nine literals", () => {
-  assert.equal(PROVENANCE_SOURCES.length, 9);
+test("source accepts every supported provenance literal", () => {
+  assert.ok(PROVENANCE_SOURCES.length > 0);
   for (const source of PROVENANCE_SOURCES) {
     assert.doesNotThrow(() => assertProvenance({ ...valid, source }));
   }

@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1.7
+FROM node:24-bookworm-slim AS dependencies
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+WORKDIR /app
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared-types/package.json packages/shared-types/package.json
+
+RUN pnpm install --frozen-lockfile --filter @fleetvolt/web...
+
+FROM dependencies AS builder
+
+ARG NEXT_PUBLIC_CONVEX_URL
+ARG NEXT_PUBLIC_CONVEX_SITE_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ARG NEXT_PUBLIC_GOOGLE_MAP_ID
+ARG NEXT_PUBLIC_GOOGLE_MAP_ID_MONOCHROME
+ARG NEXT_PUBLIC_WORKOS_CLIENT_ID
+ARG NEXT_PUBLIC_WORKOS_REDIRECT_URI
+ARG NEXT_PUBLIC_APP_URL
+
+ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
+ENV NEXT_PUBLIC_CONVEX_SITE_URL=$NEXT_PUBLIC_CONVEX_SITE_URL
+ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_GOOGLE_MAP_ID=$NEXT_PUBLIC_GOOGLE_MAP_ID
+ENV NEXT_PUBLIC_GOOGLE_MAP_ID_MONOCHROME=$NEXT_PUBLIC_GOOGLE_MAP_ID_MONOCHROME
+ENV NEXT_PUBLIC_WORKOS_CLIENT_ID=$NEXT_PUBLIC_WORKOS_CLIENT_ID
+ENV NEXT_PUBLIC_WORKOS_REDIRECT_URI=$NEXT_PUBLIC_WORKOS_REDIRECT_URI
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+
+COPY apps/web apps/web
+COPY packages/shared-types packages/shared-types
+
+RUN pnpm --filter @fleetvolt/web build
+
+FROM node:24-bookworm-slim AS runner
+
+ENV NODE_ENV=production
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV COREPACK_HOME=/corepack
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+WORKDIR /app
+RUN mkdir -p /corepack \
+    && corepack enable \
+    && corepack install --global pnpm@11.9.0 \
+    && chmod -R a+rX /corepack \
+    && groupadd --system --gid 1001 nodejs \
+    && useradd --system --uid 1001 --gid nodejs nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web ./apps/web
+COPY --from=builder --chown=nextjs:nodejs /app/packages/shared-types ./packages/shared-types
+
+USER nextjs
+EXPOSE 3000
+
+CMD ["pnpm", "--filter", "@fleetvolt/web", "start"]

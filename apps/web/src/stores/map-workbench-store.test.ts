@@ -46,12 +46,15 @@ describe("useMapWorkbenchStore", () => {
     const state = useMapWorkbenchStore.getState();
     assert.equal(state.mode, "caas_gap_map");
     assert.equal(state.caasPhase, "freight_overview");
+    assert.equal(state.caasGeoLevel, "air-district");
     assert.ok(state.activeLayers.includes("freight-flow"));
     assert.ok(state.activeLayers.includes("geo-regions"));
     assert.ok(state.activeLayers.includes("ports"));
+    assert.ok(state.activeLayers.includes("chargers"));
+    assert.ok(state.activeLayers.includes("carriers"));
   });
 
-  it("CaaS route analysis fits corridor and drops statewide overlays", () => {
+  it("CaaS route analysis fits corridor and keeps statewide overlays", () => {
     useMapWorkbenchStore.getState().reset("caas_gap_map");
     useMapWorkbenchStore.getState().applyDraftPatch({
       origin: {
@@ -77,8 +80,11 @@ describe("useMapWorkbenchStore", () => {
     assert.equal(state.caasPhase, "route_analysis");
     assert.ok(state.activeLayers.includes("route"));
     assert.ok(state.activeLayers.includes("class8-gaps"));
-    assert.ok(!state.activeLayers.includes("geo-regions"));
-    assert.ok(!state.activeLayers.includes("freight-flow"));
+    assert.ok(state.activeLayers.includes("geo-regions"));
+    assert.ok(state.activeLayers.includes("freight-flow"));
+    assert.ok(state.activeLayers.includes("chargers"));
+    assert.ok(state.activeLayers.includes("parking"));
+    assert.ok(state.activeLayers.includes("carriers"));
     assert.ok(state.focusBounds);
     assert.ok(state.focusBounds!.south < 32.555);
     assert.ok(state.focusBounds!.north > 33.7542);
@@ -251,5 +257,66 @@ describe("useMapWorkbenchStore", () => {
       "parking",
       "pois",
     ]);
+  });
+
+  it("does not leave CaaS freight overview on origin-only AI draft", () => {
+    useMapWorkbenchStore.getState().reset("caas_gap_map");
+    assert.equal(useMapWorkbenchStore.getState().caasPhase, "freight_overview");
+
+    useMapWorkbenchStore.getState().applyAiResult({
+      id: "wbai_origin_only",
+      mode: "caas_gap_map",
+      answerSummary: "Set origin only",
+      draftPatch: {
+        origin: {
+          id: "polb",
+          label: "Port of Long Beach",
+          latitude: 33.7542,
+          longitude: -118.2165,
+          kind: "port",
+          source: "fleetvolt",
+        },
+        notes: "notes-only should not advance phase",
+      },
+      mapActions: [],
+      cards: [],
+      queriesRun: [],
+      fallback: true,
+    });
+
+    assert.equal(useMapWorkbenchStore.getState().caasPhase, "freight_overview");
+  });
+
+  it("advances CaaS to route analysis when AI drafts both endpoints", () => {
+    useMapWorkbenchStore.getState().reset("caas_gap_map");
+
+    useMapWorkbenchStore.getState().applyAiResult({
+      id: "wbai_full_route",
+      mode: "caas_gap_map",
+      answerSummary: "Drafted POLB → Barstow",
+      draftPatch: {
+        origin: {
+          id: "polb",
+          label: "Port of Long Beach",
+          latitude: 33.7542,
+          longitude: -118.2165,
+          kind: "port",
+          source: "fleetvolt",
+        },
+        destination: {
+          label: "Barstow",
+          latitude: 34.8958,
+          longitude: -117.0173,
+          kind: "manual",
+          source: "manual",
+        },
+      },
+      mapActions: [],
+      cards: [],
+      queriesRun: [],
+      fallback: true,
+    });
+
+    assert.equal(useMapWorkbenchStore.getState().caasPhase, "route_analysis");
   });
 });

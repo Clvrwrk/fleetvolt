@@ -67,7 +67,7 @@ function geometryFromRun(
           typeof record.durationSeconds === "number" ? record.durationSeconds : undefined,
         warnings: Array.isArray(record.warnings)
           ? record.warnings.filter((w): w is string => typeof w === "string")
-          : undefined,
+          : [],
       };
     }
   }
@@ -104,10 +104,10 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
   const { user } = useWorkOSAuth();
   const appliedKey = useRef<string | null>(null);
   const snapInFlight = useRef<string | null>(null);
-  const fetchRouteGeometry = useAction(api["workbench/actions"].routeGeometry);
+  const fetchRouteGeometry = useAction(api.workbench.actions.routeGeometry);
 
   const latestRun = useQuery(
-    api["workbench/runs"].getLatestRun,
+    api.workbench.runs.getLatestRun,
     isAuthenticated ? { mode } : "skip",
   );
 
@@ -170,8 +170,9 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
           coreCorridorId: corridor.id,
         },
       },
-      // Temporary straight line only — road snap replaces this immediately.
-      routeGeometry: endpointGeometry(corridor.origin, corridor.destination),
+      // Never draw endpoint-to-endpoint geometry as a route. The map stays in
+      // an honest loading state until a road provider returns a real polyline.
+      routeGeometry: null,
       providerWarnings: [
         `${corridor.label} preview (${corridor.meta}). Snapping to Google roads…`,
       ],
@@ -214,7 +215,7 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
           const snapped = (await fetchRouteGeometry({
             origin: { latitude: originLat, longitude: originLng },
             destination: { latitude: destLat, longitude: destLng },
-            provider: "google",
+            provider: "ptv",
           })) as RouteGeometryResult;
 
           if (cancelled) return;
@@ -243,8 +244,9 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
                 "Google Routes fell back to endpoint geometry (check API key / Routes API enablement)",
             );
             useMapWorkbenchStore.setState({
+              routeGeometry: null,
               providerWarnings: [
-                "Road snap incomplete — showing straight-line preview.",
+                "Road snap incomplete — no route drawn until road geometry is available.",
                 ...(snapped.warnings ?? []),
               ],
             });
@@ -274,8 +276,9 @@ export function WorkbenchBootstrap({ mode }: WorkbenchBootstrapProps) {
         lastError instanceof Error ? lastError.message : String(lastError ?? "unknown error");
       console.error("[workbench] road snap failed after retries", lastError);
       useMapWorkbenchStore.setState({
+        routeGeometry: null,
         providerWarnings: [
-          `Road snap failed — straight line is NOT the drive path. ${message}`,
+          `Road snap failed — no route is drawn because a straight line is not a drive path. ${message}`,
         ],
       });
     })();

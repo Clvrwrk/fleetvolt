@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { components } from "@fleetvolt/shared-types";
 import { FvInsetCard } from "@/components/design/fv-inset-card";
@@ -27,6 +27,13 @@ const WEATHER_OPTIONS = [
   { value: "headwind", label: "Headwind" },
 ] as const;
 
+// @hookform/resolvers currently resolves against an older Zod v4 minor in the
+// workspace lockfile. Keep the runtime schema canonical while narrowing the
+// resolver boundary to the form's already-inferred value type.
+const scenarioResolver = zodResolver(
+  scenarioFormSchema as never,
+) as Resolver<ScenarioFormValues>;
+
 export function ScenarioForm({ trucks, corridors }: ScenarioFormProps) {
   const submitScenario = useScenarioStore((s) => s.submitScenario);
   const setFormInputs = useScenarioStore((s) => s.setFormInputs);
@@ -42,7 +49,7 @@ export function ScenarioForm({ trucks, corridors }: ScenarioFormProps) {
   );
 
   const form = useForm<ScenarioFormValues>({
-    resolver: zodResolver(scenarioFormSchema),
+    resolver: scenarioResolver,
     defaultValues: storedInputs,
   });
 

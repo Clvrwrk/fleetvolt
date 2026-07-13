@@ -1,9 +1,16 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 
@@ -60,105 +67,119 @@ export function countActiveCatalogFilters(filters: CatalogFilters): number {
   ].filter(Boolean).length;
 }
 
-function FilterGroup({
-  title,
-  options,
+type CatalogFilterKey = keyof CatalogFilters;
+
+type FilterDefinition = {
+  key: CatalogFilterKey;
+  label: string;
+  options: string[];
+};
+
+function CatalogFilterDrawer({
+  definition,
   value,
   onChange,
-  onClearAll,
-  defaultOpen = true,
+  onClose,
+  visible,
 }: {
-  title: string;
-  options: string[];
+  definition: FilterDefinition;
   value: string | null;
   onChange: (next: string | null) => void;
-  /** Clears every catalog filter (shown on each active group). */
-  onClearAll: () => void;
-  defaultOpen?: boolean;
+  onClose: () => void;
+  visible: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
-  const active = value != null && value.length > 0;
+  const choices = ["All vehicles", ...definition.options];
+  const columnCount = choices.length <= 8 ? 2 : choices.length <= 12 ? 3 : 4;
+  const drawerWidth = Math.max(420, columnCount * 170);
 
   return (
     <section
-      className="border-b border-white/10"
-      data-filter-group={title.toLowerCase()}
-      data-active={active ? "true" : "false"}
+      id={`catalog-filter-drawer-${definition.key}`}
+      data-testid="catalog-filter-drawer"
+      className={cn(
+        "fixed inset-x-2 top-0 z-[70] flex h-fit max-h-[100dvh] flex-col overflow-hidden rounded-sm border border-[#42a5d9]/35 bg-[#0b1016]/[0.98] shadow-[0_24px_80px_rgba(0,0,0,0.56)] backdrop-blur-xl transition-[transform,opacity] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transform-none motion-reduce:transition-none md:left-[268px] md:right-auto md:top-[64px] md:max-h-[calc(100dvh-76px)] md:w-[var(--catalog-drawer-width)] md:max-w-[calc(100vw-280px)]",
+        visible
+          ? "translate-x-0 opacity-100"
+          : "pointer-events-none -translate-x-10 opacity-0",
+      )}
+      style={
+        {
+          "--catalog-drawer-width": `${drawerWidth}px`,
+        } as CSSProperties
+      }
+      aria-label={`${definition.label} catalog filters`}
+      aria-hidden={!visible}
     >
-      <div className="flex items-center gap-1.5 px-3 py-2.5">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            "min-w-0 flex-1 text-left text-[11px] font-mono uppercase tracking-[0.14em] transition",
-            active
-              ? "text-[var(--fv-alert-red)] hover:text-[var(--fv-alert-red)]"
-              : "text-[var(--fv-fog)] hover:text-white",
-          )}
-          aria-expanded={open}
-        >
-          {title}
-        </button>
-        {active ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClearAll();
-            }}
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--fv-alert-red)] text-white transition hover:brightness-110"
-            aria-label="Clear all filters"
-            title="Clear all filters"
-            data-testid={`catalog-filter-clear-all-${title.toLowerCase()}`}
-          >
-            <X size={11} strokeWidth={2.5} aria-hidden />
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            "shrink-0 transition",
-            active ? "text-[var(--fv-alert-red)]" : "text-[var(--fv-fog)] hover:text-white",
-          )}
-          aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
-          aria-expanded={open}
-        >
-          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </button>
-      </div>
-      {open ? (
-        <div className="max-h-40 space-y-0.5 overflow-y-auto px-2 pb-3">
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className={cn(
-              "flex w-full rounded-md px-2 py-1.5 text-left text-xs transition",
-              value === null
-                ? "bg-white/10 text-white"
-                : "text-[var(--fv-slate)] hover:bg-white/5 hover:text-[var(--fv-fog)]",
-            )}
-          >
-            All
-          </button>
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(option === value ? null : option)}
-              className={cn(
-                "flex w-full rounded-md px-2 py-1.5 text-left text-xs transition",
-                value === option
-                  ? "bg-[var(--fv-blueprint-blue)]/25 text-white"
-                  : "text-[var(--fv-slate)] hover:bg-white/5 hover:text-[var(--fv-fog)]",
-              )}
-              title={option}
-            >
-              <span className="truncate">{option}</span>
-            </button>
-          ))}
+      <header className="flex shrink-0 items-start justify-between gap-5 border-b border-white/10 px-4 py-3 md:px-5 md:py-4">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#69c5f0]">
+            FILTER CONTROL · {definition.label}
+          </div>
+          <h2 className="mt-1 text-base font-semibold text-white md:text-lg">
+            Limit the catalog view
+          </h2>
+          <p className="mt-1 max-w-xl text-xs text-[#a5b2bc]">
+            Toggle one option on. Toggle it again—or select All vehicles—to restore the full fleet.
+          </p>
         </div>
-      ) : null}
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-white/12 text-[#c5d0d8] transition hover:border-[#42a5d9]/60 hover:text-white"
+          aria-label={`Close ${definition.label} filters`}
+        >
+          <X size={17} aria-hidden />
+        </button>
+      </header>
+
+      <div
+        className="grid shrink-0 auto-rows-[44px] gap-px overflow-hidden bg-white/10 p-px"
+        style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
+      >
+        {choices.map((choice, index) => {
+          const option = index === 0 ? null : choice;
+          const selected = option === value;
+          return (
+            <button
+              key={choice}
+              type="button"
+              role="switch"
+              aria-checked={selected}
+              onClick={() => onChange(selected && option !== null ? null : option)}
+              className={cn(
+                "group flex min-h-11 min-w-0 items-center justify-between gap-2 bg-[#101720] px-3 text-left transition focus-visible:relative focus-visible:z-10",
+                selected
+                  ? "bg-[#132d3b] text-white"
+                  : "text-[#b9c5ce] hover:bg-[#17212b] hover:text-white",
+              )}
+              title={choice}
+            >
+              <span className="truncate text-[11px] font-medium sm:text-xs">{choice}</span>
+              <span
+                className={cn(
+                  "relative h-5 w-9 shrink-0 rounded-full border transition",
+                  selected
+                    ? "border-[#69c5f0] bg-[#42a5d9]"
+                    : "border-white/20 bg-[#29333d] group-hover:border-white/35",
+                )}
+                aria-hidden
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+                    selected ? "translate-x-[17px]" : "translate-x-0.5",
+                  )}
+                />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <footer className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-t border-white/10 px-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[#9aa9b4]">
+        <span>{definition.options.length} available</span>
+        <span className="text-[#69c5f0]">{value ?? "All vehicles"}</span>
+      </footer>
     </section>
   );
 }
@@ -190,7 +211,7 @@ export function CatalogActiveChips({
           key={key}
           type="button"
           onClick={() => onClearOne(key)}
-          className="inline-flex items-center gap-1 rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11px] font-medium text-[var(--fv-graphite)]"
+          className="inline-flex min-h-11 items-center gap-1 rounded-full border border-black/10 bg-white px-2.5 text-[11px] font-medium text-[var(--fv-graphite)]"
         >
           <span className="max-w-[180px] truncate">{value}</span>
           <X size={12} aria-hidden />
@@ -199,7 +220,7 @@ export function CatalogActiveChips({
       <button
         type="button"
         onClick={onClear}
-        className="text-[11px] font-mono uppercase tracking-wider text-[var(--fv-steel)] hover:text-[var(--fv-graphite)]"
+        className="min-h-11 px-2 text-[11px] font-mono uppercase tracking-wider text-[var(--fv-steel)] hover:text-[var(--fv-graphite)]"
       >
         Clear
       </button>
@@ -253,65 +274,183 @@ export function useCatalogFilterParams() {
   return { filters, setFilter, clearOne, clearAll, write };
 }
 
-/**
- * Filter accordion for the global app sidebar (catalog routes only).
- * Keeps Type / OEM / Class / Technology in the primary nav chrome.
- */
-export function CatalogSidebarFilters() {
+function CatalogFilterDock({ variant }: { variant: "sidebar" | "inline" }) {
   const facets = useQuery(api.catalog.queries.listFacets, {});
   const { filters, setFilter, clearAll } = useCatalogFilterParams();
   const activeCount = countActiveCatalogFilters(filters);
+  const [openKey, setOpenKey] = useState<CatalogFilterKey | null>(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+
+  const definitions = useMemo<FilterDefinition[]>(
+    () => [
+      { key: "category", label: "Type", options: facets?.categories ?? [] },
+      { key: "oem", label: "OEM", options: facets?.oems ?? [] },
+      {
+        key: "vehicleClassLabel",
+        label: "Class",
+        options: facets?.classes ?? [],
+      },
+      {
+        key: "technology",
+        label: "Technology",
+        options: facets?.technologies ?? [],
+      },
+    ],
+    [facets],
+  );
+  const openDefinition = definitions.find(({ key }) => key === openKey) ?? null;
+
+  const cancelTimers = useCallback(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (openTimer.current) clearTimeout(openTimer.current);
+    if (animationTimer.current) clearTimeout(animationTimer.current);
+  }, []);
+
+  const openDrawer = useCallback(
+    (key: CatalogFilterKey) => {
+      cancelTimers();
+      if (openKey !== null && drawerVisible) {
+        setOpenKey(key);
+        return;
+      }
+      setOpenKey(key);
+      setDrawerVisible(false);
+      animationTimer.current = setTimeout(() => setDrawerVisible(true), 24);
+    },
+    [cancelTimers, drawerVisible, openKey],
+  );
+
+  const closeDrawer = useCallback(() => {
+    cancelTimers();
+    setDrawerVisible(false);
+    animationTimer.current = setTimeout(() => setOpenKey(null), 360);
+  }, [cancelTimers]);
+
+  const scheduleOpen = useCallback(
+    (key: CatalogFilterKey) => {
+      cancelTimers();
+      openTimer.current = setTimeout(() => openDrawer(key), 360);
+    },
+    [cancelTimers, openDrawer],
+  );
+
+  const scheduleClose = useCallback(() => {
+    cancelTimers();
+    closeTimer.current = setTimeout(closeDrawer, 220);
+  }, [cancelTimers, closeDrawer]);
+
+  useEffect(() => cancelTimers, [cancelTimers]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeDrawer();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [closeDrawer]);
 
   return (
     <div
       data-testid="catalog-filter-rail"
-      className="flex min-h-0 flex-1 flex-col border-t border-white/10"
+      ref={dockRef}
+      className={cn(
+        "relative",
+        variant === "sidebar"
+          ? "shrink-0 border-t border-white/10 px-3 py-3"
+          : "mt-4 md:hidden",
+      )}
+      onMouseEnter={cancelTimers}
+      onMouseLeave={scheduleClose}
+      onBlurCapture={(event) => {
+        if (!dockRef.current?.contains(event.relatedTarget as Node | null)) {
+          scheduleClose();
+        }
+      }}
     >
-      <div className="px-3 py-3">
-        <div className="text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--fv-steel)]">
-          Vehicle Catalog
+      <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#69c5f0]">
+            <SlidersHorizontal size={13} aria-hidden />
+            FILTER CONTROL
+          </div>
+          <div className="mt-1 text-[10px] text-[#a5b2bc]">
+            {facets === undefined ? "Loading…" : `${facets.total} vehicles`}
+          </div>
         </div>
-        <div className="mt-1 text-[11px] text-[var(--fv-steel)]">
-          {facets === undefined
-            ? "Loading facets…"
-            : `${facets.total} vehicles · ${activeCount} filter${activeCount === 1 ? "" : "s"}`}
-        </div>
+        {activeCount > 0 ? (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="min-h-11 px-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[#ff8b80] hover:text-white"
+          >
+            Clear {activeCount}
+          </button>
+        ) : null}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <FilterGroup
-          title="Type"
-          options={facets?.categories ?? []}
-          value={filters.category}
-          onChange={(category) => setFilter("category", category)}
-          onClearAll={clearAll}
-        />
-        <FilterGroup
-          title="OEM"
-          options={facets?.oems ?? []}
-          value={filters.oem}
-          onChange={(oem) => setFilter("oem", oem)}
-          onClearAll={clearAll}
-          defaultOpen={false}
-        />
-        <FilterGroup
-          title="Class"
-          options={facets?.classes ?? []}
-          value={filters.vehicleClassLabel}
-          onChange={(vehicleClassLabel) =>
-            setFilter("vehicleClassLabel", vehicleClassLabel)
-          }
-          onClearAll={clearAll}
-          defaultOpen={false}
-        />
-        <FilterGroup
-          title="Technology"
-          options={facets?.technologies ?? []}
-          value={filters.technology}
-          onChange={(technology) => setFilter("technology", technology)}
-          onClearAll={clearAll}
-          defaultOpen={false}
-        />
+
+      <div className={cn("grid gap-1.5", variant === "sidebar" ? "grid-cols-2" : "grid-cols-4")}>
+        {definitions.map((definition) => {
+          const value = filters[definition.key];
+          const active = Boolean(value);
+          const expanded = openKey === definition.key;
+          return (
+            <button
+              key={definition.key}
+              type="button"
+              onClick={() => {
+                cancelTimers();
+                if (expanded && drawerVisible) closeDrawer();
+                else openDrawer(definition.key);
+              }}
+              onMouseEnter={() => scheduleOpen(definition.key)}
+              className={cn(
+                "relative flex min-h-11 min-w-0 flex-col justify-center rounded-sm border px-2 text-left transition",
+                expanded
+                  ? "border-[#69c5f0] bg-[#173042] text-white"
+                  : active
+                    ? "border-[#42a5d9]/55 bg-[#132633] text-white"
+                    : "border-white/12 bg-[#121820] text-[#c5d0d8] hover:border-[#42a5d9]/45 hover:text-white",
+              )}
+              aria-expanded={expanded && drawerVisible}
+              aria-controls={`catalog-filter-drawer-${definition.key}`}
+              data-filter-group={definition.label.toLowerCase()}
+              data-active={active ? "true" : "false"}
+            >
+              <span className="truncate font-mono text-[9px] uppercase tracking-[0.14em]">
+                {definition.label}
+              </span>
+              <span className={cn("mt-0.5 truncate text-[10px]", active ? "text-[#69c5f0]" : "text-[#9aa9b4]")}>
+                {value ?? "All"}
+              </span>
+              {active ? <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#69c5f0]" aria-hidden /> : null}
+            </button>
+          );
+        })}
       </div>
+
+      {openDefinition ? (
+        <CatalogFilterDrawer
+          definition={openDefinition}
+          value={filters[openDefinition.key]}
+          onChange={(next) => setFilter(openDefinition.key, next)}
+          onClose={closeDrawer}
+          visible={drawerVisible}
+        />
+      ) : null}
     </div>
   );
+}
+
+/** Compact sidebar dock; drawers open over the catalog canvas. */
+export function CatalogSidebarFilters() {
+  return <CatalogFilterDock variant="sidebar" />;
+}
+
+/** Mobile dock uses the same drawer model without introducing a dropdown. */
+export function CatalogInlineFilters() {
+  return <CatalogFilterDock variant="inline" />;
 }

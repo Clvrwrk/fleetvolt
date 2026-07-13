@@ -73,10 +73,29 @@ export function aggregateTruckAadt(values: number[]): TruckAadtStats | null {
   };
 }
 
-/** Tier from mean 5-axle truck AADT (CalTrans postmile sample). */
+/** Absolute tier from mean 5-axle truck AADT (fallback when cohort is tiny). */
 export function tierFromTruckAadtMean(mean: number): FreightTrafficTier {
-  if (mean >= 1200) return "heavy";
-  if (mean >= 400) return "medium";
+  // Absolute cutoffs — used only when percentile cohort has <3 scored corridors.
+  if (mean >= 5000) return "heavy";
+  if (mean >= 1500) return "medium";
+  return "low";
+}
+
+/**
+ * Percentile tiers across a corridor cohort so the freight map always shows
+ * a red / yellow / green mix when AADT values cluster high.
+ * Top third → heavy, middle → medium, bottom → low.
+ */
+export function tierFromAadtPercentile(
+  mean: number | null | undefined,
+  sortedMeans: number[],
+): FreightTrafficTier {
+  if (typeof mean !== "number") return "low";
+  if (sortedMeans.length < 3) return tierFromTruckAadtMean(mean);
+  const rank =
+    sortedMeans.filter((s) => s <= mean).length / sortedMeans.length;
+  if (rank >= 2 / 3) return "heavy";
+  if (rank >= 1 / 3) return "medium";
   return "low";
 }
 
