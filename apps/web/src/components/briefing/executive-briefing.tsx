@@ -14,6 +14,7 @@ import {
   Truck,
   Zap,
 } from "lucide-react";
+import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
 const carrierTargets = [
   ["1", "HarborLink Transport", "Drayage", "94", "36 units"],
@@ -80,12 +81,30 @@ export function ExecutiveBriefing() {
         <Link href="/" className="fv-brief-back"><ArrowLeft size={15} /> Home</Link>
         <Image src="/fleetvolt-logo-horizontal-light.svg" alt="FleetVolt" width={240} height={54} className="fv-brief-logo" priority />
         <div className="fv-brief-toolbar-actions">
-          <Link href="/role-select" className="fv-brief-secondary">Sign in</Link>
-          <button type="button" onClick={printReport} className="fv-brief-download"><Download size={15} /> Download / Save PDF</button>
+          <Link href={ALPHA_AUTH_BYPASS ? "/caas" : "/role-select"} className="fv-brief-secondary">
+            {ALPHA_AUTH_BYPASS ? "Enter Alpha" : "Sign in"}
+          </Link>
+          <button type="button" onClick={printReport} className="fv-brief-download"><Download size={15} /> Print / Save PDF</button>
         </div>
       </header>
 
       <article className="fv-brief-document">
+        <div
+          className="fv-brief-demo-banner"
+          role="status"
+          style={{
+            padding: "0.875rem 1.125rem",
+            color: "#080b0f",
+            background: "#f0b84b",
+            textAlign: "center",
+            fontFamily: "var(--font-mono)",
+            fontSize: "var(--fv-type-floor)",
+            fontWeight: 900,
+            letterSpacing: ".12em",
+          }}
+        >
+          DEMO / MODELED — SYNTHETIC TARGETS — NOT FOR CAPITAL COMMITMENT
+        </div>
         <div className="fv-brief-coverline">
           <span>FLEETVOLT EXECUTIVE BRIEFING / EF–01</span>
           <span>DECISION COPY · 12 JUL 2026</span>

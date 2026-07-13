@@ -10,7 +10,7 @@
 
 - Preserve FleetVolt black/graphite sidebar, paper/canvas surfaces, bolt blue accent, technical uppercase labels, and current type stack.
 - Do not introduce gradients, decorative hero treatment, new global typography, or a second card language.
-- Reuse existing 11–14px sidebar scale, 12px technical labels, 12–16px radii, and blue focus outline.
+- Enforce the FleetVolt readability floor: every readable label, helper, caption, control, table cell, and telemetry value is at least 16px. Use the existing radii and blue focus outline.
 
 ## Compact token set
 
@@ -67,11 +67,12 @@ The route manifest is a single instrument-like strip, not three cards. Hairline 
 - No term `POI` in primary route names; show the actual generator/site name.
 - Empty: `No preconfigured routes yet — enter endpoints below.`
 
-## Responsive contract
+## Desktop contract
 
-- Desktop/iPad sidebar: selector and three-cell strip fit the existing rail width; values ellipsize, labels never wrap.
-- Mobile bottom sheet: same selector; manifest remains three equal cells at 390px with 10–11px values.
-- Do not widen the sidebar, move panels, or introduce a modal in this phase.
+- This phase ships the desktop workbench only. Tablet/mobile work is owned by FleetVolt.Network Mobile/Tablet Design.
+- The rail may grow to 25% of the desktop viewport and filter drawers may use up to 80% of the viewport so 16px labels remain fully readable.
+- Labels wrap when needed; do not truncate decision-critical route, layer, or status text.
+- Do not introduce a mobile bottom sheet or mobile acceptance gate in this phase.
 
 ## Accessibility and motion
 
@@ -85,5 +86,5 @@ The route manifest is a single instrument-like strip, not three cards. Hairline 
 1. Dropdown clearly exposes both groups when recents exist.
 2. Selecting a preconfigured route changes endpoints and road geometry.
 3. Manifest contains no amenities or carrier clutter.
-4. Text fits at desktop, iPad, and 390px mobile.
-5. ScreenshotOne captures default catalog and selected manifest states after approved private-preview exposure.
+4. Text is at least 16px and remains fully readable at the approved desktop viewport.
+5. Visual evidence captures default catalog and selected manifest states on an approved local or preview URL.

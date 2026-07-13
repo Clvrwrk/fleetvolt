@@ -780,6 +780,7 @@ button.fv-role-card { cursor: pointer; font: inherit; }
 .fv-brief-toolbar-actions { display: flex; justify-content: flex-end; gap: 9px; }
 .fv-brief-download { color: #071016; border-color: #42a5d9; background: #42a5d9; }
 .fv-brief-document { width: min(1480px, calc(100% - 34px)); margin: 24px auto 60px; border: 1px solid rgba(142,165,181,.25); background: #0d1218; box-shadow: 0 35px 110px rgba(0,0,0,.42); }
+.fv-brief-demo-banner { padding: 0.875rem 1.125rem; color: #080b0f; background: #f0b84b; text-align: center; font: 900 var(--fv-type-floor)/1.2 var(--font-mono); letter-spacing: .12em; }
 .fv-brief-coverline, .fv-brief-doc-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 0.875rem clamp(1.125rem,3vw,2.625rem); color: #8a9aa6; font: 800 var(--fv-type-floor)/1 var(--font-mono); letter-spacing: .15em; }
 .fv-brief-coverline { border-bottom: 1px solid rgba(255,255,255,.08); }
 .fv-brief-hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 50px; align-items: end; padding: clamp(40px,7vw,94px) clamp(22px,5vw,76px) 52px; background: radial-gradient(circle at 84% 22%, rgba(66,165,217,.13), transparent 30%); }

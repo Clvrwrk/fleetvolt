@@ -1,8 +1,17 @@
 # Roadmap: FleetVolt Route
 
+## Active execution order — 2026-07-12
+
+1. FLE-5: authenticated CaaS desktop live-data path and honest demo states.
+2. FLE-9: Monday demo rehearsal with a verified POLB → Shafter path.
+3. FLE-37 decision gate, then FLE-7 report/export implementation.
+4. FLE-33 Fleet Manager Alpha only if the CaaS gates pass with capacity remaining.
+
+Phases 1–20 below are historical implementation records unless explicitly referenced by this active order. Phase 21 is backlog. Phase 22 responsive work moved to FleetVolt.Network Mobile/Tablet Design and does not block the desktop release. The retired Docker/VPS roadmap below is preserved as history, not current direction.
+
 ## Overview
 
-FleetVolt Route ships as six vertical MVP phases: spatial foundation → physics-validated POLB/Cajon simulation → charging intelligence with job pipeline → analyst dashboard with exports → corridor intelligence and emissions economics → full TCO chart and production deployment. Each phase delivers an end-to-end increment testable without waiting for later phases. Priority corridors are POLB drayage and Cajon Pass; truck library is eCascadia 438 kWh and T680E 375 kWh; deployment target is Docker Compose on VPS.
+The original FleetVolt Route roadmap shipped six vertical MVP phases. It remains below as historical context. The active FleetVolt.Network roadmap and production stack are defined in the execution order above and `.planning/STATE.md`.
 
 ## Phases
 
@@ -436,6 +445,7 @@ Plans:
   4. docker-compose.yml and self-hosted services are decommissioned; README/AGENTS/Makefile updated
 
 **Carried-over obligations from Phase 11 (deferred here):**
+
   5. **Verify MAP-01/02/03 visually on the deployed app** — SoC-gradient polyline, power-scaled charger markers + popups, hover→chart sync (deferred from Phase 11 because the docker-compose web container can't render end-to-end).
   6. **Fix the web build/proxy** — the current `apps/web/Dockerfile` rewrite is half-finished (omits copying `apps/web/convex/`) and `API_URL` bakes to `localhost:4000` at build time instead of resolving to the API host. Vercel deploy must resolve the API base correctly (no ECONNREFUSED).
 
@@ -495,7 +505,6 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 
 **Plans**: TBD
 
-
 ---
 
 ### Phase 17: Role-Based Map Workbench — Driver Day Plan, Fleet Contract Plan, CaaS Gap Map
@@ -522,7 +531,58 @@ Phases execute in numeric order: 11 → 12 → 13 → 14 → 15
 **Plans**: 1/1 plans complete
 
 Plans:
+
 - [x] 17-00-PLAN.md — Hybrid map workbench: launchers, shell, layers, Routes, autocomplete, Convex aggregation, Driver/Fleet/CaaS vertical slices, map-first AI, Playwright verification (completed 2026-07-08)
+
+### Phase 23: Statewide Route Intelligence, Prime Charging Sites, and Executive Briefs
+
+**Goal:** Complete one evidence-honest, cached port-to-generator route for each of 69 California traffic generators, identify one explainable modeled charging-prime candidate per route, and publish a route-native HTML/PDF/CSV/JSON executive brief.
+**Mode:** mvp
+**Requirements**: STATE-ROUTE-01, STATE-ROUTE-02, PRIME-SITE-01, ROUTE-MAP-01, ROUTE-BRIEF-01, ROUTE-BRIEF-02, ROUTE-CARRIER-01
+**Depends on:** Phase 18, Phase 19, Phase 20
+**Success Criteria**:
+
+1. Coverage reports exactly 69 designated routes with valid road geometry and receipts; the 63 missing routes are generated sequentially and resumably without concurrent provider fan-out.
+2. Route color is derived only from measured Caltrans truck AADT, while width/pulse uses explicitly labeled port/FAF freight context; unavailable evidence is never substituted or displayed as zero.
+3. Every promoted route exposes one explainable modeled prime charging candidate on its actual PTV path using the standard 438-kWh Class 8 planning profile, inclusive 20–40% arrival SoC window, and inclusive 10-mile maximum detour.
+4. The CaaS map renders all promoted routes and a clickable pulsing FleetVolt prime-site marker without clearing selected-route focus.
+5. Every catalog route has an accessible live HTML brief plus PDF, CSV, and JSON downloads containing route evidence, modeled emissions, verified carriers only, sources, assumptions, and unavailable reasons.
+
+**Plans:** 2/11 plans executed
+
+Plans:
+
+**Wave 1**
+
+- [x] 23-01-PLAN.md — Dedicated PR-branch/worktree protection, signed admin envelope, deterministic route-run receipts (completed 2026-07-12)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [x] 23-02-PLAN.md — Sequential, resumable PTV generation and 69-route coverage gate (completed 2026-07-13)
+- [ ] 23-03-PLAN.md — Typed truck-AADT and port/FAF freight-context policy
+- [ ] 23-05-PLAN.md — Normal-operations route energy and prime-site scoring contract
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 23-04-PLAN.md — Statewide route map with evidence-honest route styling
+- [ ] 23-06-PLAN.md — Prime-site persistence, backfill, and 69/69 reconciliation
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 23-07-PLAN.md — Pulsing prime-site marker, evidence card, and persistent route focus
+- [ ] 23-08-PLAN.md — Route-native briefing contract and verified-carrier evidence
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 23-09-PLAN.md — Accessible HTML/PDF briefing with CSV/JSON appendices and high-resolution route render
+
+**Wave 6** *(blocked on Wave 5)*
+
+- [ ] 23-10-PLAN.md — Live briefing UI, localhost review, ScreenshotOne evidence, and Linear human gate
+
+**Wave 7** *(blocked on Wave 6)*
+
+- [ ] 23-11-PLAN.md — Hunk-isolated delivery, focused validation, push, and PR-only handoff
 
 ---
 
@@ -563,6 +623,7 @@ Turn every PTV-planned route into a reusable FleetVolt data asset. PTV geometry 
 **Plans**: 1/1 plans complete
 
 Plans:
+
 - [x] 18-01-PLAN.md — Convex schema/repository, PTV action integration, policy tests, deployment verification (completed 2026-07-11)
 
 ### Phase 19: Road-Level Route Intelligence
@@ -581,6 +642,7 @@ Plans:
 **Plans**: 1/1 plans complete
 
 Plans:
+
 - [x] 19-01-PLAN.md — Route-enrichment repository, road-proximity aggregation, provenance, cache policy, tests, and live verification (completed 2026-07-11)
 
 ### Phase 20: Freight POI Route Catalog
@@ -599,6 +661,7 @@ Plans:
 **Plans**: 2/2 plans complete; human visual verification pending
 
 Plans:
+
 - [x] 20-01-PLAN.md — Catalog schema, policy, query, one-at-a-time precompute action, and five-route Alpha seed (completed 2026-07-11)
 - [x] 20-02-PLAN.md — Grouped Preconfigured/Recent selector, route manifest, responsive interaction, and local visual verification (completed 2026-07-11; ScreenshotOne/Chris UAT pending)
 

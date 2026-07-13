@@ -26,3 +26,13 @@ export function getChoroplethRing(
   }
   return ring;
 }
+
+export function getChoroplethRings(
+  rings?: ChoroplethPoint[][] | null,
+  ring?: ChoroplethPoint[] | null,
+): ChoroplethPoint[][] {
+  const candidates = rings?.length ? rings : ring ? [ring] : [];
+  return candidates
+    .map((candidate) => getChoroplethRing(candidate))
+    .filter((candidate): candidate is ChoroplethPoint[] => candidate !== null);
+}

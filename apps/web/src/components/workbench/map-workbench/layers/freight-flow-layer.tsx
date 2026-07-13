@@ -26,6 +26,29 @@ type FreightArc = {
   roadTraced: boolean;
 };
 
+type CatalogRoute = {
+  id: string;
+  origin: { latitude: number; longitude: number };
+  destination: { latitude: number; longitude: number };
+  geometry: {
+    provider: string;
+    coordinates: Array<{ latitude: number; longitude: number }>;
+  };
+  manifest?: { traffic?: string };
+};
+
+function catalogTrafficTier(value: string | undefined): "low" | "medium" | "heavy" {
+  const match = value?.match(/([0-9.]+)K/i);
+  const thousands = match ? Number(match[1]) : 0;
+  if (thousands >= 10) return "heavy";
+  if (thousands >= 5) return "medium";
+  return "low";
+}
+
+function tierColor(tier: "low" | "medium" | "heavy") {
+  return tier === "heavy" ? "#c0392b" : tier === "medium" ? "#d4a017" : "#3f9b6b";
+}
+
 /** Inverse pulse: heavy traffic = slow red; light = fast green. */
 function pulseStepForTier(tier: "low" | "medium" | "heavy"): number {
   if (tier === "heavy") return 0.6;
@@ -44,12 +67,13 @@ export function FreightFlowLayer({
 }: FreightFlowLayerProps) {
   const map = useMap();
   const flows = useQuery(api.faf.westCoastFlows.westCoastFreightFlows, {});
+  const catalog = useQuery(api.routes.catalog.list, {});
   const linesRef = useRef<google.maps.Polyline[]>([]);
   const tierRef = useRef<Map<string, "low" | "medium" | "heavy">>(new Map());
   const animRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!map || !visible || !flows?.arcs?.length) {
+    if (!map || !visible) {
       for (const line of linesRef.current) line.setMap(null);
       linesRef.current = [];
       tierRef.current = new Map();
@@ -64,12 +88,27 @@ export function FreightFlowLayer({
     linesRef.current = [];
     tierRef.current = new Map();
 
-    const arcs = (flows.arcs as FreightArc[]).filter((arc) => {
+    const overviewArcs = ((flows?.arcs ?? []) as FreightArc[]).filter((arc) => {
       // Do not render crow-flies fallbacks as freight routes.
       if (!arc.roadTraced || !arc.path || arc.path.length < 8) return false;
       if (!arc.compareGroup || viaFilter === "all") return true;
       return arc.viaRouteLabel === viaFilter;
     });
+    const generatorArcs: FreightArc[] = ((catalog?.preconfigured ?? []) as CatalogRoute[])
+      .filter((route) => route.geometry.provider === "ptv" && route.geometry.coordinates.length >= 8)
+      .map((route) => {
+        const tier = catalogTrafficTier(route.manifest?.traffic);
+        return {
+          id: route.id,
+          origin: { lat: route.origin.latitude, lng: route.origin.longitude },
+          destination: { lat: route.destination.latitude, lng: route.destination.longitude },
+          path: route.geometry.coordinates.map((point) => ({ lat: point.latitude, lng: point.longitude })),
+          tier,
+          color: tierColor(tier),
+          roadTraced: true,
+        };
+      });
+    const arcs = [...overviewArcs, ...generatorArcs];
 
     const polylines: google.maps.Polyline[] = [];
 
@@ -140,7 +179,7 @@ export function FreightFlowLayer({
       for (const line of linesRef.current) line.setMap(null);
       linesRef.current = [];
     };
-  }, [map, visible, flows, viaFilter, onSelectCorridor]);
+  }, [catalog?.preconfigured, map, visible, flows?.arcs, viaFilter, onSelectCorridor]);
 
   return null;
 }

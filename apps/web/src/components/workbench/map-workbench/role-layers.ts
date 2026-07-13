@@ -16,20 +16,6 @@ export type LayerToolbarItem = {
   hint: string;
 };
 
-export type LayerFilterId =
-  | "class8_only"
-  | "trailer_friendly"
-  | "cold_storage_reefer"
-  | "port_origin";
-
-export type LayerFilterDef = {
-  id: LayerFilterId;
-  label: string;
-  hint: string;
-  /** Which layers this filter is most relevant to. */
-  layers: WorkbenchLayerId[];
-};
-
 const LAYER_CATALOG: Record<WorkbenchLayerId, LayerToolbarItem> = {
   route: {
     id: "route",
@@ -120,70 +106,8 @@ export const ROLE_LAYER_IDS: Record<WorkbenchMode, WorkbenchLayerId[]> = {
   ],
 };
 
-/** Dataset filters — CaaS gets the full filter strip; others get none for MVP. */
-export const ROLE_LAYER_FILTERS: Record<WorkbenchMode, LayerFilterDef[]> = {
-  driver_day_plan: [
-    {
-      id: "class8_only",
-      label: "Class 8 capable",
-      hint: "Hide light-duty chargers",
-      layers: ["chargers"],
-    },
-    {
-      id: "trailer_friendly",
-      label: "Trailer friendly",
-      hint: "Sites that fit Class 8 + trailer",
-      layers: ["chargers", "parking"],
-    },
-  ],
-  fleet_contract_plan: [
-    {
-      id: "class8_only",
-      label: "Class 8 capable",
-      hint: "Hide light-duty chargers",
-      layers: ["chargers"],
-    },
-    {
-      id: "port_origin",
-      label: "Port-linked",
-      hint: "Emphasize port / gate context",
-      layers: ["route", "fleet-yards"],
-    },
-  ],
-  caas_gap_map: [
-    {
-      id: "class8_only",
-      label: "Class 8 capable",
-      hint: "HD / MCS-capable chargers",
-      layers: ["chargers", "class8-gaps"],
-    },
-    {
-      id: "cold_storage_reefer",
-      label: "Cold storage / reefer",
-      hint: "Higher aux load · fruit / perishables",
-      layers: ["freight-flow", "carriers", "parking"],
-    },
-    {
-      id: "port_origin",
-      label: "Port origin",
-      hint: "Filter freight leaving a port",
-      layers: ["freight-flow", "geo-regions"],
-    },
-    {
-      id: "trailer_friendly",
-      label: "Trailer friendly",
-      hint: "Staging that fits Class 8",
-      layers: ["parking", "chargers", "caas-zones"],
-    },
-  ],
-};
-
 export function layersForMode(mode: WorkbenchMode): LayerToolbarItem[] {
   return ROLE_LAYER_IDS[mode].map((id) => LAYER_CATALOG[id]);
-}
-
-export function filtersForMode(mode: WorkbenchMode): LayerFilterDef[] {
-  return ROLE_LAYER_FILTERS[mode];
 }
 
 export function isLayerAllowedForMode(

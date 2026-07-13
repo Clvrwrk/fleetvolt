@@ -4,8 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, FileChartColumnIncreasing, LockKeyhole, Route, Truck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-
-const INTRO_STORAGE_KEY = "fleetvolt_intro_seen_v1";
+import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
 function BoltMark({ className = "" }: { className?: string }) {
   return (
@@ -85,43 +84,26 @@ function BriefingInstrument() {
 }
 
 export function FleetVoltHome() {
-  const [showIntro, setShowIntro] = useState(false);
-  const [ready, setReady] = useState(false);
+  // Render the ignition sequence on every home entry. Starting true keeps the
+  // cinematic experience available even before client hydration completes.
+  const [showIntro, setShowIntro] = useState(true);
 
   const completeIntro = useCallback(() => {
-    try {
-      window.sessionStorage.setItem(INTRO_STORAGE_KEY, "1");
-    } catch {
-      // Locked storage only means the intro may replay next navigation.
-    }
     setShowIntro(false);
   }, []);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const forceIntro = new URLSearchParams(window.location.search).get("intro") === "1";
-    let seen = false;
-    try {
-      seen = window.sessionStorage.getItem(INTRO_STORAGE_KEY) === "1";
-    } catch {
-      seen = false;
-    }
-    const frame = window.requestAnimationFrame(() => {
-      setShowIntro(!reducedMotion && (forceIntro || !seen));
-      setReady(true);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+    if (!reducedMotion) return;
+    const timer = window.setTimeout(completeIntro, 0);
+    return () => window.clearTimeout(timer);
+  }, [completeIntro]);
 
   useEffect(() => {
     if (!showIntro) return;
     const timer = window.setTimeout(completeIntro, 4300);
     return () => window.clearTimeout(timer);
   }, [completeIntro, showIntro]);
-
-  if (!ready) {
-    return <div className="min-h-dvh bg-[#07090c]" aria-hidden="true" />;
-  }
 
   return (
     <>
@@ -139,8 +121,9 @@ export function FleetVoltHome() {
           />
           <div className="fv-home-nav-actions">
             <span className="fv-home-system"><i /> SYSTEM ONLINE</span>
-            <Link href="/role-select" className="fv-home-signin">
-              <LockKeyhole size={14} /> Sign in
+            <Link href={ALPHA_AUTH_BYPASS ? "/caas" : "/role-select"} className="fv-home-signin">
+              {ALPHA_AUTH_BYPASS ? <ArrowRight size={14} /> : <LockKeyhole size={14} />}
+              {ALPHA_AUTH_BYPASS ? "Enter Alpha" : "Sign in"}
             </Link>
           </div>
         </header>
@@ -169,7 +152,7 @@ export function FleetVoltHome() {
             <div>
               <span className="fv-home-lane-status">ACTIVE · REVENUE LANE</span>
               <h2>Executive Briefing</h2>
-              <p>Download the route investment case.</p>
+              <p>Preview the modeled route investment case.</p>
             </div>
             <ArrowRight className="fv-home-lane-arrow" size={20} />
           </Link>

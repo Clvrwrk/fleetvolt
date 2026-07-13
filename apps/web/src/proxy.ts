@@ -1,5 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { authkit, handleAuthkitHeaders } from "@workos-inc/authkit-nextjs";
+import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
 const PROTECTED_PREFIXES = [
   "/planner",
@@ -21,6 +22,10 @@ function isProtected(pathname: string): boolean {
 }
 
 export default async function proxy(request: NextRequest) {
+  if (ALPHA_AUTH_BYPASS) {
+    return NextResponse.next();
+  }
+
   const { session, headers } = await authkit(request);
   const { pathname } = request.nextUrl;
 

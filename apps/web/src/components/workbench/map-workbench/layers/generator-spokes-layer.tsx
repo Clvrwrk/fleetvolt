@@ -5,6 +5,7 @@ import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { WorkbenchSelection } from "../types";
+import { trafficGeneratorSelection } from "@/lib/workbench/traffic-generator-selection";
 import { TrafficGeneratorMarker } from "./generator-markers";
 
 export type GeneratorSpokesLayerProps = {
@@ -55,25 +56,20 @@ export function GeneratorSpokesLayer({
           position={{ lat: spoke.generator.lat, lng: spoke.generator.lng }}
           title={spoke.name}
           onClick={() =>
-            onSelectGenerator?.({
-              id: spoke.generatorId,
-              type: "poi",
-              label: spoke.name,
-              layerId: "pois",
-              latitude: spoke.generator.lat,
-              longitude: spoke.generator.lng,
-              metadata: {
-                kind: "traffic-generator",
+            onSelectGenerator?.(
+              trafficGeneratorSelection({
+                generatorId: spoke.generatorId,
+                name: spoke.name,
                 city: spoke.city,
                 county: spoke.county,
                 zip: spoke.zip,
                 district: spoke.district,
+                location: spoke.generator,
                 portCode: spoke.portCode,
                 tier: spoke.tier,
                 dailyTruckIndex: spoke.dailyTruckIndex,
-                carrierHref: `/caas?view=summary&carriers=1&zip=${encodeURIComponent(spoke.zip)}&city=${encodeURIComponent(spoke.city)}`,
-              },
-            })
+              }),
+            )
           }
         >
           <TrafficGeneratorMarker

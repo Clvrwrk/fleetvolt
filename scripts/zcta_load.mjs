@@ -1,4 +1,4 @@
-// Load CA ZCTAs into Convex (geoZcta) from prep_ca_zcta.py output.
+// Load California Geoportal ZIP areas into Convex (geoZcta).
 //
 // Usage (repo root):
 //   services/simulator/.venv/bin/python3.14 data/ingest/census/prep_ca_zcta.py
@@ -47,7 +47,7 @@ if (!Array.isArray(rows) || rows.length === 0) {
   console.error("ca_zcta.json is empty — nothing to ingest.");
   process.exit(1);
 }
-console.log(`zcta_load: ${rows.length} CA ZCTAs from ${ZCTA_JSON}`);
+console.log(`zcta_load: ${rows.length} California Geoportal ZIP areas from ${ZCTA_JSON}`);
 
 const fetchedAt = Date.now();
 const BATCH = 80; // keep argv under shell limits
@@ -93,7 +93,12 @@ for (let i = 0; i < rows.length; i += BATCH) {
 try {
   const out = execFileSync(
     "npx",
-    ["convex", "run", "geo/ingestZcta:purgeNonCaliforniaZcta", "{}"],
+    [
+      "convex",
+      "run",
+      "geo/ingestZcta:purgeNonCaliforniaZcta",
+      JSON.stringify({ keepZctas: rows.map((row) => row.zcta) }),
+    ],
     {
       cwd: WEB,
       encoding: "utf8",
@@ -101,7 +106,7 @@ try {
       maxBuffer: 16 * 1024 * 1024,
     },
   );
-  console.log("purge:", parseConvexJson(out) ?? out.trim());
+  console.log("authoritative reconciliation:", parseConvexJson(out) ?? out.trim());
 } catch (err) {
   console.error("purge failed:", err.stderr?.toString?.() ?? err.message);
   process.exit(1);

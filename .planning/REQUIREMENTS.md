@@ -367,6 +367,6 @@ Net-new requirements for the Convex Data + Spatial Layer. **Prefix `CVX-*` is de
 | ROUTE-CATALOG-02 | Precompute one curated generator route per explicit action, resolving associated/nearest port without a mass provider-call path | 20 | 20-01 | Pending |
 | ROUTE-CATALOG-03 | Return grouped shared Preconfigured and authenticated deduplicated Recent routes with usable cached road geometry | 20 | 20-01/20-02 | Pending |
 | ROUTE-CATALOG-04 | Selecting a route restores endpoints and road geometry and exposes concise road/traffic/Class-8 status without amenity clutter | 20 | 20-02 | Pending |
-| ROUTE-CATALOG-05 | Route catalog passes accessibility, loading/empty/error, desktop, iPad, mobile, local Docker, and ScreenshotOne visual evidence gates | 20 | 20-02 | Pending |
+| ROUTE-CATALOG-05 | Route catalog passes accessibility, loading/empty/error, approved desktop viewport, Vercel/Convex preview, and visual evidence gates; tablet/mobile are tracked in the separate Mobile/Tablet project | 20 | 20-02 | Pending |
 
 *v3.1 Phase-20 requirements registered: 2026-07-11*

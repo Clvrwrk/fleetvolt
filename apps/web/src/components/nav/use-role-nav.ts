@@ -50,6 +50,7 @@ export const FLEET_MANAGER_NAV: NavItem[] = [
 
 const CAAS_NAV: NavItem[] = [
   { label: "Freight Map", href: "/caas", icon: "Map" },
+  { label: "Fleet Catalog", href: "/catalog", icon: "BookOpen" },
   { label: "Summary KPIs", href: "/caas?view=summary", icon: "LayoutDashboard" },
   { label: "System Status", href: "/status", icon: "Activity" },
 ];

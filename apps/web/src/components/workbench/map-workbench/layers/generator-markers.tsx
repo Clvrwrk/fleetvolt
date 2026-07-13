@@ -3,6 +3,8 @@
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
+import type { WorkbenchSelection } from "../types";
+import { trafficGeneratorSelection } from "@/lib/workbench/traffic-generator-selection";
 
 export function TrafficGeneratorMarker({
   name,
@@ -19,10 +21,10 @@ export function TrafficGeneratorMarker({
         type="button"
         data-testid={testId}
         data-generator-id={generatorId}
-        className="relative z-10 flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white bg-sky-600 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white shadow-lg transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]"
+        className="relative z-10 flex h-10 min-w-10 items-center justify-center rounded-full border-2 border-white bg-sky-600 px-2 text-base font-black uppercase tracking-[0.04em] text-white shadow-lg transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)]"
         aria-label={name}
       >
-        POI
+        TG
       </button>
     </span>
   );
@@ -31,7 +33,7 @@ export function TrafficGeneratorMarker({
 export type GeneratorMarkersProps = {
   portCode: string | null;
   visible?: boolean;
-  onSelectGenerator?: (generatorId: string) => void;
+  onSelectGenerator?: (selection: WorkbenchSelection) => void;
 };
 
 /** Subtle facility dots near the selected (or all west-coast) ports. */
@@ -54,7 +56,7 @@ export function GeneratorMarkers({
           key={g.generatorId}
           position={{ lat: g.location.lat, lng: g.location.lng }}
           title={g.name}
-          onClick={() => onSelectGenerator?.(g.generatorId)}
+          onClick={() => onSelectGenerator?.(trafficGeneratorSelection(g))}
         >
           <TrafficGeneratorMarker name={g.name} generatorId={g.generatorId} />
         </AdvancedMarker>

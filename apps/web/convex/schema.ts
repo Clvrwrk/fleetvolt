@@ -523,6 +523,9 @@ export default defineSchema({
         maxLng: v.number(),
       }),
     ),
+    rings: v.optional(
+      v.array(v.array(v.object({ lat: v.number(), lng: v.number() }))),
+    ),
     aggregateScore: v.optional(v.number()),
     airDistrict: v.optional(v.string()),
     zipCodes: v.optional(v.array(v.string())),
@@ -532,7 +535,7 @@ export default defineSchema({
     .index("by_fips", ["fips"])
     .index("by_parent", ["parentFips"]),
 
-  // Census TIGER ZCTA5 (2020 vintage, tl_2022_us_zcta520) — CA only.
+  // California State Geoportal ZIP areas (2024 vintage) — CA only.
   // Simplified exterior rings for CaaS ZIP choropleth (fill ≤50%).
   geoZcta: defineTable({
     zcta: v.string(),
@@ -553,6 +556,24 @@ export default defineSchema({
   })
     .index("by_zcta", ["zcta"])
     .index("by_county", ["countyFips"]),
+
+  // California Air Resources Board district boundaries. A district may be
+  // represented by more than one authoritative exterior polygon.
+  geoAirDistricts: defineTable({
+    code: v.string(),
+    name: v.string(),
+    centroid: v.object({ lat: v.number(), lng: v.number() }),
+    bbox: v.object({
+      minLat: v.number(),
+      minLng: v.number(),
+      maxLat: v.number(),
+      maxLng: v.number(),
+    }),
+    rings: v.array(
+      v.array(v.object({ lat: v.number(), lng: v.number() })),
+    ),
+    provenance,
+  }).index("by_code", ["code"]),
 
   // ── Driver profiles (P-DRIVER) ──────────────────────────────────────────────
   //
@@ -946,6 +967,79 @@ export default defineSchema({
     .index("by_catalogId", ["catalogId"])
     .index("by_promoted_sortOrder", ["promoted", "sortOrder"])
     .index("by_requestHash", ["requestHash"]),
+
+  // Phase 23 statewide route generation is deliberately controlled one pair
+  // at a time. These rows are operational receipts, not provider payloads.
+  statewideRouteRuns: defineTable({
+    runId: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("paused"),
+      v.literal("complete"),
+      v.literal("failed"),
+    ),
+    totalPairs: v.number(),
+    verifiedPairs: v.number(),
+    missingPairs: v.number(),
+    invalidPairs: v.number(),
+    duplicatePairs: v.number(),
+    providerCalls: v.number(),
+    cacheHits: v.number(),
+    failures: v.number(),
+    activePairKey: v.optional(v.string()),
+    activeLeaseOwner: v.optional(v.string()),
+    activeLeaseUntil: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_runId", ["runId"])
+    .index("by_status_updatedAt", ["status", "updatedAt"])
+    .index("by_activeLeaseUntil", ["activeLeaseUntil"]),
+
+  statewideRouteAttempts: defineTable({
+    receiptId: v.string(),
+    runId: v.string(),
+    pairKey: v.string(),
+    generatorId: v.string(),
+    originPortCode: v.string(),
+    attempt: v.number(),
+    status: v.union(
+      v.literal("claimed"),
+      v.literal("succeeded"),
+      v.literal("failed"),
+      v.literal("skipped"),
+    ),
+    leaseOwner: v.string(),
+    leaseUntil: v.number(),
+    requestHash: v.optional(v.string()),
+    catalogId: v.optional(v.string()),
+    providerCall: v.boolean(),
+    cacheStatus: v.optional(v.string()),
+    pointCount: v.optional(v.number()),
+    errorCode: v.optional(v.string()),
+    errorSummary: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_receiptId", ["receiptId"])
+    .index("by_run_pair_attempt", ["runId", "pairKey", "attempt"])
+    .index("by_run_status", ["runId", "status"])
+    .index("by_pair_status", ["pairKey", "status"])
+    .index("by_leaseUntil", ["leaseUntil"]),
+
+  consumedAdminNonces: defineTable({
+    nonceDigest: v.string(),
+    keyId: v.string(),
+    operation: v.string(),
+    bodyHash: v.string(),
+    issuedAt: v.number(),
+    expiresAt: v.number(),
+    consumedAt: v.number(),
+  })
+    .index("by_nonceDigest", ["nonceDigest"])
+    .index("by_expiresAt", ["expiresAt"]),
 
   // Last successful map-workbench Calculate runs (driver / fleet / caas).
   // Used to restore route geometry + draft on "Start Day Plan" for returning users.

@@ -49,7 +49,7 @@ Dark and light are not interchangeable themes. They are assigned by task.
 
 ### Arcline
 
-Arcline is the FleetVolt application voice. Use Regular for body and interface copy, Bold for headings and strong values, and Light only for oversized editorial display. Default body copy is 14–16 px with 1.5–1.7 line height.
+Arcline is the FleetVolt application voice. Use Regular for body and interface copy, Bold for headings and strong values, and Light only for oversized editorial display. Default body copy is 18 px with 1.5–1.7 line height. No readable text may be smaller than 16 px.
 
 ### Brokline
 
@@ -67,8 +67,8 @@ Use for telemetry, provenance, status, timestamps, coordinates, IDs, units, smal
 | Page title | 32–48 px | 28–36 px | 700–900 |
 | Section title | 22–32 px | 20–26 px | 700 |
 | Card title | 16–20 px | 16–18 px | 700 |
-| Body | 14–16 px | 14–16 px | 400 |
-| Technical label | 7–10 px | 7–10 px | 700–900 mono |
+| Body | 18 px | 18 px | 400 |
+| Technical label | 16 px | 16 px | 700–900 mono |
 | Data value | 18–40 px | 18–32 px | 700–900 |
 
 ## 5. Geometry and spacing
@@ -143,17 +143,11 @@ Approved vocabulary: `LIVE`, `VERIFIED`, `MODELED`, `ESTIMATED`, `STALE`, `UNAVA
 
 All motion honors `prefers-reduced-motion`. Reduced motion removes rotation, pulsing, route dashes, and transform-based transitions while preserving state changes.
 
-## 8. Responsive behavior
+## 8. Platform behavior
 
-Every product change is verified at:
+The FleetVolt.Network CaaS and Fleet Manager application is currently a desktop product. Each desktop change is verified at 1440 × 900 and at the approved minimum desktop width. Tablet/mobile work is designed and launched separately under FleetVolt.Network Mobile/Tablet Design and is not a desktop release gate.
 
-- Desktop: 1440 × 900
-- iPad: 1024 × 1366
-- Mobile: 390 × 844
-
-Desktop uses persistent navigation and multi-column evidence. iPad moves secondary controls to a drawer. Mobile prioritizes the map or current decision, uses a bottom sheet for supporting controls, and keeps touch targets at least 44 px.
-
-Responsive design is not desktop shrinkage. Information order changes by role and task.
+Desktop uses persistent navigation and multi-column evidence. The sidebar may grow to 25% of the viewport and filter drawers may grow to 80% so 16 px labels remain readable without truncation.
 
 ## 9. Accessibility and trust
 

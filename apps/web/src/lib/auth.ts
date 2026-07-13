@@ -89,9 +89,9 @@ export function useWorkOSAuth() {
     // Use the official WorkOS AuthKit Next.js server route so PKCE/CSRF cookies
     // are set and the callback can establish the app session. Manual client-side
     // AuthKit URLs do not create the verifier cookie and cause redirect loops.
-    const signUpUrl = new URL("/api/auth/sign-up", window.location.origin);
-    if (selectedRole) signUpUrl.searchParams.set("role", selectedRole);
-    window.location.href = signUpUrl.toString();
+    const signInUrl = new URL("/api/auth/sign-in", window.location.origin);
+    if (selectedRole) signInUrl.searchParams.set("role", selectedRole);
+    window.location.href = signInUrl.toString();
   }, []);
 
   const signOut = useCallback(() => {

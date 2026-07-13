@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getChoroplethRing } from "./choropleth-geometry";
+import { getChoroplethRing, getChoroplethRings } from "./choropleth-geometry";
 
 test("accepts a verified polygon ring", () => {
   const ring = [
@@ -10,6 +10,20 @@ test("accepts a verified polygon ring", () => {
   ];
 
   assert.deepEqual(getChoroplethRing(ring), ring);
+});
+
+test("preserves multiple authoritative district rings", () => {
+  const first = [
+    { lat: 34, lng: -118 },
+    { lat: 35, lng: -118 },
+    { lat: 35, lng: -117 },
+  ];
+  const second = [
+    { lat: 36, lng: -120 },
+    { lat: 37, lng: -120 },
+    { lat: 37, lng: -119 },
+  ];
+  assert.deepEqual(getChoroplethRings([first, second]), [first, second]);
 });
 
 test("rejects absent or underspecified geometry", () => {

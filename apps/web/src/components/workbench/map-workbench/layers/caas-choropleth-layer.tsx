@@ -6,7 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { WorkbenchSelection } from "../types";
 import { cn } from "@/lib/utils";
-import { getChoroplethRing } from "@/lib/maps/choropleth-geometry";
+import { getChoroplethRings } from "@/lib/maps/choropleth-geometry";
 
 export type CaasGeoLevel = "air-district" | "county" | "zip";
 
@@ -24,6 +24,7 @@ type ChoroplethRegion = {
     maxLng: number;
   };
   ring?: Array<{ lat: number; lng: number }>;
+  rings?: Array<Array<{ lat: number; lng: number }>>;
   score?: number;
   tier: "low" | "medium" | "heavy";
   color: string;
@@ -92,8 +93,10 @@ export function CaasChoroplethLayer({
   const shapeInputs = useMemo(
     () =>
       regions.flatMap((region: ChoroplethRegion) => {
-        const ring = getChoroplethRing(region.ring);
-        return ring ? [{ region, ring }] : [];
+        return getChoroplethRings(region.rings, region.ring).map((ring) => ({
+          region,
+          ring,
+        }));
       }),
     [regions],
   );

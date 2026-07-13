@@ -90,7 +90,7 @@ export interface paths {
         };
         /**
          * Get Route
-         * @description Return a Class 8 truck route via Valhalla truck costing.
+         * @description Return a Class 8 truck route via the PTV Developer Routing API.
          */
         get: operations["get_route_v1_routing_route_get"];
         put?: never;
@@ -288,7 +288,7 @@ export interface paths {
         put?: never;
         /**
          * Export Simulation PDF
-         * @description Render consulting PDF report — implemented on API gateway (:4000).
+         * @description Render consulting PDF report with KPIs, map snapshot, and audit footer — implemented on API gateway (:4000). Returns application/pdf.
          */
         post: operations["export_simulation_pdf_v1_exports_pdf_post"];
         delete?: never;
@@ -619,7 +619,7 @@ export interface components {
             duration_s: number;
             /**
              * Encoded Polyline
-             * @description Valhalla encoded polyline when shape_format is not geojson
+             * @description Encoded polyline when the provider returns a string polyline
              */
             encoded_polyline?: string | null;
             /**
@@ -629,7 +629,7 @@ export interface components {
             coordinates?: number[][];
             /**
              * Valhalla Status
-             * @description Valhalla service status at request time
+             * @description Routing provider readiness marker
              */
             valhalla_status: string;
         };
@@ -806,6 +806,22 @@ export interface components {
          */
         WeatherPreset: "ideal" | "hot" | "cold" | "headwind";
         /**
+         * PdfExportRequest
+         * @description POST /v1/exports/pdf request body (EXPR-02, D-23) — implemented on API gateway.
+         */
+        PdfExportRequest: {
+            /**
+             * Job Id
+             * @description Simulation run UUID
+             */
+            job_id: string;
+            /**
+             * Map Snapshot Base64
+             * @description Optional PNG map snapshot as base64 (no data: prefix)
+             */
+            map_snapshot_base64?: string | null;
+        };
+        /**
          * SimulationJobPollResponse
          * @description GET /v1/simulations/{id} response (PLAT-02, D-01) — implemented on API gateway.
          */
@@ -858,19 +874,6 @@ export interface components {
             inputs?: {
                 [key: string]: unknown;
             } | null;
-        };
-        /**
-         * PdfExportRequest
-         * @description POST /v1/exports/pdf request body (EXPR-02, D-23) — implemented on API gateway.
-         */
-        PdfExportRequest: {
-            /**
-             * Job Id
-             * Format: uuid
-             */
-            job_id: string;
-            /** Map Snapshot Base64 */
-            map_snapshot_base64?: string | null;
         };
     };
     responses: never;
@@ -1306,13 +1309,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description PDF report */
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/pdf": string;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

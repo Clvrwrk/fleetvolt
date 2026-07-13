@@ -1,5 +1,5 @@
 /**
- * CA ZCTA ingest — Census TIGER tl_2022_us_zcta520 (local shapefile prep).
+ * CA ZIP ingest — California State Geoportal 2024 ZIP areas.
  *
  * Driven by scripts/zcta_load.mjs after:
  *   services/simulator/.venv/bin/python3.14 data/ingest/census/prep_ca_zcta.py
@@ -54,12 +54,12 @@ export const upsertZctaBatch = internalMutation({
           ? { aggregateScore: r.aggregateScore }
           : {}),
         provenance: {
-          source: "Census" as const,
+          source: "CA_Geoportal" as const,
           fetchedAt,
           usefulnessScore,
-          matchMethod: "tiger_zcta520_local",
+          matchMethod: "ca_geoportal_esri_zip_areas",
           method: "measured" as const,
-          year: 2020,
+          year: 2024,
         },
       };
       const existing = await ctx.db
@@ -144,26 +144,43 @@ export const attachZctaCountyContext = internalMutation({
   },
 });
 
-/** Remove ZCTAs outside primary CA ZIP range (artifacts from looser bbox ingest). */
+/**
+ * Reconcile the ZIP table to the authoritative California Geoportal export.
+ *
+ * When keepZctas is supplied, records absent from the current source file are
+ * removed as well as records outside California's primary ZIP range. This
+ * prevents stale polygons from an older Census-based load surviving a source
+ * replacement.
+ */
 export const purgeNonCaliforniaZcta = action({
-  args: {},
+  args: { keepZctas: v.optional(v.array(v.string())) },
   returns: v.object({ deleted: v.number(), remaining: v.number() }),
   handler: async (
     ctx,
+    { keepZctas },
   ): Promise<{ deleted: number; remaining: number }> => {
-    return await ctx.runMutation(internal.geo.ingestZcta.purgeNonCaliforniaZctaMutation, {});
+    return await ctx.runMutation(
+      internal.geo.ingestZcta.purgeNonCaliforniaZctaMutation,
+      { keepZctas },
+    );
   },
 });
 
 export const purgeNonCaliforniaZctaMutation = internalMutation({
-  args: {},
+  args: { keepZctas: v.optional(v.array(v.string())) },
   returns: v.object({ deleted: v.number(), remaining: v.number() }),
-  handler: async (ctx) => {
+  handler: async (ctx, { keepZctas }) => {
     const all = await ctx.db.query("geoZcta").collect();
+    const keep = keepZctas ? new Set(keepZctas) : null;
     let deleted = 0;
     for (const z of all) {
       const n = Number(z.zcta);
-      if (!Number.isFinite(n) || n < 90001 || n > 96162) {
+      if (
+        !Number.isFinite(n) ||
+        n < 90001 ||
+        n > 96162 ||
+        (keep !== null && !keep.has(z.zcta))
+      ) {
         await ctx.db.delete(z._id);
         deleted += 1;
       }

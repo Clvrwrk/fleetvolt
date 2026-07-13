@@ -12,7 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import { FleetVoltBrand } from "@/components/design/fleetvolt-brand";
-import { useWorkOSAuth, type FleetVoltRole } from "@/lib/auth";
+import type { FleetVoltRole } from "@/lib/auth";
+import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
 type RoleDef = {
   key: FleetVoltRole;
@@ -55,17 +56,6 @@ const ROLES: RoleDef[] = [
 ];
 
 export default function RoleSelectPage() {
-  const { signIn } = useWorkOSAuth();
-
-  const handleSelectRole = (role: FleetVoltRole) => {
-    try {
-      localStorage.setItem("fv_selected_role", role);
-    } catch {
-      // WorkOS cookie + state remain the primary role transport.
-    }
-    signIn(role);
-  };
-
   return (
     <main id="main-content" tabIndex={-1} className="fv-role-shell">
       <div className="fv-command-grid" aria-hidden="true" />
@@ -112,14 +102,13 @@ export default function RoleSelectPage() {
             );
 
             return role.active ? (
-              <button
+              <a
                 key={role.key}
-                type="button"
+                href={ALPHA_AUTH_BYPASS ? "/caas" : `/api/auth/sign-in?role=${role.key}`}
                 className="fv-role-card fv-role-card--active"
-                onClick={() => handleSelectRole(role.key)}
               >
                 {content}
-              </button>
+              </a>
             ) : (
               <div key={role.key} className="fv-role-card fv-role-card--locked" aria-disabled="true">
                 {content}
@@ -138,7 +127,7 @@ export default function RoleSelectPage() {
         </aside>
 
         <footer className="fv-role-security">
-          <span><ShieldCheck size={14} /> WORKOS AUTHKIT / SSO READY / MFA SUPPORTED</span>
+          <span><ShieldCheck size={14} /> {ALPHA_AUTH_BYPASS ? "ALPHA ACCESS OPEN / WORKOS READY FOR LAUNCH" : "WORKOS AUTHKIT / SSO READY / MFA SUPPORTED"}</span>
           <span>POWERED BY CLEVERWORK / ZERO EMISSION ADVISORS</span>
           <Link href="/"><ArrowLeft size={13} /> Return home</Link>
         </footer>

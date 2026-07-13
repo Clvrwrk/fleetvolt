@@ -514,21 +514,23 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
     <section
       data-testid="ai-command-bar"
       className={cn(
-        "rounded-2xl border border-black/10 bg-white/80 p-3 shadow-sm",
+        "px-3 py-6",
         className,
       )}
       aria-label="AI map command bar"
     >
-      <div className="flex items-center gap-2">
-        <Sparkles size={16} className="text-[var(--fv-accent)]" />
-        <TechnicalLabel>AI map actions</TechnicalLabel>
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2">
+          <Sparkles size={18} className="text-[var(--fv-accent)]" />
+          <TechnicalLabel>Ask FleetVolt</TechnicalLabel>
+        </div>
+        <p className="mt-2 text-base leading-6 text-[var(--fv-steel)]">
+          Describe the freight question you want mapped.
+        </p>
       </div>
-      <p className="mt-1 text-[11px] leading-4 text-[var(--fv-steel)]">
-        Commands update draft, layers, and cards first. Prose stays secondary.
-      </p>
 
       <form
-        className="mt-3 flex flex-col gap-2"
+        className="relative mx-auto mt-5 max-w-4xl"
         onSubmit={(event) => {
           event.preventDefault();
           void submit(prompt);
@@ -547,20 +549,22 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
           data-1p-ignore
           data-lpignore="true"
           data-form-type="other"
-          className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm text-[var(--fv-graphite)] shadow-sm outline-none focus-visible:border-[var(--fv-accent)] focus-visible:ring-2 focus-visible:ring-[var(--fv-accent)]/30"
+          className="h-16 w-full rounded-full border border-black/15 bg-white py-3 pl-7 pr-20 text-base text-[var(--fv-graphite)] shadow-[0_10px_30px_rgba(20,35,48,0.14)] outline-none transition hover:shadow-[0_12px_34px_rgba(20,35,48,0.18)] focus-visible:border-[var(--fv-accent)] focus-visible:ring-2 focus-visible:ring-[var(--fv-accent)]/30"
         />
         <button
           type="submit"
           data-testid="ai-command-submit"
           disabled={isRunning || prompt.trim().length === 0}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--fv-graphite)] px-4 text-sm font-bold text-white transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="absolute right-2 top-2 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--fv-blueprint-blue)] text-white shadow-md transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Apply to map"
+          title="Apply to map"
         >
           {isRunning ? (
             <FleetVoltLoader compact label="Applying map command" />
           ) : (
             <Sparkles size={16} />
           )}
-          Apply to map
+          <span className="sr-only">Apply to map</span>
         </button>
       </form>
 
@@ -585,20 +589,6 @@ export function AiCommandBar({ mode, className }: AiCommandBarProps) {
         </div>
       ) : null}
 
-      <div className="mt-2 flex flex-wrap gap-2">
-        {examples.map((example) => (
-          <button
-            key={example}
-            type="button"
-            data-testid="ai-command-example"
-            onClick={() => void submit(example)}
-            disabled={isRunning}
-            className="min-h-9 rounded-xl border border-black/10 bg-[var(--fv-surface)] px-3 text-[11px] font-semibold text-[var(--fv-graphite)] transition hover:border-[var(--fv-accent)] disabled:opacity-60"
-          >
-            {example}
-          </button>
-        ))}
-      </div>
     </section>
   );
 }

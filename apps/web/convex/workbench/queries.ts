@@ -662,6 +662,42 @@ function caasZoneAsset(zone: {
   };
 }
 
+function class8GapZoneAsset(zone: Doc<"caasDeploymentZones">): LayerAsset {
+  const existing = zone.existingChargers ?? 0;
+  const parking = zone.parkingCapacity ?? 0;
+  const flowEvidence = typeof zone.freightFlowKtons === "number"
+    ? `${Math.round(zone.freightFlowKtons).toLocaleString()} ktons of modeled freight flow`
+    : "freight-route demand requiring route-level quantification";
+  return {
+    id: `gap-${zone.zoneId}`,
+    type: "class8-gap",
+    layerId: "class8-gaps",
+    label: `${zone.name} mobile charging gap`,
+    latitude: zone.centroid.lat,
+    longitude: zone.centroid.lng,
+    subtitle: `${zone.priority ?? "modeled"} priority · ${zone.recommendedPowerKw ?? "power TBD"} kW`,
+    metric: zone.priority ? `${zone.priority} gap` : "GAP",
+    source: source("caasDeploymentZones", "zoneId"),
+    provenance: null,
+    metadata: {
+      classification: "modeled-zone",
+      whyGap: `${existing} existing Class 8 charger${existing === 1 ? "" : "s"} within the screening radius, against ${flowEvidence} and ${parking.toLocaleString()} nearby truck-parking spaces.`,
+      optimalArrivalSoc: "Route-specific state of charge calculated after a truck route is selected",
+      dwellWindow: "Parking and dwell evidence present; timing requires route analysis",
+      recommendedPower: zone.recommendedPowerKw ? `${zone.recommendedPowerKw} kW mobile bridge` : "Power sizing required",
+      siteType: `${zone.level.replaceAll("_", " ")} opportunity zone`,
+      whyHere: `Modeled dwell score ${zone.modeledDwellScore ?? "unavailable"}; ${parking.toLocaleString()} parking spaces and ${zone.carrierCount ?? 0} carriers in the zone.`,
+      chargerEvidence: `${existing} existing Class 8 charger${existing === 1 ? "" : "s"} recorded`,
+      confidence: "Modeled screening candidate",
+      provenance: "FleetVolt CaaS deployment-zone model",
+      verification: "Validate site access, trailer circulation, utility capacity, and route-specific optimum charge window",
+      status: "Modeled siting hypothesis — validation required",
+      priority: zone.priority ?? null,
+      zoneId: zone.zoneId,
+    },
+  };
+}
+
 function geoRegionPayload(region: {
   _id?: unknown;
   fips: string;
@@ -931,7 +967,9 @@ export const visibleLayers = query({
           : ctx.db.query("fleetParkingLots").collect()
         : Promise.resolve([]),
       requested.has("geo-regions") ? ctx.db.query("geoRegions").collect() : Promise.resolve([]),
-      requested.has("caas-zones") ? ctx.db.query("caasDeploymentZones").collect() : Promise.resolve([]),
+      requested.has("caas-zones") || requested.has("class8-gaps")
+        ? ctx.db.query("caasDeploymentZones").collect()
+        : Promise.resolve([]),
       requested.has("highways") || requested.has("freight-flow")
         ? ctx.runQuery(api.highways.queries.segmentsInBbox, bbox)
         : Promise.resolve([]),
@@ -987,6 +1025,10 @@ export const visibleLayers = query({
       .filter((doc) => pointInBbox(doc.centroid, bbox))
       .slice(0, pointLimit)
       .map(caasZoneAsset);
+    const class8GapAssets = caasZoneDocs
+      .filter((doc) => doc.class8ChargerGap === true && pointInBbox(doc.centroid, bbox))
+      .slice(0, pointLimit)
+      .map(class8GapZoneAsset);
     const highwayAssets = highwaySegments
       .slice(0, capLimit(limit, MAX_HIGHWAY_RESULTS, MAX_HIGHWAY_RESULTS))
       .map((segment) => highwayAsset({ ...segment, bbox }));
@@ -1036,6 +1078,7 @@ export const visibleLayers = query({
         pois: poiAssets,
         fleetYards: fleetYardAssets,
         caasZones: caasZoneAssets,
+        class8Gaps: class8GapAssets,
         highways: highwayAssets,
       },
       geoRegions: geoRegionPayloads,
@@ -1590,6 +1633,25 @@ export const hotspotReport = query({
           ],
         },
       ],
+    };
+  },
+});
+
+/** Live statewide counts for the CaaS workbench data card. */
+export const caasDataSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const [class8Chargers, trafficGenerators] = await Promise.all([
+      ctx.db
+        .query("chargers")
+        .withIndex("by_class8", (q) => q.eq("isClass8Capable", true))
+        .collect(),
+      ctx.db.query("trafficGenerators").collect(),
+    ]);
+    return {
+      class8FriendlyChargers: class8Chargers.length,
+      trafficGenerators: trafficGenerators.length,
+      source: "Live Convex inventory",
     };
   },
 });

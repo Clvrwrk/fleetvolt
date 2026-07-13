@@ -81,6 +81,9 @@ const regionValidator = v.object({
   countyCount: v.optional(v.number()),
   zipCodes: v.optional(v.array(v.string())),
   ring: v.optional(v.array(v.object({ lat: v.number(), lng: v.number() }))),
+  rings: v.optional(
+    v.array(v.array(v.object({ lat: v.number(), lng: v.number() }))),
+  ),
 });
 
 export const listCaasChoropleth = query({
@@ -120,6 +123,7 @@ export const listCaasChoropleth = query({
             ? { centroid: { lat: c.centroid.lat, lng: c.centroid.lng } }
             : {}),
           ...(c.bbox ? { bbox: c.bbox } : {}),
+          ...(c.rings?.length ? { rings: c.rings } : {}),
           ...(typeof score === "number" ? { score } : {}),
           tier,
           color: colorForTier(tier),
@@ -163,7 +167,7 @@ export const listCaasChoropleth = query({
           level,
           regions,
           note:
-            "ZIP fallback markers — run `node scripts/zcta_load.mjs` to load TIGER ZCTA polygons. Fill ≤50%.",
+            "ZIP fallback markers — run `node scripts/zcta_load.mjs` to load California Geoportal ZIP polygons. Fill ≤50%.",
         };
       }
       const sortedScores = collectScores(zctas);
@@ -190,11 +194,60 @@ export const listCaasChoropleth = query({
         level,
         regions,
         note:
-          "ZIP choropleth from Census TIGER tl_2022_us_zcta520 (CA, simplified rings). Fill opacity ≤50%.",
+          "ZIP choropleth from California State Geoportal 2024 ZIP areas (simplified rings). Fill opacity ≤50%.",
       };
     }
 
-    // air-district: union county bboxes by airDistrict attribute
+    const districtGeometry = await ctx.db.query("geoAirDistricts").collect();
+
+    // Prefer authoritative CARB district polygons. County rollups remain the
+    // score source; geometry and score provenance stay separate.
+    if (districtGeometry.length > 0) {
+      const countyScoresByDistrict = new Map<string, number[]>();
+      for (const county of caCounties) {
+        if (!county.airDistrict || typeof county.aggregateScore !== "number") continue;
+        const scores = countyScoresByDistrict.get(county.airDistrict) ?? [];
+        scores.push(county.aggregateScore);
+        countyScoresByDistrict.set(county.airDistrict, scores);
+      }
+      const scoreFor = (code: string) => {
+        const scores = countyScoresByDistrict.get(code) ?? [];
+        return scores.length
+          ? scores.reduce((total, score) => total + score, 0) / scores.length
+          : null;
+      };
+      const scored = districtGeometry.map((district) => ({
+        district,
+        score: scoreFor(district.code),
+      }));
+      const sortedScores = scored
+        .map((row) => row.score)
+        .filter((score): score is number => typeof score === "number")
+        .sort((a, b) => a - b);
+      return {
+        level,
+        regions: scored.map(({ district, score }) => {
+          const tier = tierFromPercentile(score, sortedScores);
+          return {
+            id: `air-${district.code}`,
+            name: district.name,
+            level: "air-district" as const,
+            airDistrict: district.code,
+            centroid: district.centroid,
+            bbox: district.bbox,
+            rings: district.rings,
+            ...(typeof score === "number" ? { score } : {}),
+            tier,
+            color: colorForTier(tier),
+            fillOpacity: fillOpacityForScore(score),
+          };
+        }),
+        note:
+          "Air-district boundaries from CARB GeoJSON; freight score remains a separate county rollup. Fill opacity ≤50%.",
+      };
+    }
+
+    // Fallback only when the authoritative geometry ingest has not run.
     const byDistrict = new Map<
       string,
       {
@@ -351,9 +404,9 @@ export const regionPopup = query({
             carrierHref: `/caas?view=summary&carriers=1&zip=${zcta.zcta}${
               zcta.countyFips ? `&fips=${zcta.countyFips}` : ""
             }`,
-            summary: `Census ZCTA ${zcta.zcta}. Modeled score ${
+            summary: `California ZIP ${zcta.zcta}. Modeled score ${
               typeof score === "number" ? score.toFixed(2) : "n/a"
-            }${zcta.airDistrict ? ` (${zcta.airDistrict})` : ""}. Geometry from TIGER tl_2022_us_zcta520.`,
+            }${zcta.airDistrict ? ` (${zcta.airDistrict})` : ""}. Geometry from California State Geoportal 2024 ZIP areas.`,
           };
         }
         const all = await ctx.db

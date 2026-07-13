@@ -370,3 +370,52 @@ export const list = query({
     return { preconfigured, recent };
   },
 });
+
+/** Auditable coverage gate for the default traffic-generator route catalog. */
+export const trafficGeneratorCoverage = query({
+  args: {},
+  handler: async (ctx) => {
+    const generators = await ctx.db.query("trafficGenerators").collect();
+    const promoted = await ctx.db
+      .query("routeCatalogEntries")
+      .withIndex("by_promoted_sortOrder", (q) => q.eq("promoted", true))
+      .collect();
+    const promotedByGenerator = new Map(promoted.map((row) => [row.generatorId, row]));
+    const results = await Promise.all(
+      generators.map(async (generator) => {
+        const entry = promotedByGenerator.get(generator.generatorId);
+        if (!entry) {
+          return {
+            generatorId: generator.generatorId,
+            name: generator.name,
+            portCode: generator.portCode ?? null,
+            state: "missing" as const,
+          };
+        }
+        const geometry = await ctx.db
+          .query("routeGeometries")
+          .withIndex("by_requestHash", (q) => q.eq("requestHash", entry.requestHash))
+          .unique();
+        const valid = Boolean(
+          geometry &&
+            geometry.provider === "ptv" &&
+            geometry.coordinates.length >= 8,
+        );
+        return {
+          generatorId: generator.generatorId,
+          name: generator.name,
+          portCode: entry.originPortCode,
+          state: valid ? ("verified-ptv" as const) : ("invalid" as const),
+        };
+      }),
+    );
+    return {
+      totalGenerators: results.length,
+      verifiedPtv: results.filter((row) => row.state === "verified-ptv").length,
+      invalid: results.filter((row) => row.state === "invalid").length,
+      missing: results.filter((row) => row.state === "missing").length,
+      complete: results.every((row) => row.state === "verified-ptv"),
+      gaps: results.filter((row) => row.state !== "verified-ptv"),
+    };
+  },
+});
