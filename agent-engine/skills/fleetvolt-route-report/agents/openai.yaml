@@ -1,0 +1,5 @@
+interface:
+  display_name: "FleetVolt Route Report"
+  short_description: "Generate locked FleetVolt command briefs"
+  default_prompt: "Use $fleetvolt-route-report to generate a FleetVolt route report from verified corridor evidence."
+  brand_color: "#176B87"

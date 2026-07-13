@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
+import { FLEETVOLT_REPORT_STANDARD_VERSION } from "../../../report-standard/fleetvolt-route-report-v1";
 
 const carrierTargets = [
   ["1", "HarborLink Transport", "Drayage", "94", "36 units"],
@@ -88,7 +89,10 @@ export function ExecutiveBriefing() {
         </div>
       </header>
 
-      <article className="fv-brief-document">
+      <article
+        className="fv-brief-document"
+        data-report-standard={`fleetvolt-route-report-v${FLEETVOLT_REPORT_STANDARD_VERSION}`}
+      >
         <div
           className="fv-brief-demo-banner"
           role="status"

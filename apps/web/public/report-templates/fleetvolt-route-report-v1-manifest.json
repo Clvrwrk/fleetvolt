@@ -1,0 +1,34 @@
+{
+  "id": "fleetvolt-route-report-v1.0.0",
+  "version": "1.0.0",
+  "locked": true,
+  "protocol": "Command Brief narrative / Corridor White Paper design",
+  "approvedReference": "POLB to Shafter Command Brief Final",
+  "pageSequence": [
+    "Cover and board answer",
+    "Executive finding",
+    "Corridor evidence",
+    "Vehicle and energy model",
+    "Charging landscape",
+    "Operational emissions",
+    "Origin-side carrier prospects",
+    "Destination-side carrier prospects",
+    "Commercial interpretation",
+    "Method, limitations, and authorization"
+  ],
+  "assets": {
+    "html": {
+      "path": "/report-templates/fleetvolt-command-brief-v1-reference.html",
+      "sha256": "5d7f2a8ca335c1a42c1abd6aebf7fab1ba84375851116474a86579a5eb77f3e5"
+    },
+    "pdf": {
+      "path": "/report-templates/fleetvolt-command-brief-v1-reference.pdf",
+      "sha256": "a3dd0f800110e0d5461326f2202f3db2ec78c1f5040e69337d5f25302df8eb2f"
+    },
+    "contactSheet": {
+      "path": "/report-templates/fleetvolt-command-brief-v1-contact-sheet.png",
+      "sha256": "e2efca8c041960486a6d99be6fa3d20a6c9e5726ff9fc607494d00bb4170aa01"
+    }
+  },
+  "changeControl": "Create a reviewed new version; do not modify v1 artifacts in place."
+}
