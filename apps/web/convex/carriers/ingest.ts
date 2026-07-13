@@ -40,6 +40,11 @@ const carrierRow = v.object({
   lat: v.optional(v.union(v.number(), v.null())),
   lng: v.optional(v.union(v.number(), v.null())),
   geocodeStatus: v.optional(v.union(v.string(), v.null())),
+  contactName: v.optional(v.union(v.string(), v.null())),
+  phone: v.optional(v.union(v.string(), v.null())),
+  email: v.optional(v.union(v.string(), v.null())),
+  tractorCount: v.optional(v.union(v.number(), v.null())),
+  website: v.optional(v.union(v.string(), v.null())),
 });
 
 export const run = action({

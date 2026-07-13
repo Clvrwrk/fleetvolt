@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, FileChartColumnIncreasing, LockKeyhole, Route, Truck } from "lucide-react";
+import { ArrowRight, LockKeyhole, Radar, Route, Truck } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
@@ -174,12 +174,12 @@ export function FleetVoltHome() {
         </section>
 
         <section className="fv-home-lanes" aria-label="FleetVolt product lanes">
-          <Link href="/briefing" className="fv-home-lane fv-home-lane--active">
-            <div className="fv-home-lane-icon"><FileChartColumnIncreasing size={21} /></div>
+          <Link href="/caas" className="fv-home-lane fv-home-lane--active">
+            <div className="fv-home-lane-icon"><Radar size={21} /></div>
             <div>
               <span className="fv-home-lane-status">ACTIVE · REVENUE LANE</span>
-              <h2>Executive Briefing</h2>
-              <p>Preview the modeled route investment case.</p>
+              <h2>CaaS Intelligence</h2>
+              <p>Model corridors, reveal Class 8 charging gaps, and build route evidence.</p>
             </div>
             <ArrowRight className="fv-home-lane-arrow" size={20} />
           </Link>

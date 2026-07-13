@@ -31,6 +31,11 @@ const carrierRow = v.object({
   lat: v.optional(v.union(v.number(), v.null())),
   lng: v.optional(v.union(v.number(), v.null())),
   geocodeStatus: v.optional(v.union(v.string(), v.null())),
+  contactName: v.optional(v.union(v.string(), v.null())),
+  phone: v.optional(v.union(v.string(), v.null())),
+  email: v.optional(v.union(v.string(), v.null())),
+  tractorCount: v.optional(v.union(v.number(), v.null())),
+  website: v.optional(v.union(v.string(), v.null())),
 });
 
 export const upsertCarrierBatch = internalMutation({
@@ -72,6 +77,11 @@ export const upsertCarrierBatch = internalMutation({
         location,
         corridorCity,
         geocodeStatus: r.geocodeStatus ?? undefined,
+        contactName: r.contactName ?? undefined,
+        phone: r.phone ?? undefined,
+        email: r.email ?? undefined,
+        tractorCount: r.tractorCount ?? undefined,
+        website: r.website ?? undefined,
         provenance: {
           source: "POLB_Carriers" as const,
           fetchedAt,
@@ -86,6 +96,10 @@ export const upsertCarrierBatch = internalMutation({
         .query("carriers")
         .withIndex("by_carrierKey", (q) => q.eq("carrierKey", r.carrierKey))
         .unique();
+      const locationChanged =
+        !existing?.location ||
+        existing.location.lat !== location?.lat ||
+        existing.location.lng !== location?.lng;
 
       let id;
       if (existing) {
@@ -99,7 +113,7 @@ export const upsertCarrierBatch = internalMutation({
 
       // Spatial-index located carriers (12-02). No-op on the haversine backend.
       // filterFields {corridor} enables an in-index corridor partition filter.
-      if (hasLocation && location) {
+      if (hasLocation && location && locationChanged) {
         await insertPoint(ctx, {
           table: "carriers",
           id,

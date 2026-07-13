@@ -13,6 +13,16 @@ export type SelectedAssetCardProps = {
   className?: string;
 };
 
+function safeCarrierWebsite(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value.startsWith("http") ? value : `https://${value}`);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function SelectedAssetCard({ selection, className }: SelectedAssetCardProps) {
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
   const selectAsset = useMapWorkbenchStore((state) => state.selectAsset);
@@ -46,6 +56,9 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
   }
 
   const card = assetCardViewModel(selection);
+  const carrierWebsite = selection.type === "carrier"
+    ? safeCarrierWebsite(selection.metadata?.website)
+    : null;
   const gapMetadata = selection.type === "class8-gap" ? selection.metadata : null;
   const gapValue = (key: string, fallback = "Not available") => {
     const value = gapMetadata?.[key];
@@ -182,6 +195,18 @@ export function SelectedAssetCard({ selection, className }: SelectedAssetCardPro
             </section>
           ))}
         </div>
+      ) : null}
+
+      {carrierWebsite ? (
+        <a
+          href={carrierWebsite}
+          target="_blank"
+          rel="noreferrer"
+          data-testid="carrier-website-link"
+          className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[var(--fv-blueprint-blue)] bg-[var(--fv-blueprint-blue)]/10 px-3 py-2 text-base font-bold uppercase tracking-[0.08em] text-[var(--fv-blueprint-blue)] hover:bg-[var(--fv-blueprint-blue)]/15"
+        >
+          Open carrier website
+        </a>
       ) : null}
 
       {selection.type !== "route" && typeof selection.metadata?.carrierHref === "string" ? (

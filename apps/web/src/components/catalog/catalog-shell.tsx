@@ -31,15 +31,12 @@ function CatalogShellInner({ children }: { children?: ReactNode }) {
         <button
           type="button"
           data-testid="catalog-back-button"
-          onClick={() => {
-            if (window.history.length > 1) router.back();
-            else router.push("/caas");
-          }}
+          onClick={() => router.push("/caas")}
           className="mb-5 inline-flex min-h-12 items-center gap-2 rounded-lg border border-[var(--fv-blueprint-blue)]/60 bg-[#0b1016] px-4 text-base font-bold text-[var(--fv-blueprint-blue)] shadow-sm transition hover:border-[var(--fv-blueprint-blue)] hover:bg-[var(--fv-blueprint-blue)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-blueprint-blue)]"
-          aria-label="Back to previous page"
+          aria-label="Back to CaaS workbench"
         >
           <ArrowLeft size={20} aria-hidden />
-          Back
+          Back to workbench
         </button>
         <div className="flex flex-wrap items-start gap-3">
           <BookOpen

@@ -91,7 +91,6 @@ const CAAS_FULL_LAYERS: WorkbenchLayerId[] = [
   "class8-gaps",
   "carriers",
   "geo-regions",
-  "caas-zones",
   "highways",
   "pois",
   "fleet-yards",

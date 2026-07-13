@@ -7,6 +7,7 @@ import {
   useAccessToken,
   useAuth,
 } from "@workos-inc/authkit-nextjs/components";
+import { ALPHA_AUTH_BYPASS } from "@/lib/alpha-auth";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -44,7 +45,28 @@ function useAuthFromAuthKit() {
   );
 }
 
+/** Alpha access keeps Convex public queries available without booting AuthKit. */
+function useAlphaAuth() {
+  const fetchAccessToken = useCallback(async () => null, []);
+  return useMemo(
+    () => ({
+      isLoading: false,
+      isAuthenticated: false,
+      fetchAccessToken,
+    }),
+    [fetchAccessToken],
+  );
+}
+
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  if (ALPHA_AUTH_BYPASS) {
+    return (
+      <ConvexProviderWithAuth client={convex} useAuth={useAlphaAuth}>
+        {children}
+      </ConvexProviderWithAuth>
+    );
+  }
+
   return (
     <AuthKitProvider>
       <ConvexProviderWithAuth client={convex} useAuth={useAuthFromAuthKit}>

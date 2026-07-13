@@ -56,7 +56,6 @@ export const WORKBENCH_MODE_CONFIG: Record<WorkbenchMode, WorkbenchModeConfig> =
       "class8-gaps",
       "carriers",
       "geo-regions",
-      "caas-zones",
       "highways",
     ],
     defaultDraft: {

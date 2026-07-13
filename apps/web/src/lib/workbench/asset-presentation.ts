@@ -254,7 +254,29 @@ export function assetCardViewModel(selection: WorkbenchSelection): AssetCardView
     };
   }
 
-  const excluded = new Set(["convexId", "parkingKey", "requestHash", "routeRequestHash", "source", "provenance", "subtitle", "metric", "carrierHref"]);
+  if (selection.type === "carrier") {
+    const address = [
+      stringValue(metadata.address),
+      [stringValue(metadata.city), stringValue(metadata.state), stringValue(metadata.zip)]
+        .filter(Boolean)
+        .join(" "),
+    ].filter(Boolean).join(", ");
+    return {
+      eyebrow: "Carrier",
+      rows: [
+        ...(address ? [{ label: "Address", value: address }] : []),
+        ...(stringValue(metadata.contactName) ? [{ label: "Contact", value: stringValue(metadata.contactName)! }] : []),
+        ...(stringValue(metadata.phone) ? [{ label: "Phone", value: stringValue(metadata.phone)! }] : []),
+        ...(stringValue(metadata.email) ? [{ label: "Email", value: stringValue(metadata.email)! }] : []),
+        ...(stringValue(metadata.tractorCount ?? metadata.powerUnits)
+          ? [{ label: "Tractors / power units", value: stringValue(metadata.tractorCount ?? metadata.powerUnits)! }]
+          : []),
+      ],
+      pillGroups: [],
+    };
+  }
+
+  const excluded = new Set(["convexId", "parkingKey", "carrierKey", "requestHash", "routeRequestHash", "source", "provenance", "subtitle", "metric", "carrierHref"]);
   const rows = Object.entries(metadata)
     .filter(([key, value]) => !excluded.has(key) && stringValue(value) !== null)
     .slice(0, 6)
