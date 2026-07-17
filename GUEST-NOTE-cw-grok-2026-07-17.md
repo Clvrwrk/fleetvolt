@@ -21,3 +21,7 @@ User asked for a **new** Vercel project + spicy mobile calc without blocking on 
 - Subdomain option: `rail.fleetvolt.network` (if DNS/Vercel domain API allows)
 
 No secrets written. No app runtime code changed.
+
+## Follow-up (same day)
+- Root `vercel.json` rewrites alone did not surface `/rail` (Next catch-all 404).
+- Added `apps/web/next.config.ts` `beforeFiles` rewrites to proxy standalone project.
