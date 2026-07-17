@@ -30,6 +30,14 @@ const nextConfig: NextConfig = {
           source: "/rail/:path*",
           destination: "https://fleetvolt-rail.vercel.app/rail/:path*",
         },
+        {
+          source: "/railpower",
+          destination: "https://railpower-lect.vercel.app/railpower",
+        },
+        {
+          source: "/railpower/:path*",
+          destination: "https://railpower-lect.vercel.app/railpower/:path*",
+        },
       ],
     };
   },
