@@ -1,1 +1,16 @@
-{"buildCommand": "pnpm build", "framework": "nextjs", "installCommand": "pnpm install", "outputDirectory": ".next"}
+{
+  "buildCommand": "pnpm build",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".next",
+  "rewrites": [
+    {
+      "source": "/rail",
+      "destination": "https://fleetvolt-rail.vercel.app/rail"
+    },
+    {
+      "source": "/rail/:path*",
+      "destination": "https://fleetvolt-rail.vercel.app/rail/:path*"
+    }
+  ]
+}
