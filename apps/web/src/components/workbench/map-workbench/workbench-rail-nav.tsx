@@ -101,7 +101,7 @@ export function WorkbenchRailNav({ modePanel, opportunityPanel }: WorkbenchRailN
   const caasGeoLevel = useMapWorkbenchStore((state) => state.caasGeoLevel);
   const setCaasGeoLevel = useMapWorkbenchStore((state) => state.setCaasGeoLevel);
   const iconLayers = layersForMode(mode).filter((layer) =>
-    ["ports", "chargers", "parking", "pois", "fleet-yards", "class8-gaps", "carriers", "caas-zones"].includes(layer.id),
+    ["ports", "chargers", "parking", "pois", "fleet-yards", "class8-gaps", "carriers"].includes(layer.id),
   );
   const layerItems = layersForMode(mode);
   const copy = modeCopy(mode);

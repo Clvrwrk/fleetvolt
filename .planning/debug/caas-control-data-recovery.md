@@ -2,7 +2,7 @@
 status: awaiting_human_verify
 trigger: "CaaS sidebar lacks approved drawer menus; geo overlays, POI filters, GAP and heat controls are inert or absent; POI, charger, and parking markers/cards expose incorrect semantics and internal fields."
 created: 2026-07-12T16:32:00-07:00
-updated: 2026-07-12T18:55:00-07:00
+updated: 2026-07-13T15:30:00-07:00
 ---
 
 # CaaS control and data recovery
@@ -141,6 +141,16 @@ updated: 2026-07-12T18:55:00-07:00
   checked: Post-replacement static and regression gates.
   found: Focused ESLint, non-incremental TypeScript, `git diff --check`, and the full 258-test web unit suite all passed with zero failures after the California Geoportal provenance/schema/loader changes.
   implication: The source replacement did not regress the tested workbench, route, map-geometry, provenance, export, or authentication contracts.
+
+- timestamp: 2026-07-13T15:30:00-07:00
+  checked: Homepage lane routing, first-load map state, live KPI isolation, carrier detail projection, retired heat surface, catalog return flow, and alpha-auth console behavior.
+  found: The homepage now has one Executive Briefing CTA and a separate active CaaS Intelligence lane. The map gates first paint on Google tile and Convex-data readiness behind the FleetVolt loader. KPI buttons isolate 13 Class-8-capable chargers or 69 traffic generators; the charger query now prioritizes the 13 qualifying records before applying its row limit. The one-circle Buttonwillow pseudo-heatmap was removed because it duplicated a single GAP instead of representing a comparative scored surface. Carrier ingestion preserved source contact and phone values, patched 1,823 development records without rebuilding unchanged geospatial points, and the browser card showed Douglas A. Brown / (760) 937-7963 with no carrier key. Catalog detail → catalog → Back to workbench returned deterministically to `/caas`. Alpha bypass no longer boots AuthKit or emits hidden server-action 500s.
+  implication: The current review branch addresses the user-visible defects without fabricating missing carrier email, website, or tractor-count fields. A future heat surface must contain multiple comparable scored cells, and Google Places Autocomplete deprecation warnings remain a separate migration item.
+
+- timestamp: 2026-07-13T15:31:00-07:00
+  checked: Focused regression and fresh-browser console gate.
+  found: TypeScript, `git diff --check`, and 21 focused unit tests passed. A fresh `http://localhost:3100/caas` browser load produced zero console errors; only Google Places legacy API and unused development-font preload warnings remained.
+  implication: The bounded branch is ready for PR review and human visual verification at the localhost gate.
 
 ## Eliminated
 

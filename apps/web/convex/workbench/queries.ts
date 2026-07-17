@@ -480,6 +480,11 @@ function carrierAsset(carrier: {
   location?: { lat: number; lng: number } | null;
   corridorCity?: string | null;
   geocodeStatus?: string | null;
+  contactName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  tractorCount?: number | null;
+  website?: string | null;
   provenance?: unknown;
 }): LayerAsset | null {
   if (!carrier.location) return null;
@@ -503,6 +508,11 @@ function carrierAsset(carrier: {
       zip: carrier.zip ?? null,
       corridorCity: carrier.corridorCity ?? null,
       geocodeStatus: carrier.geocodeStatus ?? null,
+      contactName: carrier.contactName ?? null,
+      phone: carrier.phone ?? null,
+      email: carrier.email ?? null,
+      tractorCount: carrier.tractorCount ?? null,
+      website: carrier.website ?? null,
     },
   };
 }
@@ -992,6 +1002,10 @@ export const visibleLayers = query({
 
     const chargerAssets = chargerDocs
       .filter((doc) => pointInBbox(doc.location, bbox))
+      // Keep the decision-grade Class 8 inventory inside the bounded payload.
+      // Without this ordering, an arbitrary first 400 light-duty stations can
+      // crowd all 13 Class 8-capable records out of the client response.
+      .sort((a, b) => Number(b.isClass8Capable) - Number(a.isClass8Capable))
       .slice(0, pointLimit)
       .map(chargerAsset);
 

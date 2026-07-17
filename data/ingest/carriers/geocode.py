@@ -3,7 +3,7 @@
 
 Input : data/ingest/carriers/out/polb_carriers.json  (from prep_polb_carriers.py)
 Output: data/ingest/carriers/out/carriers_geocoded.json
-        = [{carrierKey,name,address,city,state,zip,lat?,lng?,geocodeStatus}]
+        = [{carrierKey,name,contactName,address,city,state,zip,phone,lat?,lng?,geocodeStatus}]
 Cache : data/ingest/carriers/out/geocode_cache.json   (address -> {lat,lng,status})
 
 WHY LOCAL + CACHED (must_haves): geocoding runs here in Python (NOT a Convex
@@ -170,6 +170,8 @@ def main() -> None:
             "city": rec.get("city"),
             "state": rec.get("state"),
             "zip": rec.get("zip"),
+            "contactName": rec.get("contactName"),
+            "phone": rec.get("phone"),
         }
         if not addr:
             row["geocodeStatus"] = "ZERO_RESULTS"

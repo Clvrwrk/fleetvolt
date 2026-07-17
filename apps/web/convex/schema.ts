@@ -165,6 +165,11 @@ export default defineSchema({
     location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
     corridorCity: v.optional(v.string()),
     geocodeStatus: v.optional(v.string()),
+    contactName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    tractorCount: v.optional(v.number()),
+    website: v.optional(v.string()),
     provenance,
   })
     .index("by_carrierKey", ["carrierKey"])

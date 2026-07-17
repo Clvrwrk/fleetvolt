@@ -6,17 +6,6 @@ import {
   caasVisiblePointLayers,
 } from "./caas-visible-assets";
 
-function zone(id: string): WorkbenchMapAsset {
-  return {
-    id,
-    type: "caas-zone",
-    layerId: "caas-zones",
-    label: id,
-    latitude: 34,
-    longitude: -118,
-  };
-}
-
 function gap(id: string): WorkbenchMapAsset {
   return {
     id,
@@ -29,24 +18,23 @@ function gap(id: string): WorkbenchMapAsset {
 }
 
 describe("CaaS visible asset adapter", () => {
-  it("requests CaaS zones only while the heat layer is active", () => {
+  it("does not request the retired single-point heat surface", () => {
     assert.deepEqual(
       caasVisiblePointLayers(["chargers", "class8-gaps", "caas-zones", "geo-regions"]),
-      ["chargers", "class8-gaps", "caas-zones"],
+      ["chargers", "class8-gaps"],
     );
     assert.deepEqual(caasVisiblePointLayers(["chargers", "geo-regions"]), [
       "chargers",
     ]);
   });
 
-  it("merges returned CaaS zones into the shared map asset contract", () => {
+  it("merges the supported live point layers into the shared map asset contract", () => {
     const result = caasVisibleAssets({
       chargers: [],
       class8Gaps: [gap("gap-la-basin")],
-      caasZones: [zone("zone-la-basin")],
     });
 
-    assert.deepEqual(result.map((asset) => asset.id), ["gap-la-basin", "zone-la-basin"]);
+    assert.deepEqual(result.map((asset) => asset.id), ["gap-la-basin"]);
     assert.equal(result[0]?.layerId, "class8-gaps");
     assert.equal(result[0]?.type, "class8-gap");
   });

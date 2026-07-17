@@ -30,7 +30,6 @@ import { AssetMarkerLayer, type WorkbenchMapAsset } from "./layers/asset-marker-
 import {
   CaasChoroplethLayer,
 } from "./layers/caas-choropleth-layer";
-import { CaasZoneHeatLayer } from "./layers/caas-zone-heat-layer";
 import { DetourLegsLayer } from "./layers/detour-legs-layer";
 import { FreightFlowLayer } from "./layers/freight-flow-layer";
 import { GeneratorMarkers } from "./layers/generator-markers";
@@ -234,6 +233,7 @@ function MapCanvasBody({
   caasGeoLevel,
   routeFocusActive,
   onSelectRoute,
+  dataReady,
 }: {
   mode: WorkbenchMode;
   mapId: string;
@@ -256,8 +256,14 @@ function MapCanvasBody({
   caasGeoLevel: CaasGeoLevel;
   routeFocusActive: boolean;
   onSelectRoute: () => void;
+  dataReady: boolean;
 }) {
   const status = useApiLoadingStatus();
+  const mapInstanceKey = focusBounds
+    ? `focus-${focusBounds.north}-${focusBounds.south}-${focusBounds.east}-${focusBounds.west}`
+    : `default-${mode}`;
+  const [tilesLoadedForKey, setTilesLoadedForKey] = useState<string | null>(null);
+  const tilesLoaded = tilesLoadedForKey === mapInstanceKey;
 
   // AUTH_FAILURE often arrives after a brief LOADED state; prefer explicit onError too.
   if (
@@ -280,15 +286,13 @@ function MapCanvasBody({
   }
 
   return (
+    <div className="relative h-full w-full">
       <GoogleMap
-      key={
-        focusBounds
-          ? `focus-${focusBounds.north}-${focusBounds.south}-${focusBounds.east}-${focusBounds.west}`
-          : `default-${mode}`
-      }
+      key={mapInstanceKey}
       mapId={mapId}
       renderingType={RenderingType.VECTOR}
       defaultBounds={focusBounds ? paddedBounds(focusBounds) : defaultBounds}
+      onTilesLoaded={() => setTilesLoadedForKey(mapInstanceKey)}
       gestureHandling="greedy"
       disableDefaultUI
       className="h-full w-full"
@@ -341,19 +345,23 @@ function MapCanvasBody({
         selectedAsset={selectedAsset}
         visible={visibleLayer(activeLayers, "route") && showRouteLayer}
       />
-      <CaasZoneHeatLayer
-        assets={assets.filter((asset) => asset.type === "caas-zone")}
-        visible={!routeFocusActive && visibleLayer(activeLayers, "caas-zones")}
-        onSelectAsset={selectAsset}
-      />
       <AssetMarkerLayer
         assets={assets.filter(
-          (asset) => asset.type !== "caas-zone" && visibleLayer(activeLayers, asset.layerId),
+          (asset) => visibleLayer(activeLayers, asset.layerId),
         )}
         selectedAsset={selectedAsset}
         onSelectAsset={selectAsset}
       />
-    </GoogleMap>
+      </GoogleMap>
+      {!tilesLoaded || !dataReady ? (
+        <div
+          data-testid="map-tiles-loading"
+          className="absolute inset-0 z-50 flex items-center justify-center bg-[#11151a]/65 backdrop-blur-[2px]"
+        >
+          <FleetVoltLoader label="Loading freight intelligence" className="text-white" />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -389,6 +397,7 @@ function layerAssetToMapAsset(asset: {
 
 export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps) {
   const activeLayers = useMapWorkbenchStore((state) => state.activeLayers);
+  const setLayers = useMapWorkbenchStore((state) => state.setLayers);
   const selectedAsset = useMapWorkbenchStore((state) => state.selectedAsset);
   const routeGeometry = useMapWorkbenchStore((state) => state.routeGeometry);
   const mapAssets = useMapWorkbenchStore((state) => state.mapAssets);
@@ -408,6 +417,20 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   const [authError, setAuthError] = useState<string | null>(null);
   const [mapsAuthGuardReady, setMapsAuthGuardReady] = useState(false);
   const [routeFocusActive, setRouteFocusActive] = useState(false);
+  const [kpiFocus, setKpiFocus] = useState<
+    "class8-chargers" | "class8-gaps" | "traffic-generators" | null
+  >(null);
+  const activeKpiFocus = useMemo(() => {
+    if (!kpiFocus) return null;
+    const expectedLayer = kpiFocus === "class8-chargers"
+      ? "chargers"
+      : kpiFocus === "class8-gaps"
+        ? "class8-gaps"
+        : "pois";
+    return activeLayers.length === 1 && activeLayers[0] === expectedLayer
+      ? kpiFocus
+      : null;
+  }, [activeLayers, kpiFocus]);
 
   // Google invokes this documented global callback when a browser key is
   // rejected (including RefererNotAllowedMapError). Install it *before*
@@ -541,6 +564,47 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
         ) <= ON_ROUTE_MAX_M,
     );
   }, [assets, routeCoordinates, routeFocusEngaged]);
+  const visibleAssets = useMemo(() => {
+    if (activeKpiFocus === "class8-chargers") {
+      return routeFocusedAssets.filter(
+        (asset) => asset.type === "charger" && asset.metadata?.isClass8Capable === true,
+      );
+    }
+    if (activeKpiFocus === "class8-gaps") {
+      return routeCoordinates.length >= 8
+        ? routeFocusedAssets.filter(
+            (asset) =>
+              asset.layerId === "class8-gaps" &&
+              asset.metadata?.classification !== "modeled-zone",
+          )
+        : [];
+    }
+    if (activeKpiFocus === "traffic-generators") {
+      return routeFocusedAssets.filter((asset) => {
+        if (asset.type !== "poi") return false;
+        return String(asset.metadata?.kind ?? asset.metadata?.type ?? "")
+          .toLowerCase()
+          .replaceAll("-", "_") === "traffic_generator";
+      });
+    }
+    return routeFocusedAssets;
+  }, [activeKpiFocus, routeCoordinates.length, routeFocusedAssets]);
+
+  const focusKpiLayer = useCallback(
+    (focus: "class8-chargers" | "class8-gaps" | "traffic-generators") => {
+      const layer = focus === "class8-chargers"
+        ? "chargers"
+        : focus === "class8-gaps"
+          ? "class8-gaps"
+          : "pois";
+      setKpiFocus(focus);
+      setLayers([layer]);
+      setRouteFocusActive(false);
+      setSelectedPortCode(null);
+      selectAsset(null);
+    },
+    [selectAsset, setLayers, setSelectedPortCode],
+  );
 
   const routeProvider = routeGeometry?.provider;
   const routeDistanceMeters = routeGeometry?.distanceMeters;
@@ -618,6 +682,10 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
   return (
     <div
       data-testid="fleetvolt-map-canvas"
+      data-visible-asset-count={visibleAssets.length}
+      data-all-asset-count={assets.length}
+      data-query-charger-count={overviewAssetsQuery?.assets.chargers?.length ?? -1}
+      data-kpi-focus={activeKpiFocus ?? "none"}
       className={cn("relative h-full min-h-[420px] w-full overflow-hidden", className)}
     >
       <MapSoftBoundary label="workbench-map">
@@ -639,7 +707,7 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             mode={mode}
             mapId={MAP_ID}
             routeCoordinates={routeCoordinates}
-            assets={routeFocusedAssets}
+            assets={visibleAssets}
             activeLayers={activeLayers}
             selectedAsset={selectedAsset}
             focusBounds={focusBounds}
@@ -660,7 +728,9 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
               visibleLayer(activeLayers, "geo-regions")
             }
             showGeneratorSpokes={
-              showCaasDataLayers && visibleLayer(activeLayers, "pois")
+              showCaasDataLayers &&
+              visibleLayer(activeLayers, "pois") &&
+              (activeKpiFocus === null || activeKpiFocus === "traffic-generators")
             }
             selectedPortCode={selectedPortCode}
             onSelectPort={setSelectedPortCode}
@@ -668,6 +738,10 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
             caasGeoLevel={caasGeoLevel}
             routeFocusActive={routeFocusEngaged}
             onSelectRoute={selectRoute}
+            dataReady={
+              !showCaasDataLayers ||
+              (overviewAssetsQuery !== undefined && caasDataSummary !== undefined)
+            }
           />
         </APIProvider>
       </MapSoftBoundary>
@@ -776,16 +850,29 @@ export function FleetVoltMapCanvas({ mode, className }: FleetVoltMapCanvasProps)
       {isCaas ? (
         <aside className="pointer-events-none absolute right-5 top-5 z-10 w-[min(28rem,calc(100vw-22rem))] rounded-2xl border border-black/10 bg-white/95 p-5 text-[var(--fv-graphite)] shadow-xl backdrop-blur" aria-label="Live CaaS data summary">
           <div className="font-mono text-base font-black uppercase tracking-[0.12em] text-[var(--fv-blueprint-blue)]">Live data card</div>
-          <div className="mt-3 grid grid-cols-3 gap-3">
+          <div className="pointer-events-auto mt-3 grid grid-cols-3 gap-3">
             {[
-              ["Class 8-friendly chargers", caasDataSummary?.class8FriendlyChargers ?? "—"],
-              ["Route charger gaps", routeGapCount],
-              ["Traffic generators", caasDataSummary?.trafficGenerators ?? "—"],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-black/10 bg-[var(--fv-bg)] p-3">
+              ["class8-chargers", "Class 8-capable chargers", caasDataSummary?.class8FriendlyChargers ?? "—"],
+              ["class8-gaps", "Route charger gaps", routeGapCount],
+              ["traffic-generators", "Traffic generators", caasDataSummary?.trafficGenerators ?? "—"],
+            ].map(([focus, label, value]) => (
+              <button
+                key={label}
+                type="button"
+                data-testid={`caas-kpi-${focus}`}
+                aria-pressed={activeKpiFocus === focus}
+                onClick={() => focusKpiLayer(focus as "class8-chargers" | "class8-gaps" | "traffic-generators")}
+                className={cn(
+                  "rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fv-blueprint-blue)]",
+                  activeKpiFocus === focus
+                    ? "border-[var(--fv-blueprint-blue)] bg-[var(--fv-blueprint-blue)]/12 shadow-md"
+                    : "border-black/10 bg-[var(--fv-bg)] hover:border-[var(--fv-blueprint-blue)]/60 hover:bg-white",
+                )}
+                title={`Show only ${String(label).toLowerCase()} on the map`}
+              >
                 <div className="text-2xl font-black text-[var(--fv-graphite)]">{value}</div>
                 <div className="mt-1 text-base font-bold leading-5 text-[var(--fv-steel)]">{label}</div>
-              </div>
+              </button>
             ))}
           </div>
         </aside>

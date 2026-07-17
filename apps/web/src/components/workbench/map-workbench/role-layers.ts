@@ -74,8 +74,8 @@ const LAYER_CATALOG: Record<WorkbenchLayerId, LayerToolbarItem> = {
   },
   "caas-zones": {
     id: "caas-zones",
-    label: "Heat map / CaaS zones",
-    hint: "High truck traffic + Class-8 gap overlap",
+    label: "CaaS opportunity surface",
+    hint: "Reserved for a future multi-zone scored surface",
   },
 };
 
@@ -99,7 +99,6 @@ export const ROLE_LAYER_IDS: Record<WorkbenchMode, WorkbenchLayerId[]> = {
     "geo-regions",
     "class8-gaps",
     "carriers",
-    "caas-zones",
     "route",
     "pois",
     "fleet-yards",

@@ -3,7 +3,7 @@
 
 Input : data/raw/POLB/POLB-Status-Update-07-01-26.xlsx (the "POLB Status" sheet)
 Output: data/ingest/carriers/out/polb_carriers.json
-        = [{carrierKey, name, address, city, state, zip}]
+        = [{carrierKey, name, contactName, address, city, state, zip, phone}]
 
 The POLB "Status Update" workbook is a single sheet ("POLB Status") whose real
 header sits on the THIRD row (row index 2) under a merged section banner
@@ -46,10 +46,12 @@ OUT_JSON = OUT_DIR / "polb_carriers.json"
 # Expected header labels (lower-cased, whitespace-collapsed) -> our field name.
 HEADER_MAP = {
     "trucking company name": "name",
+    "contact": "contactName",
     "address": "address",
     "city": "city",
     "state": "state",
     "zip": "zip",
+    "phone number": "phone",
 }
 
 
@@ -114,6 +116,8 @@ def main() -> None:
         city = _norm(cell(row, "city"))
         state = _norm(cell(row, "state"))
         zip_ = _norm(cell(row, "zip"))
+        contact_name = _norm(cell(row, "contactName"))
+        phone = _norm(cell(row, "phone"))
         # a real carrier row must carry a name AND (address or city)
         if not name or not (address or city):
             if not any((name, address, city, state, zip_)):
@@ -128,6 +132,8 @@ def main() -> None:
             "city": city or None,
             "state": state or None,
             "zip": zip_ or None,
+            "contactName": contact_name or None,
+            "phone": phone or None,
         }
         if key in carriers:
             dupes += 1

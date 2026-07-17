@@ -99,7 +99,7 @@ const caasInitialCards: WorkbenchResultCard[] = [
     summary: "CaaS route cards will show target carriers/fleets, hotspot/report context, FAF freight context, and mobile charger staging recommendations with assumptions labeled.",
     mode: "caas_gap_map",
     severity: "info",
-    layerId: "caas-zones",
+    layerId: "class8-gaps",
   },
 ];
 

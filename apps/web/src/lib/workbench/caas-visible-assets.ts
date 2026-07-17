@@ -7,8 +7,7 @@ export type CaasVisiblePointLayer =
   | "carriers"
   | "pois"
   | "fleet-yards"
-  | "class8-gaps"
-  | "caas-zones";
+  | "class8-gaps";
 
 const CAAS_VISIBLE_POINT_LAYERS: readonly CaasVisiblePointLayer[] = [
   "chargers",
@@ -17,12 +16,11 @@ const CAAS_VISIBLE_POINT_LAYERS: readonly CaasVisiblePointLayer[] = [
   "pois",
   "fleet-yards",
   "class8-gaps",
-  "caas-zones",
 ];
 
 type CaasVisibleAssetPayload = Partial<
   Record<
-    "chargers" | "parking" | "carriers" | "pois" | "fleetYards" | "class8Gaps" | "caasZones",
+    "chargers" | "parking" | "carriers" | "pois" | "fleetYards" | "class8Gaps",
     WorkbenchMapAsset[]
   >
 >;
@@ -48,6 +46,5 @@ export function caasVisibleAssets(
     ...(assets.pois ?? []),
     ...(assets.fleetYards ?? []),
     ...(assets.class8Gaps ?? []),
-    ...(assets.caasZones ?? []),
   ];
 }

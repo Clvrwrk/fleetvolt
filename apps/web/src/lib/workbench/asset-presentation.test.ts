@@ -93,4 +93,33 @@ describe("assetCardViewModel", () => {
     });
     assert.deepEqual(model.pillGroups[0]?.values, ["REST AREA", "YES"]);
   });
+
+  it("shows useful carrier contact and fleet facts without internal keys", () => {
+    const model = assetCardViewModel({
+      id: "carrier-1",
+      type: "carrier",
+      layerId: "carriers",
+      label: "Example Freight",
+      metadata: {
+        carrierKey: "internal-key",
+        address: "100 Harbor Way",
+        city: "Long Beach",
+        state: "CA",
+        zip: "90802",
+        contactName: "Operations Desk",
+        phone: "562-555-0100",
+        email: "dispatch@example.com",
+        tractorCount: 42,
+        website: "https://example.com",
+      },
+    });
+    assert.equal(JSON.stringify(model).includes("internal-key"), false);
+    assert.deepEqual(model.rows.map((row) => row.label), [
+      "Address",
+      "Contact",
+      "Phone",
+      "Email",
+      "Tractors / power units",
+    ]);
+  });
 });

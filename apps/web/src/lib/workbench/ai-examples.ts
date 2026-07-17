@@ -192,7 +192,6 @@ export function localWorkbenchAiExample(
             "class8-gaps",
             "carriers",
             "parking",
-            "caas-zones",
           ],
         },
       ],
