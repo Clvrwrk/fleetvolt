@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert";
 import { buildBriefPrompt, buildFallbackBrief } from "../../src/lib/brief-prompt.js";
+import { FLEETVOLT_REPORT_STANDARD_VERSION } from "../../report-standard/fleetvolt-route-report-v1.js";
 
 const sampleReport = {
   location: { lat: 33.754, lng: -118.216 },
@@ -21,6 +22,10 @@ test("buildBriefPrompt: system prompt has honesty rules + grounding injection", 
   assert.ok(/modeled/i.test(systemPrompt), "system prompt mentions 'modeled'");
   assert.ok(/GROUNDING DATA/i.test(systemPrompt), "system prompt injects grounding data");
   assert.ok(/detour|CO2|environmental/i.test(systemPrompt), "system prompt mentions detour/CO2 deferral");
+  assert.ok(systemPrompt.includes(FLEETVOLT_REPORT_STANDARD_VERSION), "system prompt records the report standard version");
+  assert.match(systemPrompt, /Command Brief narrative/);
+  assert.match(systemPrompt, /Corridor White Paper design/);
+  assert.match(systemPrompt, /Open Gates for the Full Route Report/);
   assert.ok(userPrompt.length > 0, "user prompt is non-empty");
 });
 

@@ -19,6 +19,10 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import {
+  FLEETVOLT_REPORT_NARRATIVE_CONTRACT,
+  FLEETVOLT_REPORT_STANDARD_VERSION,
+} from "./report-standard/fleetvolt-route-report-v1";
 
 // ── INLINED from src/lib/brief-prompt.ts (deployment copy) ──────────────────
 
@@ -29,7 +33,10 @@ const PROXY_INPUTS = [
   "POLB_carrier_concentration",
 ] as const;
 
-const SYSTEM_PROMPT_PREFIX = `You are a freight electrification sales analyst. Generate an executive sales brief for a modeled truck parking/dwelling hotspot. The brief helps a BD team decide whether to pursue a mobile-energy (mobile EV charging) deployment at this location.
+const SYSTEM_PROMPT_PREFIX = `${FLEETVOLT_REPORT_NARRATIVE_CONTRACT}
+
+APPLICATION SCOPE
+Generate the hotspot section of a FleetVolt route report. This compact response is governed by FleetVolt Route Report Standard v${FLEETVOLT_REPORT_STANDARD_VERSION}; it is not a replacement for the complete ten-part route report.
 
 CRITICAL HONESTY RULES:
 1. The hotspot score is MODELED, not observed. Never say "observed", "measured", or "actual dwell data". Always say "modeled" or "estimated".
@@ -39,11 +46,11 @@ CRITICAL HONESTY RULES:
 5. Detour cost and environmental benefit are NOT computed — do not cite them as numbers. If relevant, say they require further analysis.
 6. End the brief with a "Data Disclosure" line stating the score is modeled from public proxy data, not observed dwell telematics.
 
-BRIEF STRUCTURE:
-## Executive Summary
+COMPACT HOTSPOT STRUCTURE:
+## Board Answer
 [2–3 sentences: what this hotspot is, its score, and the headline opportunity]
 
-## Why This Hotspot Exists
+## Evidence Chain
 [Explain the demand drivers using the four proxy inputs + freight context. Reference specific numbers from the data: carrier count, parking spots, AADT proxy component, FAF flow magnitude.]
 
 ## Favorability Assessment
@@ -51,6 +58,9 @@ BRIEF STRUCTURE:
 
 ## Recommended Next Steps
 [2–3 actionable items grounded in the data: e.g. "Target the N carriers within radius for outreach", "Assess depot charging feasibility given zero en-route Class-8 charging", "Validate parking capacity of N spots on-site"]
+
+## Open Gates for the Full Route Report
+[List route geometry, equal-work diesel-versus-BEV emissions, charger/trailer validation, field evidence, contact, and route-use facts that remain Not verified or Research required.]
 
 ## Data Disclosure
 [One line: "Hotspot score is modeled from NATD parking capacity, CalTrans truck AADT, FAF freight flow, and POLB carrier concentration data. Not observed dwell telematics. Charging data from AFDC."]
@@ -100,7 +110,7 @@ function buildBriefPrompt(reportPayload: unknown): {
 } {
   const payloadJson = JSON.stringify(reportPayload, null, 2);
   const systemPrompt = `${SYSTEM_PROMPT_PREFIX}\n${payloadJson}`;
-  const userPrompt = "Generate the executive sales brief for this hotspot.";
+  const userPrompt = `Generate the FleetVolt v${FLEETVOLT_REPORT_STANDARD_VERSION} compact hotspot brief.`;
   return { systemPrompt, userPrompt };
 }
 
@@ -115,7 +125,6 @@ function buildFallbackBrief(reportPayload: unknown): string {
   const truckValueUSD = r.freightContext?.truckValueUSD ?? 0;
   const freightOrigin = r.freightContext?.origin ?? "061";
   const freightYear = r.freightContext?.year ?? 2023;
-  const poiTotal = r.pois?.total ?? 0;
   const parkingSites = r.parking?.count ?? 0;
   const title = r.score?.title ?? "Unnamed hotspot";
 
@@ -124,12 +133,12 @@ function buildFallbackBrief(reportPayload: unknown): string {
   lines.push("");
   lines.push(`**Hotspot:** ${title} (modeled)`);
   lines.push("");
-  lines.push("## Executive Summary");
+  lines.push("## Board Answer");
   lines.push(
     `This hotspot has a modeled demand score of ${score.toFixed(3)}, with ${carrierCount} carriers within radius, ${totalSpots} total parking spots, and ${class8WithinRadius} Class-8-capable chargers in radius.`,
   );
   lines.push("");
-  lines.push("## Why This Hotspot Exists");
+  lines.push("## Evidence Chain");
   lines.push(
     `The score is modeled from four public proxy inputs: ${PROXY_INPUTS.join(", ")}.`,
   );
@@ -158,6 +167,11 @@ function buildFallbackBrief(reportPayload: unknown): string {
   );
   lines.push(
     `3. Validate parking capacity of ${totalSpots} spots across ${parkingSites} sites.`,
+  );
+  lines.push("");
+  lines.push("## Open Gates for the Full Route Report");
+  lines.push(
+    "Route geometry, equal-work diesel-versus-BEV emissions, charger/trailer capability, field evidence, carrier contacts, and route use remain Research required unless verified in the full route evidence manifest.",
   );
   lines.push("");
   lines.push("## Data Disclosure");
