@@ -19,16 +19,17 @@ const nextConfig: NextConfig = {
   },
   // ZEARP-4: proxy FleetVolt Rail benefits calc (standalone Vercel project)
   // to fleetvolt.network/rail without embedding the app in this monorepo.
-  async rewrites() {
+    async rewrites() {
     return {
       beforeFiles: [
+        // Legacy benefits URL → unified Railpower tools site
         {
           source: "/rail",
-          destination: "https://fleetvolt-rail.vercel.app/rail",
+          destination: "https://railpower-lect.vercel.app/railpower",
         },
         {
           source: "/rail/:path*",
-          destination: "https://fleetvolt-rail.vercel.app/rail/:path*",
+          destination: "https://railpower-lect.vercel.app/railpower/:path*",
         },
         {
           source: "/railpower",
